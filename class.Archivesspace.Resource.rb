@@ -55,11 +55,12 @@ end
 class Resource_Record_Buf < Record_Buf
 
     def initialize( rec_type_O )
-        if ( rec_type_O.class != Resource ) then
+        if ( rec_type_O.class.name.downcase != K.resource ) then
             Se.puts "#{Se.lineno}: =============================================="
             Se.puts "Param 1 is not a Resource class object, it's a #{rec_type_O.class}"
             raise
         end 
+        @rec_jsonmodel_type =  K.resource
         @rec_type_O = rec_type_O
         @uri = @rec_type_O.uri
         @num = @rec_type_O.num
@@ -68,22 +69,15 @@ class Resource_Record_Buf < Record_Buf
     attr_reader :num, :uri, :rec_type_O
     
     def create
-        @record_H.merge!( Record_Format.new( K.resource ).record_H )
+        @record_H.merge!( Record_Format.new( @rec_jsonmodel_type ).record_H )
         return self
     end
     
     def read( filter_record_B = true )
         @record_H = super( filter_record_B )
 #       Se.pp "@record_H", @record_H
-        if ( ! ( @record_H.has_key?( K.jsonmodel_type ) and @record_H[ K.jsonmodel_type ] == K.resource ) )
-            Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "Was expecting a resource jsonmodel_type"
-            Se.puts "@uri = #{@uri}"
-            Se.pp "@record_H:", @record_H
-            raise
-        end  
-        if ( @record_H.key?( K.resource ) and  @record_H[ K.resource ].key?( K.ref )) then
-            if ( ! ( @record_H[ K.resource ][ K.ref ] == "#{@uri}" ) ) then
+        if ( @record_H.key?( @rec_jsonmodel_type ) and  @record_H[ @rec_jsonmodel_type ].key?( K.ref )) then
+            if ( ! ( @record_H[ @rec_jsonmodel_type ][ K.ref ] == "#{@uri}" ) ) then
                 Se.puts "uri is not part of resource '#{@num}'"
                 Se.puts "resource => uri = '#{@uri}'"
                 Se.pp "@record_H:", @record_H

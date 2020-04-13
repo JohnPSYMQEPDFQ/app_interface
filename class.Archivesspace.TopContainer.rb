@@ -57,59 +57,52 @@ end
 class TC_Record_Buf < Record_Buf
 
     def initialize( rec_type_O )
-        if ( rec_type_O.class == 'Top_Container' ) then
+        if ( rec_type_O.class.name.downcase != K.top_container ) then
             Se.puts "#{Se.lineno}: =============================================="
             Se.puts "Param 1 is not an Top_Container object, it's: '#{rec_type_O.class}'"
             raise
         end    
+        @rec_jsonmodel_type =  K.top_container
         @rec_type_O = rec_type_O
         @uri = @rec_type_O.uri
         @num = @rec_type_O.num
         super( @rec_type_O.res_O.rep_O.aspace_O )
     end
-    attr_reader :rec_type_O, :num, :uri, :record_H
-    
+    attr_reader :rec_type_O, :num, :uri
     
     def create  
-        @record_H.merge!( Record_Format.new( K.top_container ).record_H )
+        @record_H.merge!( Record_Format.new( @rec_jsonmodel_type ).record_H )
         @record_H[ K.resource ][ K.ref ] = @rec_type_O.res_O.uri
         @record_H[ K.created_for_collection ] = @rec_type_O.res_O.uri
+        @cant_change_A << K.resource
+        @cant_change_A << K.created_for_collection
         return self
     end
     
     def read( filter_record_B = true )
+        stringer = "#{@rec_type_O.res_O.rep_O.uri}/top_containers"
+        if ( stringer != @uri[ 0 .. stringer.maxindex ]) then 
+            Se.puts "#{Se.lineno}: =============================================="     
+            Se.puts "uri isn't a top_container! uri=#{@uri}"
+            raise
+        end
         @record_H = super( filter_record_B ) 
 #       Se.pp "#{Se.lineno}: @record_H:", @record_H
-        if ( ! ( @record_H.has_key?( K.jsonmodel_type ) and @record_H[ K.jsonmodel_type ] == K.top_container ) )
-            Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "Was expecting a top_container jsonmodel_type"
-            Se.puts "@uri = #{@uri}"
-            Se.pp "@record_H:", @record_H
-            raise
-        end  
         return self
     end
 
     def store( )
-    #   Se.pp "@record_H:", @record_H
-    
-        if (!(  @record_H[K.jsonmodel_type] and @record_H[K.jsonmodel_type] == K.top_container)) then 
-            Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "Was expecting a top_container jsonmodel_type"
-            Se.puts "@uri = #{@uri}"
-            Se.pp "@record_H:", @record_H
-            raise
-        end 
+    #   Se.pp "@record_H:", @record_H 
         if (!(  @record_H[K.type] and @record_H[K.type] != '')) then 
             Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "#{Se.lineno}: I was expecting an @record_H[K.type] value";
+            Se.puts "#{Se.lineno}: I was expecting a @record_H[K.type] value";
             Se.puts "@uri = #{@uri}"
             Se.pp "@record_H:", @record_H
             raise
         end
         if (!(  @record_H[K.indicator] and @record_H[K.indicator] != K.undefined )) then 
             Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "#{Se.lineno}: I was expecting an @record_H[K.indicator] value";
+            Se.puts "#{Se.lineno}: I was expecting a @record_H[K.indicator] value";
             Se.puts "@uri = #{@uri}"
             Se.pp "@record_H:", @record_H
             raise

@@ -91,9 +91,16 @@ class Record_Buf < Buffer_Base
     end
     
     def load( external_record_H, filter_record_B = false)
-#          Se.puts "#{Se.lineno}"
-#          Se.pp "external_record_H:", external_record_H
-#          Se.pp "filter_jsonmodel_template_H:", filter_jsonmodel_template_H
+#       Se.puts "#{Se.lineno}"
+#       Se.pp "external_record_H:", external_record_H
+#       Se.pp "filter_jsonmodel_template_H:", filter_jsonmodel_template_H
+        if (!(  external_record_H[K.jsonmodel_type] and external_record_H[K.jsonmodel_type] == @rec_jsonmodel_type)) then 
+            Se.puts "#{Se.lineno}: =============================================="
+            Se.puts "I was expecting a #{@rec_jsonmodel_type} jsonmodel_type record."
+            Se.puts "@uri = #{@uri}"
+            Se.pp "external_record_H:", external_record_H
+            raise
+        end 
         if ( @uri == nil or @num == nil ) then
             Se.puts "#{Se.lineno}: =============================================="
             Se.puts "Was expecting the @uri and @num variables to be set"
@@ -127,27 +134,33 @@ class Record_Buf < Buffer_Base
 #          Se.puts "#{Se.lineno}"
 #          Se.pp "http_response_body_H:", http_response_body_H
 #          Se.pp "filter_jsonmodel_template_H:", filter_jsonmodel_template_H
-        if ( ! ( http_response_body_H.has_key?( K.jsonmodel_type ) ) )
+        if (!(  http_response_body_H[K.jsonmodel_type] and http_response_body_H[K.jsonmodel_type] == @rec_jsonmodel_type)) then 
             Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "Was expecting a jsonmodel_type in http_response_body"
+            Se.puts "I was expecting a #{@rec_jsonmodel_type} jsonmodel_type record."
             Se.puts "@uri = #{@uri}"
             Se.pp "http_response_body_H:", http_response_body_H
             raise
-        end
+        end 
         if ( filter_record_B ) then
-#               Se.pp "Before:", http_response_body_H
+#           Se.pp "Before:", http_response_body_H
             http_response_body_H = filter_jsonmodel( http_response_body_H )
-#               Se.pp "After:", http_response_body_H
+#           Se.pp "After:", http_response_body_H
         end
-#           Se.pp "http_response_body_H:", http_response_body_H
+#       Se.pp "http_response_body_H:", http_response_body_H
         return http_response_body_H
     end
     
     def store
 #       Se.pp @record_H
+        if (!(  @record_H[K.jsonmodel_type] and @record_H[K.jsonmodel_type] == @rec_jsonmodel_type)) then 
+            Se.puts "#{Se.lineno}: =============================================="
+            Se.puts "I was expecting a #{@rec_jsonmodel_type} jsonmodel_type record."
+            Se.puts "@uri = #{@uri}"
+            Se.pp "@record_H:", @record_H
+            raise
+        end 
         if (@record_H == nil or ( @record_H.has_key?( K.uri) and @record_H[ K.uri ] != @uri )) then
             Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "Store failed"
             Se.puts "Current @record_H[ K.uri ] != @uri"
             Se.puts "@uri = #{@uri}"
             Se.pp "Current @record_H:", @record_H
@@ -170,9 +183,15 @@ class Record_Buf < Buffer_Base
     end
 
     def delete
+        if (!(  @record_H[K.jsonmodel_type] and @record_H[K.jsonmodel_type] == @rec_jsonmodel_type)) then 
+            Se.puts "#{Se.lineno}: =============================================="
+            Se.puts "I was expecting a #{@rec_jsonmodel_type} jsonmodel_type record."
+            Se.puts "@uri = #{@uri}"
+            Se.pp "@record_H:", @record_H
+            raise
+        end 
         if (@record_H == nil or not ( @record_H.has_key?( K.uri) and @record_H[ K.uri ] == @uri )) then
             Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "Delete failed"
             Se.puts "Current @record_H[ K.uri ] != @uri"
             Se.puts "@uri = #{@uri}"
             Se.pp "Current @record_H:", @record_H

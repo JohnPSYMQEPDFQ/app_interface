@@ -56,11 +56,12 @@ end
 
 class AO_Record_Buf < Record_Buf       
     def initialize( rec_type_O )
-        if ( rec_type_O.class == 'Archival_Object' ) then
+        if ( rec_type_O.class.name.downcase != K.archival_object ) then
             Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "Param 1 is not an Archival_Class object, it's: '#{rec_type_O.class}'"
+            Se.puts "Param 1 is not an Archival_Class object, it's: '#{rec_type_O.class.name.downcase}'"
             raise
         end    
+        @rec_jsonmodel_type =  K.archival_object
         @rec_type_O = rec_type_O
         @uri = @rec_type_O.uri
         @num = @rec_type_O.num
@@ -69,22 +70,15 @@ class AO_Record_Buf < Record_Buf
     attr_reader :rec_type_O, :num, :uri
     
     def create( p1_level )
-        @record_H.merge!( Record_Format.new( K.archival_object ).record_H )  
+        @record_H.merge!( Record_Format.new( @rec_jsonmodel_type ).record_H )  
         @record_H[ K.level ] = p1_level
         @record_H[ K.resource ][ K.ref ] = @rec_type_O.res_O.uri
         @cant_change_A << K.level 
-#       Se.pp "@record_H:", @record_H    
+        @cant_change_A << K.resource
         return self
     end
 
     def load( external_record_H, filter_record_B = true )
-        if ( ! ( external_record_H.has_key?( K.jsonmodel_type ) and external_record_H[ K.jsonmodel_type ] == K.archival_object ) )
-            Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "Was expecting an archival_object jsonmodel_type"
-            Se.puts "@uri = #{@uri}"
-            Se.pp "external_record_H:", external_record_H
-            raise
-        end
         @record_H = super
         if ( @record_H[K.resource][K.ref] != @rec_type_O.res_O.uri ) then
             Se.puts "#{Se.lineno}: =============================================="
@@ -97,14 +91,14 @@ class AO_Record_Buf < Record_Buf
     end
     
     def read( filter_record_B = true )
-        @record_H = super( filter_record_B )
-        if ( ! ( @record_H.has_key?( K.jsonmodel_type ) and @record_H[ K.jsonmodel_type ] == K.archival_object ) )
-            Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "Was expecting a archival_object jsonmodel_type"
-            Se.puts "@uri = #{@uri}"
-            Se.pp "@record_H:", @record_H
+        stringer = "#{@rec_type_O.res_O.rep_O.uri}/archival_objects"
+        if ( stringer != @uri[ 0 .. stringer.maxindex ]) then 
+            Se.puts "#{Se.lineno}: =============================================="     
+            Se.puts "uri isn't a archival_object! uri=#{@uri}"
             raise
-        end       
+        end
+        @record_H = super( filter_record_B )
+#       Se.pp "#{Se.lineno}: @record_H:", @record_H
         if ( @record_H[K.resource][K.ref] != @rec_type_O.res_O.uri ) then
             Se.puts "#{Se.lineno}: =============================================="
             Se.puts "Archival_object doesn't belong to current Resource."
@@ -117,12 +111,6 @@ class AO_Record_Buf < Record_Buf
      
     def store( )
 #       Se.pp "@record_H:", @record_H            
-        if (!(   @record_H[K.jsonmodel_type] and @record_H[K.jsonmodel_type] == K.archival_object)) then 
-            Se.puts "#{Se.lineno}: =========================================="
-            Se.puts "I was expecting @record_H[K.jsonmodel_type] == K.archival_object";
-            Se.pp "@record_H:", @record_H
-            raise
-        end 
         if (!(   @record_H[K.resource][K.ref] and @record_H[K.resource][K.ref] != '')) then 
             Se.puts "#{Se.lineno}: =========================================="
             Se.puts "I was expecting an @record_H[K.resource][K.ref] value";
@@ -186,7 +174,7 @@ class AO_Query
             Se.puts "Unable to find Archival_Object with ref='#{p1_AO_ref_A}'"
             Se.pp "http_response_body", http_response_body
     #       Note:  The ref's are the strings that look like this:  75f47d3454c79e8d2f9a180ae35779a6
-    #              It's NOT the resource number.
+    #              It's NOT the AO number.
             raise
         end		
         @result = http_response_body
