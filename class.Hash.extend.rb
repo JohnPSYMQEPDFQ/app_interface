@@ -1,6 +1,6 @@
 class ::Hash
 
-def deep_keys_to_a_from_stackexchange
+def deep_keys_from_stackexchange
     h_map_output_A = self.map do |k, v|
 #       puts "k = #{k}, v = #{v}"
 #       puts
@@ -15,7 +15,7 @@ def deep_keys_to_a_from_stackexchange
                 if (e.is_a?( Hash ))
 #                   puts "Into recusion, hash:  #{k} => #{e}"
 #                   puts
-                    r = [k, e.deep_keys_to_a]
+                    r = [k, e.deep_keys_from_stackexchange]
 #                   puts "Return from recusion: #{r}"
 #                   puts
                     r
@@ -36,14 +36,14 @@ def deep_keys_to_a_from_stackexchange
     h_map_output_A
 end
 
-def deep_keys_to_a
+def deep_keys
     result_a = [ ]
     self.each_pair do | k, v |
 #              puts "k = #{k}, v = #{v}, v.class = #{v.class}"
         if ( v.is_a?( Array )) then
             a = v.map do | e |
                 if ( e.is_a?( Hash ) ) then
-                    e.deep_keys_to_a
+                    e.deep_keys
                 else
                     e
                 end
@@ -52,7 +52,7 @@ def deep_keys_to_a
             result_a << a if ( a.length > 0 )
         elsif ( v.is_a?( Hash ) ) then
             result_a << k
-            result_a << v.deep_keys_to_a
+            result_a << v.deep_keys
         else
             result_a << k
         end

@@ -102,7 +102,7 @@ j+='"top_container":[{"jsonmodel_type":"top_container",
 j+='}]}'
 
 h = JSON.parse( j )
-a = h.deep_keys_to_a
+a = h.deep_keys
 
 def print_constants( a, jsonmodel_type )
     prev_e = jsonmodel_type
