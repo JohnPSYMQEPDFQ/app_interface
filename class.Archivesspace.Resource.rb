@@ -112,7 +112,7 @@ class Resource_Tree_Query
     def initialize( p1_res_O )
         @res_O = p1_res_O
         uri = "#{@res_O.uri}/tree"
-        http_response_body = @res_O.rep_O.aspace_O.http_calls_O.http_get( uri, { } )
+        http_response_body = @res_O.rep_O.aspace_O.http_calls_O.get( uri, { } )
         if ( not ( http_response_body.has_key?( K.id ) and http_response_body[ K.id ] == @res_O.num )) then
             Se.puts "#{Se.lineno}: =============================================="
             Se.puts "Unable to find Resource Tree for res_num = #{@res_O.num}"

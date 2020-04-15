@@ -63,7 +63,7 @@ aspace_O.api_uri_base = api_uri_base
 aspace_O.login( "admin", "admin" )
 
 http_O = Http_Calls.new( aspace_O ) 
-method = "http_#{ARGV[ 0 ]}"
+method = ARGV[ 0 ]
 if ( not http_O.respond_to?( method )) then
     Se.puts "#{Se.lineno}: unknown method: #{method}"        
     exit

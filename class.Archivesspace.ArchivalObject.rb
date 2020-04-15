@@ -168,7 +168,7 @@ class AO_Query
     attr_reader :result, :uri
 
     def get_H_of_A_of_AO_ref__find_by_ref( p1_AO_ref_A )
-        http_response_body = @rep_O.aspace_O.http_calls_O.http_get( @uri, { 'ref_id[]' => p1_AO_ref_A } )
+        http_response_body = @rep_O.aspace_O.http_calls_O.get( @uri, { 'ref_id[]' => p1_AO_ref_A } )
         if ( http_response_body[K.archival_objects].length < 1 ) then
             Se.puts "#{Se.lineno}: =============================================="
             Se.puts "Unable to find Archival_Object with ref='#{p1_AO_ref_A}'"

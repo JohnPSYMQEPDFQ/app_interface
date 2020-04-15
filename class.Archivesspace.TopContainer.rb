@@ -162,7 +162,7 @@ class TC_Query
     attr_reader :result, :rep_O, :uri
 
     def get_A_of_TC_nums( p1_params )
-        http_response_body = @rep_O.aspace_O.http_calls_O.http_get( @uri, p1_params )
+        http_response_body = @rep_O.aspace_O.http_calls_O.get( @uri, p1_params )
         @result = http_response_body
         return self
     end

@@ -32,7 +32,7 @@ class Http_Calls
     end
     attr_reader :aspace_O
     
-    def http_get( p1_uri, p2_params = { } )
+    def get( p1_uri, p2_params = { } )
     #   Se.pov( uri ) 
             
         uri = URI.parse( "#{@aspace_O.api_uri_base}#{p1_uri}" )
@@ -61,7 +61,7 @@ class Http_Calls
         return response_body
     end           
     
-    def http_post_with_params( p1_uri, p2_params = { } )  
+    def post_with_params( p1_uri, p2_params = { } )  
         uri = URI.parse("#{@aspace_O.api_uri_base}/#{p1_uri}")
         uri.query = URI.encode_www_form( p2_params )  # Params are after the ? in the URL
         http = Net::HTTP.new( uri.host, uri.port )
@@ -82,7 +82,7 @@ class Http_Calls
         return response_body
     end
 
-    def http_post_with_body( p1_uri, p2_input_H )     
+    def post_with_body( p1_uri, p2_input_H )     
         uri = URI.parse("#{@aspace_O.api_uri_base}#{p1_uri}")       
         http = Net::HTTP.new( uri.host, uri.port )
     #   http.set_debug_output( $Stderr )      
@@ -103,7 +103,7 @@ class Http_Calls
         return response_body;
     end 
     
-    def http_delete( p1_uri, p2_params = { } )  
+    def delete( p1_uri, p2_params = { } )  
         uri = URI.parse("#{@aspace_O.api_uri_base}/#{p1_uri}")
         uri.query = URI.encode_www_form( p2_params )  # Params are after the ? in the URL
         http = Net::HTTP.new( uri.host, uri.port )

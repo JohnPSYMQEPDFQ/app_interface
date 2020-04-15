@@ -130,7 +130,7 @@ class Record_Buf < Buffer_Base
     end
     
     def read( filter_record_B = false )
-        http_response_body_H = @http_calls_O.http_get( @uri )
+        http_response_body_H = @http_calls_O.get( @uri )
 #          Se.puts "#{Se.lineno}"
 #          Se.pp "http_response_body_H:", http_response_body_H
 #          Se.pp "filter_jsonmodel_template_H:", filter_jsonmodel_template_H
@@ -167,7 +167,7 @@ class Record_Buf < Buffer_Base
             raise
         end
         if ( $global_update ) then
-            http_response_body_H = @http_calls_O.http_post_with_body( @uri, @record_H )
+            http_response_body_H = @http_calls_O.post_with_body( @uri, @record_H )
             if ( http_response_body_H[K.status] != 'Created' ) then 
                 Se.puts "#{Se.lineno}: =============================================="
                 Se.puts "Create failed"
@@ -198,7 +198,7 @@ class Record_Buf < Buffer_Base
             raise
         end
         if ( $global_update ) then
-            http_response_body_H = @http_calls_O.http_delete( @uri, { } )
+            http_response_body_H = @http_calls_O.delete( @uri, { } )
             if ( http_response_body_H[K.status] != 'Deleted' ) then 
                 Se.puts "#{Se.lineno}: =============================================="
                 Se.puts "Delete failed"

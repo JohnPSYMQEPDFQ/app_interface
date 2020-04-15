@@ -41,7 +41,7 @@ class ASpace
         @http_calls_O = Http_Calls.new( self )
 		@session = nil
 		@uri = "/users/#{p1_userid}/login"
-		http_response_body_H = @http_calls_O.http_post_with_params( @uri, { K.password => p2_password } )
+		http_response_body_H = @http_calls_O.post_with_params( @uri, { K.password => p2_password } )
 		@session = http_response_body_H[ K.session ]
 	#   Se.puts "session = #{@session}"
 		return http_response_body_H
