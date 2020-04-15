@@ -313,7 +313,7 @@ for argv in ARGV do
         raise
     end
 end
-Se.puts ""#{Se.lineno}: indent count = #{indent_cnt}"
+Se.puts "#{Se.lineno}: indent count = #{indent_cnt}"
 Se.pp "record counts:", record_level_cnt
 Se.pp "hash_of_TC_uri__by_type_indicator:", hash_of_TC_uri__by_type_indicator 
 
