@@ -38,7 +38,7 @@ class Http_Calls
         uri = URI.parse( "#{@aspace_O.api_uri_base}#{p1_uri}" )
         uri.query = URI.encode_www_form( p2_params )
         http = Net::HTTP.new(uri.host, uri.port)
-    #   http.set_debug_output( $Se )
+    #   http.set_debug_output( $Stderr )
     #   Se.pov( http )
             
         headers = { "Content-type" => "application/json", "X-ArchivesSpace-Session" => @aspace_O.session }
@@ -65,7 +65,7 @@ class Http_Calls
         uri = URI.parse("#{@aspace_O.api_uri_base}/#{p1_uri}")
         uri.query = URI.encode_www_form( p2_params )  # Params are after the ? in the URL
         http = Net::HTTP.new( uri.host, uri.port )
-    #   http.set_debug_output( $Se )    
+    #   http.set_debug_output( $Stderr )    
         if ( @aspace_O.session == nil ) then
             headers = { "Content-type" => "application/json" }
         else
@@ -85,7 +85,7 @@ class Http_Calls
     def http_post_with_body( p1_uri, p2_input_H )     
         uri = URI.parse("#{@aspace_O.api_uri_base}#{p1_uri}")       
         http = Net::HTTP.new( uri.host, uri.port )
-    #   http.set_debug_output( $Se )      
+    #   http.set_debug_output( $Stderr )      
         headers = { "Content-type" => "application/json" , 'X-ArchivesSpace-Session' => @aspace_O.session}
         input_O = Net::HTTP::Post.new( uri.request_uri, headers )
         input_O.body = p2_input_H.to_json
@@ -107,7 +107,7 @@ class Http_Calls
         uri = URI.parse("#{@aspace_O.api_uri_base}/#{p1_uri}")
         uri.query = URI.encode_www_form( p2_params )  # Params are after the ? in the URL
         http = Net::HTTP.new( uri.host, uri.port )
-    #   http.set_debug_output( $Se )    
+    #   http.set_debug_output( $Stderr )    
         headers = { "Content-type" => "application/json" , 'X-ArchivesSpace-Session' => @aspace_O.session}  
         response_O = http.request( Net::HTTP::Delete.new( uri.request_uri, headers ))
         if ( response_O.code != "200" ) then 
