@@ -24,7 +24,7 @@ The input FILE has the following three formats( JSONized ):
         1 = {
               K.record =>
                 {
-                  K.level => 'AO level',    # 
+                  K.level => ''             # the AO level (eg. 'file', 'series', ...)
                   K.title => '',            # the AO title field.
 -optional-        K.dates => [ ],           # An array of AO date hashes, single or inclusive
 -optional-        K.notes => [ ]            # An array of AO note hashes, singlepart or miltipart
@@ -41,7 +41,7 @@ The input FILE has the following three formats( JSONized ):
         2 = {
               K.indent =>                   
                 {
-                  K.right => 'Any text'        # Text only used for debugging
+                  K.right => 'Any text'      # Text only used for debugging
                 }
             }
   
@@ -82,7 +82,7 @@ require 'class.Archivesspace.Resource.rb'
 def get_A_of_TC_H( p1_res_buf_O, p2_TC_num_A )
     array_of_TC_H = [ ]
     p2_TC_num_A.each { |each_TC_num|
-        array_of_TC_H << Top_Container.new( p1_res_buf_O, each_TC_num ).make_buffer.read.record_H
+        array_of_TC_H << Top_Container.new( p1_res_buf_O, each_TC_num ).new_buffer.read.record_H
     }
     return array_of_TC_H
 end
@@ -191,14 +191,14 @@ aspace_O.login( "admin", "admin" )
 rep_O = Repository.new( aspace_O, repository_num )
 #Se.pom(rep_O)
 #Se.pov(rep_O)
-res_buf_O = Resource.new( rep_O, resource_num ).make_buffer.read
+res_buf_O = Resource.new( rep_O, resource_num ).new_buffer.read
 #Se.pom(res_buf_O)
 #Se.pov(res_buf_O)
 
 if ( cmdln_AO_ref ) then
     initial_parent_AO_uri = get_A_of_AO_ref( AO_Query.new( rep_O ).get_H_of_A_of_AO_ref__find_by_ref( [ cmdln_AO_ref ] ).result ) [ 0 ]
     Se.puts "#{Se.lineno}: initial_parent_AO_uri = #{initial_parent_AO_uri}"
-    initial_parent_AO_H = Archival_Object.new(res_buf_O, initial_parent_AO_uri).make_buffer.read.record_H
+    initial_parent_AO_H = Archival_Object.new(res_buf_O, initial_parent_AO_uri).new_buffer.read.record_H
 else
     initial_parent_AO_H = res_buf_O.record_H
     initial_parent_AO_uri = initial_parent_AO_H[ K.uri ]
@@ -216,7 +216,7 @@ array_of_TC_H__all_unused_AND_for_this_resource.each do |element|
 #   Se.pp each_TC_H
     if ( element[ 0 ] == K.unused ) then
         Se.puts "#{Se.lineno}: Delete top_container: #{each_TC_H[ K.uri ]}"
-        Top_Container.new( res_buf_O, each_TC_H[ K.uri ] ).make_buffer.delete
+        Top_Container.new( res_buf_O, each_TC_H[ K.uri ] ).new_buffer.delete
     else
         if ( each_TC_H.key?( K.type ) and each_TC_H.key?( K.indicator )) then
             stringer=each_TC_H[ K.type ] + each_TC_H[ K.indicator ]
@@ -267,7 +267,7 @@ for argv in ARGV do
         if ( input_record_H.key?( K.record ) ) then
             Se.puts "#{Se.lineno}: Rec:#{$.}: '#{input_record_json}'"
             stringer = input_record_H[ K.record ][ K.level ]
-            ao_buf_O = Archival_Object.new( res_buf_O ).make_buffer.create( stringer )
+            ao_buf_O = Archival_Object.new( res_buf_O ).new_buffer.create( stringer )
 #           Se.pp ao_buf_O.record_H
             record_level_cnt[ stringer ] += 1
             if ( ao_buf_O.record_H[ K.resource ][ K.ref ] == parent_ref_stack_A[ parent_ref_stack_A.maxindex ] ) then
@@ -287,7 +287,7 @@ for argv in ARGV do
                 indicator = "#{input_record_H[ K.record ][ K.container_format_1 ][ K.tc_indicator ]}"
                 unique_TC_key  = "#{type}#{indicator}"
                 if ( ! hash_of_TC_uri__by_type_indicator.key?( unique_TC_key ) ) then
-                    tc_buf_O = Top_Container.new( res_buf_O ).make_buffer.create
+                    tc_buf_O = Top_Container.new( res_buf_O ).new_buffer.create
                     tc_buf_O.record_H = { K.type => type }
                     tc_buf_O.record_H = { K.indicator => indicator }
                     tc_buf_O.store

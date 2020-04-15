@@ -45,7 +45,7 @@ class Resource
     end
     attr_reader :rep_O, :num, :uri
     
-    def make_buffer
+    def new_buffer
         res_buf_O = Resource_Record_Buf.new( self )
         return res_buf_O
     end

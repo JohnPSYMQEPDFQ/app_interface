@@ -48,7 +48,7 @@ class Archival_Object
     end
     attr_reader :res_O, :num, :uri
     
-    def make_buffer
+    def new_buffer
         ao_buf_O = AO_Record_Buf.new( self )
         return ao_buf_O
     end

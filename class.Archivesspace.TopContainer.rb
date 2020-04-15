@@ -48,7 +48,7 @@ class Top_Container
     end
     attr_reader :res_O, :num, :uri
     
-    def make_buffer
+    def new_buffer
         tc_buf_O = TC_Record_Buf.new( self )
         return tc_buf_O
     end

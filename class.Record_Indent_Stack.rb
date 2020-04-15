@@ -9,6 +9,8 @@ Abbreviations,  AO = archival object (Everything's an AO, but there's also uri "
                 _I = Index of Array
                _0R = Zero Relative
 
+  See bottom for example of how to use.
+
 =end
 
 require 'module.Se.rb'
@@ -149,3 +151,61 @@ class Record_Indent_Stack
         @record_print_method.call( first_record_H )
     end
 end
+
+=begin
+
+    How to use Record_Indent_Stack
+
+Record_Indent_Stack.new_with_flush( method( :put_record ), method( :put_indent ), desired_stacksize_0R ) do |record_stack_O|
+
+    ARGF.each_line do |input_record|                      #  << loop for each input record...
+
+        input_record_H = JSON.parse( input_record )
+        record_stack_O.add_record( input_record_H )       #  << passing the input record to the stack process
+
+    end
+
+end
+
+
+    The indent-print routine is something like this:
+
+def put_indent( level_number_A, level_title_A )
+    output_record_H={}
+    output_record_H[ K.record ] = {}
+    case level_number_A.maxindex 
+    when -1
+        Se.puts "#{Se.lineno}: =============================="
+        Se.puts "Wasn't expecting param1 level_number_A to be empty"
+        raise
+    when 0
+        output_record_H[ K.record ][ K.level ] = K.series
+        output_record_H[ K.record ][ K.title ] = "Series #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+    when 1
+        output_record_H[ K.record ][ K.level ] = K.subseries
+        output_record_H[ K.record ][ K.title ] = "Subseries #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+    else     
+        output_record_H[ K.record ][ K.level ] = K.recordgrp
+        output_record_H[ K.record ][ K.title ] = "#{level_title_A.join( ". " )}" 
+    end
+    puts output_record_H.to_json      # <<<< Write the indent record
+end
+
+
+    The record-print routine is something like this:
+
+def put_record( stack_record_H )
+    stack_record__indent_keys_A = stack_record_H[ K.record_indent_keys ]
+    stack_record__values_A = stack_record_H[ K.record_values ]
+
+    output_record_H={}
+    output_record_H[ K.record ] = {}
+    output_record_H[ K.record ][ K.level ] = stack_record_H[ K.level ]
+    stringer = stack_record__indent_keys_A[ 0..( stack_record__indent_keys_A.maxindex ) ].join( ". " ) +
+               ". " +
+               stack_record__values_A[ 0..( stack_record__values_A.maxindex - 1 ) ].join( " " )
+    output_record_H[ K.record ][ K.title ] = stringer.strip.gsub( /\.$/,'' )
+
+    puts output_record_H.to_json    # <<<< Write the data record
+end
+=end

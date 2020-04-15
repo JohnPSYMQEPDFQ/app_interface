@@ -79,7 +79,7 @@ aspace_O.login( "admin", "admin" )
 rep_O = Repository.new( aspace_O, repository_num )
 #Se.pom(rep_O)
 #Se.pov(rep_O)
-res_buf_O = Resource.new( rep_O, resource_num ).make_buffer.read
+res_buf_O = Resource.new( rep_O, resource_num ).new_buffer.read
 
 current_record_type = K.undefined
 ARGV.push('res') if (ARGV.empty?)
@@ -98,14 +98,14 @@ ARGV.each do | element |
     case current_record_type
     when 'ao'
         puts "Archival_Object: #{element}:"
-        ao_buf_O = Archival_Object.new(res_buf_O, element ).make_buffer.read( record_filter_B )
+        ao_buf_O = Archival_Object.new(res_buf_O, element ).new_buffer.read( record_filter_B )
         pp ao_buf_O.record_H
     when 'res' 
         puts "Resource: #{resource_num}:"
         pp res_buf_O.record_H
     when 'tc'
         puts "Top_Container: #{element}:"
-        tc_buf_O = Top_Container.new(res_buf_O, element ).make_buffer.read( record_filter_B )
+        tc_buf_O = Top_Container.new(res_buf_O, element ).new_buffer.read( record_filter_B )
         pp tc_buf_O.record_H
     else
         puts "Unknown record_type: #{current_record_type}"
