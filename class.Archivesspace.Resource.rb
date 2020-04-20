@@ -121,13 +121,14 @@ class Resource_Query
     end
     attr_reader :result, :res_O
 
-    def all_AO_buf_O
+    def all_AO_buf_O( starting_uri = '' )
 =begin
         Get all the AO's for the resource returning an array of AO_Record_Buf's
         load with the subset of AO data contained in the 'tree' records.
+        The parameter allows one to start from anyplace on the resource's tree.
 =end
         @result = []
-        process_each_node( '' )
+        process_each_node( starting_uri )
         return @result
     end
 
