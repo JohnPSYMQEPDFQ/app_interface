@@ -24,10 +24,10 @@ class Buffer_Base
     #  Shouldn't be an attr_reader :record_H here.
          
     def hash_comp_key_type( h_before, h_after )
-#           Se.puts "Before: #{h_before}"
-#           Se.puts "After:  #{h_after}"
+#       Se.puts "Before: #{h_before}"
+#       Se.puts "After:  #{h_after}"
         h_before.each_pair do | k, v |
-#               Se.puts "start loop: k = #{k}, v = #{v}"
+#           Se.puts "start loop: k = #{k}, v = #{v}"
             if ( k == K.parent ) then
                 next if ( h_after.has_key?( k ) and h_after[ k ].is_a?( String ) and h_after[ k ] == '' ) 
             else

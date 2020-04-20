@@ -155,8 +155,8 @@ class Record_Format < Buffer_Base
                     K.top_container => {
                         K.ref => K.undefined      # Ref to top_container, eg. /repositories/2/top_containers/98
                     } ,
-                    "type_2" => K.undefined ,     # 'folder'
-                    "indicator_2" => K.undefined  #  Folder identifier, eg a sequence num
+                    K.type_2 => K.undefined ,     # 'folder'
+                    K.indicator_2 => K.undefined  #  Folder identifier, eg a sequence num
                 }
             }
         @record_H.merge!( h )

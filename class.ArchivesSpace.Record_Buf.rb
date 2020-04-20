@@ -67,7 +67,7 @@ class Record_Buf < Buffer_Base
         end
         h = {}
         jsonmodel_H.sort.to_h.each_pair do | k, v |
-#              puts "k = #{k}, v = #{v}, v.class = #{v.class}"
+#           puts "k = #{k}, v = #{v}, v.class = #{v.class}"
             if ( v.is_a?( Array )) then
                 a = v.map do | e |
                     if ( e.is_a?( Hash ) and e.has_key?( K.jsonmodel_type )) then
@@ -111,7 +111,7 @@ class Record_Buf < Buffer_Base
         end
         if ( ! ( external_record_H.has_key?( K.jsonmodel_type ) ) )
             Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "Was expecting a jsonmodel_type in http_response_body"
+            Se.puts "Was expecting a jsonmodel_type in external_record_H"
             Se.puts "@uri = #{@uri}"
             Se.pp "external_record_H:", external_record_H
             raise
@@ -131,9 +131,9 @@ class Record_Buf < Buffer_Base
     
     def read( filter_record_B = false )
         http_response_body_H = @http_calls_O.get( @uri )
-#          Se.puts "#{Se.lineno}"
-#          Se.pp "http_response_body_H:", http_response_body_H
-#          Se.pp "filter_jsonmodel_template_H:", filter_jsonmodel_template_H
+#       Se.puts "#{Se.lineno}"
+#       Se.pp "http_response_body_H:", http_response_body_H
+#       Se.pp "filter_jsonmodel_template_H:", filter_jsonmodel_template_H
         if (!(  http_response_body_H[K.jsonmodel_type] and http_response_body_H[K.jsonmodel_type] == @rec_jsonmodel_type)) then 
             Se.puts "#{Se.lineno}: =============================================="
             Se.puts "I was expecting a #{@rec_jsonmodel_type} jsonmodel_type record."

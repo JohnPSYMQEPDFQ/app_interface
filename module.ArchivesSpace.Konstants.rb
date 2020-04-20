@@ -57,7 +57,7 @@ module K
     def K.ils_holding_id; return 'ils_holding_id'.freeze; end   # top_container
     def K.ils_item_id; return 'ils_item_id'.freeze; end   # top_container
     def K.inclusive; return 'inclusive'.freeze; end
-    def K.indent; return '__INDENT__'.freeze; end
+    def K.indent; return '__INDENT__'.freeze; end  # Stack class
     def K.indicator; return 'indicator'.freeze; end   # top_container
     def K.indicator_2; return 'indicator_2'.freeze; end   # sub_container
     def K.indicator_3; return 'indicator_3'.freeze; end   # sub_container
@@ -67,26 +67,29 @@ module K
     def K.instances; return 'instances'.freeze; end   # archival_object, resource     WARNING PLURAL
     def K.is_representative; return 'is_representative'.freeze; end   # instances
     def K.is_slug_auto; return 'is_slug_auto'.freeze; end   # archival_object, resource
-    def K.jsonmodel_type; return 'jsonmodel_type'.freeze; end   # archival_object, dates, extents, instances, lang_materials, langauge_and_script, resource, revision_statments, sub_container, top_container
+    def K.jsonmodel_type; return 'jsonmodel_type'.freeze; end   # everything
     def K.label; return 'label'.freeze; end   # dates
     def K.lang_materials; return 'lang_materials'.freeze; end   # archival_object, resource
     def K.language; return 'language'.freeze; end   # language_and_script
     def K.language_and_script; return 'language_and_script'.freeze; end   # lang_materials
     def K.last_modified_by; return 'last_modified_by'.freeze; end
-    def K.left; return 'left'.freeze; end
+    def K.left; return '__LEFT__'.freeze; end  # Stack class
     def K.level; return 'level'.freeze; end   # archival_object, resource
     def K.linked_agents; return 'linked_agents'.freeze; end   # archival_object, resource
     def K.linked_events; return 'linked_events'.freeze; end   # archival_object, resourcr
     def K.lock_version; return 'lock_version'.freeze; end
     def K.mixed_materials; return 'mixed_materials'.freeze; end
-    def K.node_type; return 'node_type'.freeze; end
+    def K.node_type; return 'node_type'.freeze; end   # tree
+    def K.node_uri; return 'node_uri'.freeze; end   # tree
     def K.note_multipart; return 'note_multipart'.freeze; end   
     def K.note_singlepart; return 'note_singlepart'.freeze; end   
     def K.note_text; return 'note_text'.freeze; end
     def K.notes; return 'notes'.freeze; end   # archival_object, lang_materials, resource
     def K.number; return 'number'.freeze; end   # extents
+    def K.offset; return 'offset'.freeze; end   # tree
     def K.parent; return 'parent'.freeze; end
     def K.parent_id; return 'parent_id'.freeze; end  # tree
+    def K.parent_node; return 'parent_node'.freeze; end  # tree
     def K.password; return 'password'.freeze; end
     def K.persistent_id; return 'persistent_id'.freeze; end
     def K.physical_details; return 'physical_details'.freeze; end   # extents
@@ -95,12 +98,12 @@ module K
     def K.precomputed_waypoints; return 'precomputed_waypoints'.freeze; end  # tree
     def K.processinfo; return 'processinfo'.freeze; end
     def K.publish; return 'publish'.freeze; end
-    def K.record; return '__RECORD__'.freeze; end
-    def K.record_indent_keys; return '__RECORD_INDENT_KEYS__'.freeze; end
-    def K.record_num; return '__RECORD_NUM__'.freeze; end
-    def K.record_original; return '__RECORD_ORIGINAL__'.freeze; end
+    def K.record; return '__RECORD__'.freeze; end  # formatter
+    def K.record_indent_keys; return '__RECORD_INDENT_KEYS__'.freeze; end  # formatter
+    def K.record_num; return '__RECORD_NUM__'.freeze; end  # formatter
+    def K.record_original; return '__RECORD_ORIGINAL__'.freeze; end  # formatter
     def K.record_uri; return 'record_uri'.freeze; end
-    def K.record_values; return '__RECORD_VALUES__'.freeze; end
+    def K.record_values; return '__RECORD_VALUES__'.freeze; end  # formatter
     def K.recordgrp; return 'recordgrp'.freeze; end  #archival_object
     def K.ref; return 'ref'.freeze; end   # archival_object, sub_container
     def K.ref_id; return 'ref_id'.freeze; end   # archival_object
@@ -111,7 +114,7 @@ module K
     def K.restrictions; return 'restrictions'.freeze; end   # resource
     def K.restrictions_apply; return 'restrictions_apply'.freeze; end   # archival_object
     def K.revision_statements; return 'revision_statements'.freeze; end   # resource
-    def K.right; return 'right'.freeze; end
+    def K.right; return '__RIGHT__'.freeze; end  # Stack class
     def K.rights_statements; return 'rights_statements'.freeze; end   # archival_object, resource
     def K.sc_indicator; return '__SC_INDICATOR__'.freeze; end   # sub_container
     def K.sc_type; return '__SC_TYPE__'.freeze; end   # sub_container
@@ -126,8 +129,8 @@ module K
     def K.subseries; return 'subseries'.freeze; end
     def K.suppressed; return 'suppressed'.freeze; end
     def K.system_mtime; return 'system_mtime'.freeze; end
-    def K.tc_indicator; return '__TC_INDICATOR__'.freeze; end   # sub_container
-    def K.tc_type; return '__TC_TYPE__'.freeze; end   # sub_container
+    def K.tc_indicator; return '__TC_INDICATOR__'.freeze; end   # formatter
+    def K.tc_type; return '__TC_TYPE__'.freeze; end   # formatter
     def K.title; return 'title'.freeze; end   # archival_object, resource
     def K.top_container; return 'top_container'.freeze; end   # sub_container
     def K.tree; return 'tree'.freeze; end   # resource

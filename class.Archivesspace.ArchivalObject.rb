@@ -14,9 +14,15 @@ Abbreviations,  AO/ao = archival object(Everything's an AO, but there's also uri
 =end
 
 class Archival_Object
+=begin
+      Archival_Object just holds the AO-number and uri.   
+      An object of this is needed to create a AO_Record_Buf, but
+      there's a 'new_buffer' method that will do it from inside here too, eg:
+          ao_buffer_Obj = Archival_Object.new(resource_Obj, ao-num|uri).new_buffer[.read|create]
+=end
     def initialize( p1_O, p2_AO_identifier = nil )
         if ( p1_O.class == Resource_Record_Buf ) then
-            @res_O = p1_O.rec_type_O
+            @res_O = p1_O.res_O
         else
             if ( p1_O.class != Resource ) then
                 Se.puts "#{Se.lineno}: =============================================="
@@ -42,6 +48,10 @@ class Archival_Object
                         Se.puts "Invalid param2: #{p2_AO_identifier}"
                         raise
                     end
+                else
+                    Se.puts "#{Se.lineno}: =============================================="
+                    Se.puts "Invalid param2: #{p2_AO_identifier}"
+                    raise
                 end
             end
         end
@@ -55,24 +65,29 @@ class Archival_Object
 end
 
 class AO_Record_Buf < Record_Buf       
-    def initialize( rec_type_O )
-        if ( rec_type_O.class.name.downcase != K.archival_object ) then
+=begin
+      A "CRUD-like" class for the /archival_objects. 
+      Note that: The 'create' just initializes the buffer, and the Update is called 'store' (so it's IRSD)
+      There's also a 'load' method which allows external data to be loaded into the buffer.
+=end
+    def initialize( ao_O )
+        if ( ao_O.class.name.downcase != K.archival_object ) then
             Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "Param 1 is not an Archival_Class object, it's: '#{rec_type_O.class.name.downcase}'"
+            Se.puts "Param 1 is not an Archival_Class object, it's: '#{ao_O.class.name.downcase}'"
             raise
         end    
         @rec_jsonmodel_type =  K.archival_object
-        @rec_type_O = rec_type_O
-        @uri = @rec_type_O.uri
-        @num = @rec_type_O.num
-        super( @rec_type_O.res_O.rep_O.aspace_O )
+        @ao_O = ao_O
+        @uri = @ao_O.uri
+        @num = @ao_O.num
+        super( @ao_O.res_O.rep_O.aspace_O )
     end
-    attr_reader :rec_type_O, :num, :uri
+    attr_reader :ao_O, :num, :uri
     
     def create( p1_level )
         @record_H.merge!( Record_Format.new( @rec_jsonmodel_type ).record_H )  
         @record_H[ K.level ] = p1_level
-        @record_H[ K.resource ][ K.ref ] = @rec_type_O.res_O.uri
+        @record_H[ K.resource ][ K.ref ] = @ao_O.res_O.uri
         @cant_change_A << K.level 
         @cant_change_A << K.resource
         return self
@@ -80,18 +95,21 @@ class AO_Record_Buf < Record_Buf
 
     def load( external_record_H, filter_record_B = true )
         @record_H = super
-        if ( @record_H[K.resource][K.ref] != @rec_type_O.res_O.uri ) then
+        if ( not (@record_H.has_key?( K.resource ) and @record_H[K.resource].has_key?( K.ref ) and 
+                  @record_H[ K.resource ][ K.ref ] == @ao_O.res_O.uri )) then
             Se.puts "#{Se.lineno}: =============================================="
             Se.puts "Archival_object doesn't belong to current Resource."
-            Se.puts "@record_H[K.resource][K.ref] != @rec_type_O.res_O.uri"
-            Se.puts "#{@record_H[K.resource][K.ref]} != #{@rec_type_O.res_O.uri}"
+            Se.puts "@record_H[K.resource][K.ref] != @ao_O.res_O.uri"
+            Se.pp "@record_H:", @record_H
             raise
         end
+        @cant_change_A << K.level 
+        @cant_change_A << K.resource
         return self
     end
     
     def read( filter_record_B = true )
-        stringer = "#{@rec_type_O.res_O.rep_O.uri}/archival_objects"
+        stringer = "#{@ao_O.res_O.rep_O.uri}/archival_objects"
         if ( stringer != @uri[ 0 .. stringer.maxindex ]) then 
             Se.puts "#{Se.lineno}: =============================================="     
             Se.puts "uri isn't a archival_object! uri=#{@uri}"
@@ -99,11 +117,11 @@ class AO_Record_Buf < Record_Buf
         end
         @record_H = super( filter_record_B )
 #       Se.pp "#{Se.lineno}: @record_H:", @record_H
-        if ( @record_H[K.resource][K.ref] != @rec_type_O.res_O.uri ) then
+        if ( @record_H[K.resource][K.ref] != @ao_O.res_O.uri ) then
             Se.puts "#{Se.lineno}: =============================================="
             Se.puts "Archival_object doesn't belong to current Resource."
-            Se.puts "@record_H[K.resource][K.ref] != @rec_type_O.res_O.uri"
-            Se.puts "#{@record_H[K.resource][K.ref]} != #{@rec_type_O.res_O.uri}"
+            Se.puts "@record_H[K.resource][K.ref] != @ao_O.res_O.uri"
+            Se.puts "#{@record_H[K.resource][K.ref]} != #{@ao_O.res_O.uri}"
             raise
         end
         return self
@@ -119,10 +137,10 @@ class AO_Record_Buf < Record_Buf
         end
         if ( @record_H.has_key?(K.parent)) then
             if ( @record_H[K.parent].respond_to?(:to_H) and @record_H[K.parent].has_key?(K.ref)) then
-                if ( !(  @record_H[K.parent][K.ref] =~ %r"^#{@rec_type_O.res_O.rep_O.uri}/(archival_objects|resources)" \
+                if ( !(  @record_H[K.parent][K.ref] =~ %r"^#{@ao_O.res_O.rep_O.uri}/(archival_objects|resources)" \
                        or(  @record_H[K.parent][K.ref] == "NO UPDATE MODE" and ! $global_update)))
                     Se.puts "#{Se.lineno}: =========================================="
-                    Se.puts "@record_H[K.parent][K.ref] =~ |#{@rec_type_O.res_O.rep_O.uri}/(archival_objects|resources)|"
+                    Se.puts "@record_H[K.parent][K.ref] =~ |#{@ao_O.res_O.rep_O.uri}/(archival_objects|resources)|"
                     Se.puts "@record_H[K.parent][K.ref] = #{@record_H[K.parent][K.ref]}"
                     Se.pp "@record_H:", @record_H
                     raise
@@ -135,16 +153,16 @@ class AO_Record_Buf < Record_Buf
             Se.pp "@record_H:", @record_H
             raise
         end
-        if ( @record_H[K.resource][K.ref] != @rec_type_O.res_O.uri ) then
+        if ( @record_H[K.resource][K.ref] != @ao_O.res_O.uri ) then
             Se.puts "#{Se.lineno}: =============================================="
             Se.puts "Archival_object doesn't belong to current Resource."
-            Se.puts "@record_H[K.resource][K.ref] != @rec_type_O.res_O.uri"
-            Se.puts "#{@record_H[K.resource][K.ref]} != #{@rec_type_O.res_O.uri}"
+            Se.puts "@record_H[K.resource][K.ref] != @ao_O.res_O.uri"
+            Se.puts "#{@record_H[K.resource][K.ref]} != #{@ao_O.res_O.uri}"
             raise
         end
 
         if ( @uri == nil ) then
-            @uri = "#{@rec_type_O.res_O.rep_O.uri}/archival_objects"
+            @uri = "#{@ao_O.res_O.rep_O.uri}/archival_objects"
             http_response_body_H = super
             Se.puts "#{Se.lineno}: Created ArchivalObject, uri = #{http_response_body_H[ K.uri ]}";
         else

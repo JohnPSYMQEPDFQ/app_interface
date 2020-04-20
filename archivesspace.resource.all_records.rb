@@ -77,17 +77,6 @@ else
     Se.puts "The --resource-num option is required."
     raise
 end
-if ( cmdln_option[ 'ao-ref' ] ) then
-    cmdln_AO_ref = cmdln_option[ 'ao-ref' ]      
-else
-    cmdln_AO_ref = nil
-end
-if ( cmdln_option[ 'last-record-num' ] ) then
-    last_record_num = cmdln_option[ 'last-record-num' ]      
-else
-    last_record_num = nil
-end
-$global_update=cmdln_option[ 'update' ] 
 
 aspace_O = ASpace.new
 aspace_O.api_uri_base = api_uri_base
@@ -99,12 +88,9 @@ rep_O = Repository.new( aspace_O, repository_num )
 #Se.pov(rep_O)
 
 res_O = Resource.new( rep_O, resource_num )
-res_tree_query_O = Resource_Tree_Query.new( res_O )
-cnt = 0
-res_tree_query_O.result.each do | element |
+cnt = 0; Resource_Query.new( res_O ).all_AO_buf_O.each do | ao_buf_O |
     cnt += 1
-    ao_record_H = AO_Record_Buf.new( element ).read.record_H
-    puts "#{cnt} #{ao_record_H[ K.uri ]} #{ao_record_H[ K.position ]} #{ao_record_H[ K.title ]}"
+    puts "#{cnt} #{ao_buf_O.record_H[ K.uri ]} #{ao_buf_O.record_H[ K.position ]} #{ao_buf_O.record_H[ K.title ]}"
 end
 
 

@@ -1,22 +1,28 @@
 =begin
 
 Abbreviations,  AO = archival object(Everything's an AO, but there's also uri "archive_objects". It's confusing...)
-            AS = ArchivesSpace
-            IT = instance type
-            TC = top container
-            SC = Sub-container
-            _H = Hash
-            _A = Array
-            _I = Index(of Array)
-            _O = Object
-           _0R = Zero Relative
+                AS = ArchivesSpace
+                IT = instance type
+                TC = top container
+                SC = Sub-container
+                _H = Hash
+                _A = Array
+                _I = Index(of Array)
+                _O = Object
+               _0R = Zero Relative
 
 =end
 
 class Top_Container 
+=begin
+      Top_Container just holds the TC-number and uri.   
+      An object of this is needed to create a TC_Record_Buf, but
+      there's a 'new_buffer' method that will do it from inside here too, eg:
+          tc_buffer_Obj = Top_Container.new(resource_Obj, tc-num|uri).new_buffer[.read|create]
+=end
     def initialize( p1_O, p2_TC_identifier = nil )
         if ( p1_O.class == Resource_Record_Buf ) then
-            @res_O = p1_O.rec_type_O
+            @res_O = p1_O.res_O
         else
             if ( p1_O.class != Resource ) then
                 Se.puts "#{Se.lineno}: =============================================="
@@ -42,6 +48,10 @@ class Top_Container
                         Se.puts "Invalid param2: #{p2_TC_identifier}"
                         raise
                     end
+                else
+                    Se.puts "#{Se.lineno}: =============================================="
+                    Se.puts "Invalid param2: #{p2_TC_identifier}"
+                    raise
                 end
             end
         end
@@ -55,32 +65,35 @@ class Top_Container
 end
 
 class TC_Record_Buf < Record_Buf
-
-    def initialize( rec_type_O )
-        if ( rec_type_O.class.name.downcase != K.top_container ) then
+=begin
+      A "CRUD-like" class for the /top_containers. 
+      Note that: The 'create' just initializes the buffer, and the Update is called 'store' (so it's IRSD)
+=end
+    def initialize( tc_O )
+        if ( tc_O.class.name.downcase != K.top_container ) then
             Se.puts "#{Se.lineno}: =============================================="
-            Se.puts "Param 1 is not an Top_Container object, it's: '#{rec_type_O.class}'"
+            Se.puts "Param 1 is not an Top_Container object, it's: '#{tc_O.class}'"
             raise
         end    
         @rec_jsonmodel_type =  K.top_container
-        @rec_type_O = rec_type_O
-        @uri = @rec_type_O.uri
-        @num = @rec_type_O.num
-        super( @rec_type_O.res_O.rep_O.aspace_O )
+        @tc_O = tc_O
+        @uri = @tc_O.uri
+        @num = @tc_O.num
+        super( @tc_O.res_O.rep_O.aspace_O )
     end
-    attr_reader :rec_type_O, :num, :uri
+    attr_reader :tc_O, :num, :uri
     
     def create  
         @record_H.merge!( Record_Format.new( @rec_jsonmodel_type ).record_H )
-        @record_H[ K.resource ][ K.ref ] = @rec_type_O.res_O.uri
-        @record_H[ K.created_for_collection ] = @rec_type_O.res_O.uri
+        @record_H[ K.resource ][ K.ref ] = @tc_O.res_O.uri
+        @record_H[ K.created_for_collection ] = @tc_O.res_O.uri
         @cant_change_A << K.resource
         @cant_change_A << K.created_for_collection
         return self
     end
     
     def read( filter_record_B = true )
-        stringer = "#{@rec_type_O.res_O.rep_O.uri}/top_containers"
+        stringer = "#{@tc_O.res_O.rep_O.uri}/top_containers"
         if ( stringer != @uri[ 0 .. stringer.maxindex ]) then 
             Se.puts "#{Se.lineno}: =============================================="     
             Se.puts "uri isn't a top_container! uri=#{@uri}"
@@ -107,15 +120,15 @@ class TC_Record_Buf < Record_Buf
             Se.pp "@record_H:", @record_H
             raise
         end
-        if ( @record_H[K.resource][K.ref] != @rec_type_O.res_O.uri ) then
+        if ( @record_H[K.resource][K.ref] != @tc_O.res_O.uri ) then
             Se.puts "#{Se.lineno}: =============================================="
             Se.puts "Top_Container doesn't belong to current Resource."
-            Se.puts "@record_H[K.resource][K.ref] != @rec_type_O.res_O.uri"
-            Se.puts "#{@record_H[K.resource][K.ref]} != #{@rec_type_O.res_O.uri}"
+            Se.puts "@record_H[K.resource][K.ref] != @tc_O.res_O.uri"
+            Se.puts "#{@record_H[K.resource][K.ref]} != #{@tc_O.res_O.uri}"
             raise
         end
         if ( @uri == nil ) then
-            @uri = "#{@rec_type_O.res_O.rep_O.uri}/top_containers"
+            @uri = "#{@tc_O.res_O.rep_O.uri}/top_containers"
             http_response_body_H = super
             Se.puts "#{Se.lineno}: Created TopContainer, uri = #{http_response_body_H[ K.uri ]}"
         else
@@ -130,7 +143,7 @@ class TC_Record_Buf < Record_Buf
     end
         
     def delete( )
-        stringer = "#{@rec_type_O.res_O.rep_O.uri}/top_containers"
+        stringer = "#{@tc_O.res_O.rep_O.uri}/top_containers"
         if ( stringer != @uri[ 0 .. stringer.maxindex ]) then 
             Se.puts "#{Se.lineno}: =============================================="     
             Se.puts "uri isn't a top_container! uri=#{@uri}"
@@ -139,11 +152,11 @@ class TC_Record_Buf < Record_Buf
         read()
         
         if ( @record_H.has_key?( K.resource ) and @record_H[ K.resource ].has_key?( K.ref )) then
-            if ( @record_H[ K.resource ][ K.ref ] != @rec_type_O.res_O.uri ) then
+            if ( @record_H[ K.resource ][ K.ref ] != @tc_O.res_O.uri ) then
                 Se.puts "#{Se.lineno}: =============================================="
                 Se.puts "Top_Container doesn't belong to current Resource."
-                Se.puts "@record_H[K.resource][K.ref] != @rec_type_O.res_O.uri"
-                Se.puts "#{@record_H[K.resource][K.ref]} != #{@rec_type_O.res_O.uri}"
+                Se.puts "@record_H[K.resource][K.ref] != @tc_O.res_O.uri"
+                Se.puts "#{@record_H[K.resource][K.ref]} != #{@tc_O.res_O.uri}"
                 raise
             end
         end

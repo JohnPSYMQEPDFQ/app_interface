@@ -37,24 +37,20 @@ myself_name = File.basename( $0 )
 api_uri_base = "http://localhost:8089"
 
 cmdln_option = { "repository-num" => 2  ,
-                 "resource-num" => nil  ,
-                 "filter" => false }
+               }
 OptionParser.new do |option|
-    option.banner = "Usage: #{myself_name} [ options ] --resource-num n [res] [(ao|tc) n,n,...]..."
-    option.on( "--filter", "apply-read-filter" ) do |opt_arg|
-        cmdln_option[ 'filter' ] = true
-    end
+    option.banner = "Usage: #{myself_name} [ options ] uri[?params]"
     option.on( "-h","--help" ) do
         Se.puts option
         exit
     end
 end.parse!  # Bang because ARGV is altered
-#p cmdln_option
-#p ARGV
-record_filter_B = cmdln_option[ 'filter' ] 
+if ( cmdln_option[ 'repository-num' ] ) then
+    repository_num = cmdln_option[ 'repository-num' ]
+end
 
 if ( ARGV.length < 2 ) then
-    Se.puts "I need to params"
+    Se.puts "I need two params: http method (eg 'get') and the uri"
     exit
 end
 
@@ -76,9 +72,9 @@ else
     params = [ a1[ 1 ].split( '=' ).map( &:to_s ).map( &:strip ) ].to_h
     params.each_pair { | k, v | params[k] = v.to_i if (v.integer?) }
 end
-p a1
-p uri
-p params
+uri.sub!( ':repo_id', repository_num.to_s )
+#p a1
+Se.puts "uri=#{uri}, params=#{params}"
 pp http_O.method( method ).call( uri, params ) 
 
 

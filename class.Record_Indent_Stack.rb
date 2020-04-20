@@ -18,12 +18,12 @@ require 'module.Se.rb'
 class Record_Indent_Stack
 
     def self.new_with_flush(*args)
-        stack = new(*args)
-        yield stack
-        stack.flush
+        myself_O = new(*args)
+        yield myself_O
+        myself_O.flush
     end
 
-    def initialize(record_print_method, indent_print_method, stack_size_0R, indent_keys_prefixes_A = [  ] )
+    def initialize(record_print_method, indent_print_method, stack_size_0R, indent_keys_prefixes_A = [ [ '/', 0 ] ] )
         @record_print_method = record_print_method
         @indent_print_method = indent_print_method
         if (stack_size_0R < 1) then
@@ -40,7 +40,7 @@ class Record_Indent_Stack
             end
         end
         @indent_key_stack_A = indent_keys_prefixes_A
-        if ( @indent_key_stack_A.empty? or @indent_key_stack_A[0] != '/' ) then
+        if ( @indent_key_stack_A.empty? or @indent_key_stack_A[0][0] != '/' ) then
             @indent_key_stack_A.unshift( [ '/', 0 ])
         end
         @indent_key_prefixes_A = @indent_key_stack_A.transpose[0]
@@ -91,8 +91,8 @@ class Record_Indent_Stack
             Se.p "@indent_key_stack_A[ indent_key_I ][ 0 ]" +
                  "=#{@indent_key_stack_A[ indent_key_I ][ 0 ]}" if ( $DEBUG )
             Se.p "first_record_indent_keys_A.maxindex=#{first_record_indent_keys_A.maxindex}" if ( $DEBUG )
-            if (   indent_key_I > first_record_indent_keys_A.maxindex\
-                or @indent_key_stack_A[ indent_key_I ][ 0 ].downcase != first_record_indent_keys_A[ indent_key_I ].downcase ) then
+            if (   indent_key_I > first_record_indent_keys_A.maxindex or
+                   @indent_key_stack_A[ indent_key_I ][ 0 ].downcase != first_record_indent_keys_A[ indent_key_I ].downcase ) then
                 a1 = @indent_key_stack_A.pop( 1 )[ 0 ]
                 output_record_H = {}
                 output_record_H[ K.indent ] = {}
@@ -118,30 +118,29 @@ class Record_Indent_Stack
                     break if ( indent_key_I > highest_matched_indent_key_idx_A.min )
                     Se.p "indent_key_I=#{indent_key_I} " +
                          "@indent_key_stack_A.maxindex=#{@indent_key_stack_A.maxindex}" if ($DEBUG)
-                    if  (  indent_key_I > @indent_key_stack_A.maxindex \
-                        or @indent_key_stack_A[ indent_key_I ][ 0 ].downcase != first_record_indent_keys_A[ indent_key_I ].downcase ) then
+                    if  (  indent_key_I > @indent_key_stack_A.maxindex or
+                           @indent_key_stack_A[ indent_key_I ][ 0 ].downcase != first_record_indent_keys_A[ indent_key_I ].downcase ) then
                         if ( indent_key_I > @indent_key_stack_A.maxindex )
                         then
-                            @indent_key_stack_A[ indent_key_I ] = [ "", 0 ]
-                            @indent_key_stack_A[ indent_key_I ][ 0 ] = first_record_indent_keys_A[ indent_key_I ]
+                            @indent_key_stack_A[ indent_key_I ] = [ first_record_indent_keys_A[ indent_key_I ], 0 ]
                             Se.p "@indent_key_stack_A[ #{indent_key_I} ]" +
                                  "=#{@indent_key_stack_A[ indent_key_I ]}" if ( $DEBUG )
                         end
                         if ( indent_key_I > 0 ) then
                             @indent_key_stack_A[ indent_key_I - 1 ][ 1 ] += 1
-                            idx = -1; a1 = [ ]; loop do
+                            idx = -1; group_numbers_A = [ ]; loop do
                                 idx += 1
                                 break if ( idx >= indent_key_I )
-                                a1.push( "#{@indent_key_stack_A[ idx ][ 1 ]}" )   # a1 is the series numbers n.n.n.etc...
+                                group_numbers_A.push( "#{@indent_key_stack_A[ idx ][ 1 ]}" )   # Group numbers: n.n.n.etc...
                             end 
-                            idx = 0; a2 = [ ]; loop do
+                            idx = 0; group_text_A = [ ]; loop do
                                 idx += 1
                                 break if ( idx > indent_key_I )
-                                a2.push( "#{@indent_key_stack_A[ idx ][ 0 ]}" )   # a2 is the series title text.
+                                group_text_A.push( "#{@indent_key_stack_A[ idx ][ 0 ]}" )
                             end
-                            @indent_print_method.call( a1, a2 )
+                            @indent_print_method.call( group_numbers_A, group_text_A )
                             output_record_H={}
-                            output_record_H[ K.indent ] = [ K.right,  "GROUP #{a1.join( "." )}: #{a2.join( ". " )}" ]
+                            output_record_H[ K.indent ] = [ K.right,  "GROUP #{group_numbers_A.join( "." )}: #{group_text_A.join( ". " )}" ]
                             puts output_record_H.to_json
                         end
                     end
@@ -156,7 +155,7 @@ end
 
     How to use Record_Indent_Stack
 
-Record_Indent_Stack.new_with_flush( method( :put_record ), method( :put_indent ), desired_stacksize_0R ) do |record_stack_O|
+Record_Indent_Stack.new_with_flush( method( :put_record ), method( :put_indent ), desired_stacksize_0R, [ [ '/', 0 ] ]  ) do |record_stack_O|
 
     ARGF.each_line do |input_record|                      #  << loop for each input record...
 
@@ -166,6 +165,16 @@ Record_Indent_Stack.new_with_flush( method( :put_record ), method( :put_indent )
     end
 
 end
+    Argument 1 is the data record write routine.
+  
+    Argument 2 is the indent record write routine.
+
+    Argument 3 is how far to match "ahead".   So, this is the number of records stored in the stack.
+    NOTE:  this is a Zero-Relative number.
+
+    Argument 4 is an optional array of indent-key-prefixes (idx 0) and starting counter (idx 1).   The first indent-key-prefix is '/' (ie the-root).   
+    If this key isn't found as the first entry of the array, [ '/', 0 ] will be prepended.  This allows the top-level of indentation to start
+    at number 1 (0 + 1).  
 
 
     The indent-print routine is something like this:
