@@ -15,7 +15,7 @@ Abbreviations,  AO = archival object (Everything's an AO, but there's also uri "
 
 require 'module.Se.rb'
 
-class Record_Indent_Stack
+class Record_Grouping_Indent
 
     def self.new_with_flush(*args)
         myself_O = new(*args)
@@ -153,14 +153,14 @@ end
 
 =begin
 
-    How to use Record_Indent_Stack
+    How to use Record_Grouping_Indent
 
-Record_Indent_Stack.new_with_flush( method( :put_record ), method( :put_indent ), desired_stacksize_0R, [ [ '/', 0 ] ]  ) do |record_stack_O|
+Record_Grouping_Indent.new_with_flush( method( :put_record ), method( :put_indent ), desired_stacksize_0R, [ [ '/', 0 ] ]  ) do |rgi_O|
 
     ARGF.each_line do |input_record|                      #  << loop for each input record...
 
         input_record_H = JSON.parse( input_record )
-        record_stack_O.add_record( input_record_H )       #  << passing the input record to the stack process
+        rgi_O.add_record( input_record_H )       #  << passing the input record to the stack process
 
     end
 
