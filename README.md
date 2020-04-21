@@ -10,7 +10,7 @@ The basic requirement was:
 
 2)  The data needs to edited and (sometimes) grouped by "subjects" (for indentation purposes. The series, subseries, group things...) 
 
-2)  The data needs to be loaded into ArchivesSpace attach an existing Resource, sometimes as children of an existing Archival-Object.
+2)  The data needs to be loaded into ArchivesSpace and attached an existing Resource, sometimes as children of an existing Archival-Object.
 
 The basic solution was:
 
@@ -50,13 +50,13 @@ The basic solution was:
         
             *  Initialize a new Archival-Object record.
             
-            *  Get the top-container data and "post" a new top-container record (if needed)
+            *  Look-up the top-container data and "post" a new top-container record (if needed)
             
             *  Store the new or existing top-container "refid" in the initialize AO record.
             
             *  Create any note and date sub-records in the AO records.
             
-            *  Store the parent-refid in the Archival-Object record.
+            *  Store the parent-refid in the initialized Archival-Object record.
             
             *  "Post" the new Archival-Object record.
             
@@ -64,7 +64,7 @@ The basic solution was:
        
             *  Initialize a new Archival-Object record.
             
-            *  Store the parent-ref in the Archival-Object record.
+            *  Store the parent-ref in the initialized Archival-Object record.
             
             *  "Post" the new Archival-Object record.
             
