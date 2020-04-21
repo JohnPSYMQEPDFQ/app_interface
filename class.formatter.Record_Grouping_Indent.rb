@@ -95,7 +95,6 @@ class Record_Grouping_Indent
                    @indent_key_stack_A[ indent_key_I ][ 0 ].downcase != first_record_indent_keys_A[ indent_key_I ].downcase ) then
                 a1 = @indent_key_stack_A.pop( 1 )[ 0 ]
                 output_record_H = {}
-                output_record_H[ K.indent ] = {}
                 output_record_H[ K.indent ] = [ K.left, a1[ 0 ] ]
                 puts output_record_H.to_json 
             else
@@ -131,12 +130,12 @@ class Record_Grouping_Indent
                             idx = -1; group_numbers_A = [ ]; loop do
                                 idx += 1
                                 break if ( idx >= indent_key_I )
-                                group_numbers_A.push( "#{@indent_key_stack_A[ idx ][ 1 ]}" )   # Group numbers: n.n.n.etc...
+                                group_numbers_A << @indent_key_stack_A[ idx ][ 1 ]   # Group numbers: n.n.n.etc...
                             end 
                             idx = 0; group_text_A = [ ]; loop do
                                 idx += 1
                                 break if ( idx > indent_key_I )
-                                group_text_A.push( "#{@indent_key_stack_A[ idx ][ 0 ]}" )
+                                group_text_A << @indent_key_stack_A[ idx ][ 0 ]
                             end
                             @indent_print_method.call( group_numbers_A, group_text_A )
                             output_record_H={}

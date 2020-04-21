@@ -124,7 +124,7 @@ class Resource_Query
     def all_AO_buf_O( starting_uri = '' )
 =begin
         Get all the AO's for the resource returning an array of AO_Record_Buf's
-        load with the subset of AO data contained in the 'tree' records.
+        loaded with the subset of AO data contained in the 'tree' records.
         The parameter allows one to start from anyplace on the resource's tree.
 =end
         @result = []
