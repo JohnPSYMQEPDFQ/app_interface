@@ -172,6 +172,7 @@ class AO_Record_Buf < Record_Buf
             Se.puts "#{Se.lineno}: Updated ArchivalObject, uri = #{http_response_body_H[ K.uri ]}";
         end
         @uri = http_response_body_H[ K.uri ] 
+        @num = @uri.sub( /^.*\//, '' )
         return self
     end
 end    

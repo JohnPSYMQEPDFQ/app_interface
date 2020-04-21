@@ -28,7 +28,7 @@ class Repository
         @aspace_O = p1_aspace_O
         @num = p2_rep_num
         @uri = "/repositories/#{@num}"
-#           Se.puts "#{Se.lineno}: ================ In Repository:initialize,@num=#{@num}"
+#       Se.puts "#{Se.lineno}: ================ In Repository:initialize,@num=#{@num}"
     end
     attr_reader :aspace_O, :num, :uri
        

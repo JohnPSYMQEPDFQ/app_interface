@@ -24,10 +24,6 @@ require 'class.Hash.extend.rb'
 require 'module.Se.rb'
 require 'class.Archivesspace.rb'
 require 'class.ArchivesSpace.http_calls.rb'
-require 'class.Archivesspace.ArchivalObject.rb'
-require 'class.Archivesspace.Repository.rb'
-require 'class.Archivesspace.TopContainer.rb'
-require 'class.Archivesspace.Resource.rb'
 
 
 BEGIN {}

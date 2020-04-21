@@ -47,7 +47,7 @@ class Record_Buf < Buffer_Base
         return jsonmodel_H
     end
     
-    def nil_filter__what_to_throw_away( )
+    def what_to_throw_away( )
         h = {   K.created_by => '',
                 K.last_modified_by => '',
                 K.create_time => '',
@@ -83,7 +83,7 @@ class Record_Buf < Buffer_Base
                 if ( jsonmodel_filter__what_to_keep ) then
                     h.merge!( { k => v } ) if ( jsonmodel_filter__what_to_keep.has_key?( k )) 
                 else
-                    h.merge!( { k => v } ) if ( not nil_filter__what_to_throw_away.has_key?( k ))         
+                    h.merge!( { k => v } ) if ( not what_to_throw_away.has_key?( k ))         
                 end
             end
         end

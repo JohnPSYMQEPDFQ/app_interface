@@ -14,13 +14,13 @@ Abbreviations,  AO = archival object(Everything's an AO, but there's also uri "a
 =end
 
 
+
+require "net/http"
+require 'uri'
+require "json"
 require 'class.ArchivesSpace.Record_Buf.rb'
 
 class Http_Calls
-
-    require "net/http"
-    require 'uri'
-    require "json"
 
     def initialize( p1_aspace_O )
         if ( p1_aspace_O.class != ASpace ) then
