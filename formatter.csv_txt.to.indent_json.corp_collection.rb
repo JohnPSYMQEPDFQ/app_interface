@@ -36,50 +36,50 @@ ARGF.each_line do |input_record|
         if ( a1[ 5 ] =~ /^[12][0-9]{3}\-[12][0-9]{3}$/ ) then
             input_date_string.gsub!( /\-/, ">" ) 
         end
-        input_date_string.split( /[;\>\/]/ ).each_with_index do |each_date, idx|
-            if ( each_date.length > 14 ) then
+        input_date_string.split( /[;\>\/]/ ).each_with_index do |current_date, idx|
+            if ( current_date.length > 14 ) then
                 Se.puts "#{Se.lineno}: bad date: #{idx}: #{a1[ 5 ]} -> " +
-                            "#{input_date_string} -> #{each_date} -> Too long: #{each_date.length}"
+                            "#{input_date_string} -> #{current_date} -> Too long: #{current_date.length}"
                 next
             end
-            if ( each_date =~ /^[12][0-9]{3}$/ ) then
-                input_date_A.push( each_date )
-#               Se.puts "#{Se.lineno}: good date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> #{each_date} -> year-only"
+            if ( current_date =~ /^[12][0-9]{3}$/ ) then
+                input_date_A.push( current_date )
+#               Se.puts "#{Se.lineno}: good date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> #{current_date} -> year-only"
                 next
             end
-            if ( each_date.length < 5 ) then
+            if ( current_date.length < 5 ) then
                 Se.puts "#{Se.lineno}: bad date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> " +
-                            "#{each_date} -> Too short: #{each_date.length}"
+                            "#{current_date} -> Too short: #{current_date.length}"
                 next
             end
-            if ( each_date =~ /-/ and each_date =~ /,/) then
+            if ( current_date =~ /-/ and current_date =~ /,/) then
                 Se.puts "#{Se.lineno}: bad date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> " +
-                            "#{each_date} -> mix of '-' & ','"
+                            "#{current_date} -> mix of '-' & ','"
                 next
             end
-            if ( each_date =~ /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)-[0-9]{2}$/i ) then
+            if ( current_date =~ /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)-[0-9]{2}$/i ) then
                 Se.puts "#{Se.lineno}: MOD date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> " +
-                            "#{each_date} -> appended '01-'"
-                each_date = "01-" + each_date
+                            "#{current_date} -> appended '01-'"
+                current_date = "01-" + current_date
             end
             begin
-                date_type=Date.parse( each_date )
+                date_type=Date.parse( current_date )
                 if ( date_type.year < 0 ) then
                     Se.puts "#{Se.lineno}: bad date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> " +
-                                "#{each_date} -> #{date_type}"
+                                "#{current_date} -> #{date_type}"
                 else
                     if ( date_type.year >= 2000 ) then
                         date_type = Date.new( date_type.year - 100, date_type.mon, date_type.mday )
 #                       Se.puts "#{Se.lineno}: MOD date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> " +
-#                                   "#{each_date} -> changed year to 1900"
+#                                   "#{current_date} -> changed year to 1900"
                     end
                     input_date_A.push( date_type )
 #                   Se.puts "#{Se.lineno}: good date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> " +
-#                               "#{each_date} -> #{date_type}"
+#                               "#{current_date} -> #{date_type}"
                     next
                 end
             rescue
-                Se.puts "#{Se.lineno}: bad date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> #{each_date}"
+                Se.puts "#{Se.lineno}: bad date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> #{current_date}"
             end
         end
         if ( input_date_A.maxindex > 1 ) then

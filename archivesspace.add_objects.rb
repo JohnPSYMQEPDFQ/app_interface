@@ -81,25 +81,25 @@ require 'class.Archivesspace.Resource.rb'
 
 def get_A_of_TC_H( p1_res_buf_O, p2_TC_num_A )
     array_of_TC_H = [ ]
-    p2_TC_num_A.each { |each_TC_num|
-        array_of_TC_H << Top_Container.new( p1_res_buf_O, each_TC_num ).new_buffer.read.record_H
+    p2_TC_num_A.each { |current_TC_num|
+        array_of_TC_H << Top_Container.new( p1_res_buf_O, current_TC_num ).new_buffer.read.record_H
     }
     return array_of_TC_H
 end
 
 def get_A_of_TC_H__for_all_unused_AND_for_this_resource( p1_res_buf_O, p2_array_of_TC_H )
     array_of_TC_H__unused_and_this_resource=[ ]
-    p2_array_of_TC_H.each { |each_TC_H|
-        if ( each_TC_H.key?( K.collection ) && each_TC_H[ K.collection ].count > 0 ) then
-            each_TC_H[ K.collection ].each { |ref_A|
+    p2_array_of_TC_H.each { |current_TC_H|
+        if ( current_TC_H.key?( K.collection ) && current_TC_H[ K.collection ].count > 0 ) then
+            current_TC_H[ K.collection ].each { |ref_A|
                 if ( ref_A.key?( K.ref ) ) then
                     if ( ref_A[ K.ref ] == p1_res_buf_O.uri ) then
-                        array_of_TC_H__unused_and_this_resource << [ '', each_TC_H ]
+                        array_of_TC_H__unused_and_this_resource << [ '', current_TC_H ]
                     end
                 end
             }
         else
-            array_of_TC_H__unused_and_this_resource << [ K.unused, each_TC_H ]
+            array_of_TC_H__unused_and_this_resource << [ K.unused, current_TC_H ]
         end
     }
     return array_of_TC_H__unused_and_this_resource
@@ -107,8 +107,8 @@ end
 
 def get_A_of_AO_ref( p1_hash_of_AO_ref_A )
     array_of_AO_ref= [ ]
-    p1_hash_of_AO_ref_A[ K.archival_objects ].each do |each_A_element| 
-        array_of_AO_ref<< each_A_element[ K.ref ]
+    p1_hash_of_AO_ref_A[ K.archival_objects ].each do |current_A_element| 
+        array_of_AO_ref<< current_A_element[ K.ref ]
     end
 #   Se.pp "#{Se.lineno}: array_of_AO_ref:", array_of_AO_ref
     return array_of_AO_ref
@@ -212,19 +212,19 @@ array_of_TC_H__all_unused_AND_for_this_resource = get_A_of_TC_H__for_all_unused_
 
 hash_of_TC_uri__by_type_indicator = {}
 array_of_TC_H__all_unused_AND_for_this_resource.each do |element|
-    each_TC_H = element[ 1 ]
-#   Se.pp each_TC_H
+    current_TC_H = element[ 1 ]
+#   Se.pp current_TC_H
     if ( element[ 0 ] == K.unused ) then
-        Se.puts "#{Se.lineno}: Delete top_container: #{each_TC_H[ K.uri ]}"
-        Top_Container.new( res_buf_O, each_TC_H[ K.uri ] ).new_buffer.delete
+        Se.puts "#{Se.lineno}: Delete top_container: #{current_TC_H[ K.uri ]}"
+        Top_Container.new( res_buf_O, current_TC_H[ K.uri ] ).new_buffer.delete
     else
-        if ( each_TC_H.key?( K.type ) and each_TC_H.key?( K.indicator )) then
-            stringer=each_TC_H[ K.type ] + each_TC_H[ K.indicator ]
+        if ( current_TC_H.key?( K.type ) and current_TC_H.key?( K.indicator )) then
+            stringer=current_TC_H[ K.type ] + current_TC_H[ K.indicator ]
             if ( hash_of_TC_uri__by_type_indicator.key?( stringer ) ) then
-                Se.puts "#{Se.lineno}: Duplicate each_TC_H 'type+indicator' #{stringer}, K.uri=#{each_TC_H[ K.uri ]}"
+                Se.puts "#{Se.lineno}: Duplicate current_TC_H 'type+indicator' #{stringer}, K.uri=#{current_TC_H[ K.uri ]}"
                 next
             end
-            hash_of_TC_uri__by_type_indicator[ stringer ] = each_TC_H[ K.uri ]
+            hash_of_TC_uri__by_type_indicator[ stringer ] = current_TC_H[ K.uri ]
         end   
     end 
 end
