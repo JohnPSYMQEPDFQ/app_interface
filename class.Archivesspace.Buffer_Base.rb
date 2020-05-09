@@ -13,6 +13,7 @@ Abbreviations,  AO = archival object(Everything's an AO, but there's also uri "a
 
 =end
 
+require 'class.Hash.extend.rb'
 class Buffer_Base
 
     def initialize(  )
