@@ -276,13 +276,16 @@ for argv in ARGV do
                 ao_buf_O.record_H = { K.parent => { K.ref => parent_ref_stack_A[ parent_ref_stack_A.maxindex ] }} 
             end
             ao_buf_O.record_H = { K.title => input_record_H[ K.record ][ K.title ] }
-            if ( input_record_H[ K.record ].key?( K.ao_date_array ) ) then
+            if ( input_record_H[ K.record ].key?( K.ao_date_array ) and
+               ! input_record_H[ K.record ][ K.ao_date_array ].empty? ) then
                 ao_buf_O.record_H = { K.dates => input_record_H[ K.record ][ K.ao_date_array ] }
             end
-            if ( input_record_H[ K.record ].key?( K.ao_note_array ) ) then
+            if ( input_record_H[ K.record ].key?( K.ao_note_array ) and
+               ! input_record_H[ K.record ][ K.ao_note_array ].empty? ) then
                 ao_buf_O.record_H = { K.notes => input_record_H[ K.record ][ K.ao_note_array ] }
             end
-            if ( input_record_H[ K.record ].key?( K.container_format_1 ) ) then
+            if ( input_record_H[ K.record ].key?( K.container_format_1 ) and 
+               ! input_record_H[ K.record ][ K.container_format_1 ].empty? ) then
                 type      = "#{input_record_H[ K.record ][ K.container_format_1 ][ K.tc_type ]}"
                 indicator = "#{input_record_H[ K.record ][ K.container_format_1 ][ K.tc_indicator ]}"
                 unique_TC_key  = "#{type}#{indicator}"
@@ -295,7 +298,8 @@ for argv in ARGV do
                     Se.pp "#{Se.lineno}: hash_of_TC_uri__by_type_indicator:", hash_of_TC_uri__by_type_indicator
                 end
 
-                mm_frag_O = Record_Format.new( :mixed_materials_IT )
+                mm_frag_O = Record_Format.new( :instance_type )
+                mm_frag_O.record_H = { K.instance_type => K.mixed_materials}
                 mm_frag_O.record_H = { K.sub_container => { K.top_container => { K.ref => hash_of_TC_uri__by_type_indicator[ unique_TC_key ] }}}
                 mm_frag_O.record_H = { K.sub_container => { K.type_2 => input_record_H[ K.record ][ K.container_format_1 ][ K.sc_type ] }}
                 mm_frag_O.record_H = { K.sub_container => { K.indicator_2 => input_record_H[ K.record ][ K.container_format_1 ][ K.sc_indicator ] }}

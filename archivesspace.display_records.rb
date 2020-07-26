@@ -28,6 +28,7 @@ require 'class.Archivesspace.ArchivalObject.rb'
 require 'class.Archivesspace.Repository.rb'
 require 'class.Archivesspace.TopContainer.rb'
 require 'class.Archivesspace.Resource.rb'
+require 'class.Archivesspace.Location.rb'
 
 
 BEGIN {}
@@ -57,56 +58,71 @@ OptionParser.new do |option|
 end.parse!  # Bang because ARGV is altered
 #p cmdln_option
 #p ARGV
-if ( cmdln_option[ 'repository-num' ] ) then
-    repository_num = cmdln_option[ 'repository-num' ]
-else
-    Se.puts "The --repository-num option is required."
-    raise
-end
-if ( cmdln_option[ 'resource-num' ] ) then
-    resource_num = cmdln_option[ 'resource-num' ]
-else
-    Se.puts "The --resource-num option is required."
-    raise
-end
-record_filter_B = cmdln_option[ 'filter' ] 
 
 aspace_O = ASpace.new
 aspace_O.api_uri_base = api_uri_base
 aspace_O.login( "admin", "admin" )
 #Se.pom(aspace_O)
 #Se.pov(aspace_O)
-rep_O = Repository.new( aspace_O, repository_num )
+ 
+record_filter_B = cmdln_option[ 'filter' ] 
+if ( cmdln_option[ 'repository-num' ] ) then
+    repository_num = cmdln_option[ 'repository-num' ]
+    rep_O = Repository.new( aspace_O, repository_num )
+else
+    Se.puts "The --repository-num option is required."
+    raise
+end
+if ( cmdln_option[ 'resource-num' ] ) then
+    resource_num = cmdln_option[ 'resource-num' ]
+    res_buf_O = Resource.new( rep_O, resource_num ).new_buffer.read ( record_filter_B )
+end
+
 #Se.pom(rep_O)
 #Se.pov(rep_O)
-res_buf_O = Resource.new( rep_O, resource_num ).new_buffer.read
 
 current_record_type = K.undefined
 ARGV.push('res') if (ARGV.empty?)
 ARGV.each do | element | 
     if ( element.in? [ 'ao', 'tc' ]) then
+        if ( not res_buf_O ) then
+            Se.puts "The --resource-num option is required."
+            raise
+        end
         current_record_type = element
         next
     end
     if ( element == 'res' ) then
-         current_record_type = element
+        if ( not res_buf_O ) then
+            Se.puts "The --resource-num option is required."
+            raise
+        end
+        current_record_type = element
+    end
+    if ( element == 'loc' ) then
+        current_record_type = element
+        next
     end
     if ( current_record_type == K.undefined ) then
         Se.puts "No record_type specified"
         raise
     end
     case current_record_type
+    when 'res' 
+        puts "Resource: #{resource_num}:"
+        pp res_buf_O.record_H
     when 'ao'
         puts "Archival_Object: #{element}:"
         ao_buf_O = Archival_Object.new(res_buf_O, element ).new_buffer.read( record_filter_B )
         pp ao_buf_O.record_H
-    when 'res' 
-        puts "Resource: #{resource_num}:"
-        pp res_buf_O.record_H
     when 'tc'
         puts "Top_Container: #{element}:"
         tc_buf_O = Top_Container.new(res_buf_O, element ).new_buffer.read( record_filter_B )
         pp tc_buf_O.record_H
+    when 'loc'
+        puts "Location: #{element}:"
+        ao_buf_O = Location.new(aspace_O, element ).new_buffer.read( record_filter_B )
+        pp ao_buf_O.record_H
     else
         puts "Unknown record_type: #{current_record_type}"
     end 

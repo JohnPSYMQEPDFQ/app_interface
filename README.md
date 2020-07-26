@@ -10,7 +10,7 @@ The basic requirement was:
 
 2)  The data needs to edited and (sometimes) grouped by "subjects" (for indentation purposes. The series, subseries, group things...) 
 
-2)  The data needs to be loaded into ArchivesSpace and attached an existing Resource, sometimes as children of an existing Archival-Object.
+3)  The data needs to be loaded into ArchivesSpace and attached to an existing Resource, sometimes as children of an existing Archival-Object.
 
 The basic solution was:
 
