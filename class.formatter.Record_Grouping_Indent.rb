@@ -154,12 +154,12 @@ end
 
     How to use Record_Grouping_Indent
 
-Record_Grouping_Indent.new_with_flush( method( :put_record ), method( :put_indent ), desired_stacksize_0R, [ [ '/', 0 ] ]  ) do |rgi_O|
+    rgi_O.new_with_flush( method( :put_record ), method( :put_indent ), desired_stacksize_0R, [ [ '/', 0 ] ]  ) do |rgi_O|
 
     ARGF.each_line do |input_record|                      #  << loop for each input record...
 
         input_record_H = JSON.parse( input_record )
-        rgi_O.add_record( input_record_H )       #  << passing the input record to the stack process
+        rgi_O.add_record( input_record_H )                #  << passing the input record to the stack process
 
     end
 
