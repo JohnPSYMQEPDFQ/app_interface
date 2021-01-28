@@ -119,7 +119,7 @@ class Resource_Query
         @res_O = res_O
         @result_A = nil
     end
-    attr_reader :result, :res_O
+    attr_reader :result_A, :res_O
 
     def get_A_of_all_AO_buf_O( starting_uri = '' )
 =begin
