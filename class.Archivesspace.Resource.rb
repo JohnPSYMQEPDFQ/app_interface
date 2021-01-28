@@ -117,19 +117,19 @@ class Resource_Query
             raise
         end 
         @res_O = res_O
-        @result = nil
+        @result_A = nil
     end
     attr_reader :result, :res_O
 
-    def all_AO_buf_O( starting_uri = '' )
+    def get_A_of_all_AO_buf_O( starting_uri = '' )
 =begin
         Get all the AO's for the resource returning an array of AO_Record_Buf's
         loaded with the subset of AO data contained in the 'tree' records.
         The parameter allows one to start from anyplace on the resource's tree.
 =end
-        @result = []
+        @result_A = []
         process_each_node( starting_uri )
-        return @result
+        return @result_A
     end
 
     def process_each_node( node_uri )
@@ -178,7 +178,7 @@ class Resource_Query
                     raise
                 end
                 child_H[ K.resource ] = { K.ref => @res_O.uri }
-                @result <<  Archival_Object.new( @res_O, child_H[ K.uri ] ).new_buffer.load( child_H )
+                @result_A << Archival_Object.new( @res_O, child_H[ K.uri ] ).new_buffer.load( child_H )
                 if ( child_H[ K.child_count ] > 0 ) then
                     process_each_node( child_H[ K.uri ] )
                 end
@@ -195,7 +195,7 @@ class Resource_Query
     end
     private :process_each_node
 
-    def all_AO_buf_O__DEPRECATED
+    def get_A_of_all_AO_buf_O__DEPRECATED
 =begin
         Get all the AO's for the resource
         returning an array of AO_Record_Buf's
