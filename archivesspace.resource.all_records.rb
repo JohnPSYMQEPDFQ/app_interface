@@ -43,10 +43,10 @@ cmdln_option = { "repository-num" => 2  ,
                  'last_record_num' => nil}
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [ options ] FILE"
-    option.on( "--repository-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
+    option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
         cmdln_option[ 'repository-num' ] = opt_arg
     end
-    option.on( "--resource-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
+    option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
         cmdln_option[ 'resource-num' ] = opt_arg
     end
     option.on( "--ao-ref x", "Archival Object ReferenceID ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
@@ -68,13 +68,13 @@ end.parse!  # Bang because ARGV is altered
 if ( cmdln_option[ 'repository-num' ] ) then
     repository_num = cmdln_option[ 'repository-num' ]
 else
-    Se.puts "The --repository-num option is required."
+    Se.puts "The --rep-num option is required."
     raise
 end
 if ( cmdln_option[ 'resource-num' ] ) then
     resource_num = cmdln_option[ 'resource-num' ]
 else
-    Se.puts "The --resource-num option is required."
+    Se.puts "The --res-num option is required."
     raise
 end
 
@@ -88,7 +88,7 @@ rep_O = Repository.new( aspace_O, repository_num )
 #Se.pov(rep_O)
 
 res_O = Resource.new( rep_O, resource_num )
-cnt = 0; Resource_Query.new( res_O ).get_A_of_all_AO_buf_O.each do | ao_buf_O |
+cnt = 0; Resource_Query.new( res_O ).get_all_AO.buf_O_A.each do | ao_buf_O |
     cnt += 1
     puts "#{cnt} #{ao_buf_O.record_H[ K.uri ]} #{ao_buf_O.record_H[ K.position ]} #{ao_buf_O.record_H[ K.title ]}"
 end

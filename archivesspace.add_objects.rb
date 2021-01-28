@@ -14,8 +14,8 @@ Abbreviations,  AO = archival object (Everything's an AO, but there's also uri "
 
 Usage: add_objects.rb --help
 
-To attach the records in FILE to the "Resource Record", only the --resource-num option is needed.
-To attach the records to a specific AO, enter the --resource-num option along with the --ao-ref
+To attach the records in FILE to the "Resource Record", only the --res-num option is needed.
+To attach the records to a specific AO, enter the --res-num option along with the --ao-ref
 of the child AO. The --ref is the long unique-id of the record.
 
 
@@ -121,35 +121,35 @@ END {}
 myself_name = File.basename( $0 )
 api_uri_base = "http://localhost:8089"
 
-cmdln_option = { "repository-num" => 2  ,
-                 "resource-num" => nil  ,
-                 "ao-ref" => nil  ,
-                 "delete-TC-only" => false ,
-                 "delete-tc-only" => false ,
-                 "update" => false ,
-                 'last_record_num' => nil}
+cmdln_option = { :repository_num => 2  ,
+                 :resource_num => nil  ,
+                 :ao_ref => nil  ,
+                 :ao_num => nil  ,
+                 :delete_TC_only => false ,
+                 :update => false ,
+                 :last_record_num => nil}
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [ options ] FILE"
-    option.on( "--repository-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
-        cmdln_option[ 'repository-num' ] = opt_arg
+    option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
+        cmdln_option[ :repository_num ] = opt_arg
     end
-    option.on( "--resource-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
-        cmdln_option[ 'resource-num' ] = opt_arg
+    option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
+        cmdln_option[ :resource_num ] = opt_arg
     end
     option.on( "--ao-ref x", "Archival Object ReferenceID ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
-        cmdln_option[ 'ao-ref' ] = opt_arg
+        cmdln_option[ :ao_ref ] = opt_arg
     end
-    option.on( "--delete-TC-only", "Delete TC records only" ) do |opt_arg|
-        cmdln_option[ 'delete-TC-only' ] = true
+    option.on( "--ao-num n", OptionParser::DecimalInteger, "Archival Object URI number ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
+        cmdln_option[ :ao_num ] = opt_arg
     end
-    option.on( "--delete-tc-only", "Delete TC records only" ) do |opt_arg|
-        cmdln_option[ 'delete-TC-only' ] = true
+    option.on( "--delete-tc-only", "Delete TC records, then stop" ) do |opt_arg|
+        cmdln_option[ :delete_TC_only ] = true
     end
     option.on( "--update", "Do updates" ) do |opt_arg|
-        cmdln_option[ 'update' ] = true
+        cmdln_option[ :update ] = true
     end
     option.on( "--last-record-num n", OptionParser::DecimalInteger, "Stop after record N" ) do |opt_arg|
-        cmdln_option[ 'last-record-num' ] = opt_arg
+        cmdln_option[ :last_record_num ] = opt_arg
     end
     option.on( "-h","--help" ) do
         Se.puts option
@@ -158,30 +158,40 @@ OptionParser.new do |option|
 end.parse!  # Bang because ARGV is altered
 #p cmdln_option
 #p ARGV
-if ( cmdln_option[ 'repository-num' ] ) then
-    repository_num = cmdln_option[ 'repository-num' ]
+if ( cmdln_option[ :repository_num ] ) then
+    repository_num = cmdln_option[ :repository_num ]
 else
-    Se.puts "The --repository-num option is required."
+    Se.puts "The --rep-num option is required."
     raise
 end
-if ( cmdln_option[ 'resource-num' ] ) then
-    resource_num = cmdln_option[ 'resource-num' ]
+if ( cmdln_option[ :resource_num ] ) then
+    resource_num = cmdln_option[ :resource_num ]
 else
-    Se.puts "The --resource-num option is required."
+    Se.puts "The --res-num option is required."
     raise
 end
-if ( cmdln_option[ 'ao-ref' ] ) then
-    cmdln_AO_ref = cmdln_option[ 'ao-ref' ]      
+if ( cmdln_option[ :ao_ref ] ) then
+    cmdln_AO_ref = cmdln_option[ :ao_ref ]      
 else
     cmdln_AO_ref = nil
 end
-if ( cmdln_option[ 'last-record-num' ] ) then
-    last_record_num = cmdln_option[ 'last-record-num' ]      
+if ( cmdln_option[ :ao_num ] ) then
+    cmdln_AO_num = cmdln_option[ :ao_num ]      
+else
+    cmdln_AO_num = nil
+end
+if ( cmdln_AO_ref and cmdln_AO_num ) then
+    Se.puts "The --ao-ref and --ao-num options are mutually exclusive."
+    raise
+end
+
+if ( cmdln_option[ :last_record_num ] ) then
+    last_record_num = cmdln_option[ :last_record_num ]      
 else
     last_record_num = nil
 end
-$global_update=cmdln_option[ 'update' ] 
-delete_TC_records_only=cmdln_option[ 'delete-TC-only' ] 
+$global_update=cmdln_option[ :update ] 
+delete_TC_records_only=cmdln_option[ :delete_TC_only ] 
 
 aspace_O = ASpace.new
 aspace_O.api_uri_base = api_uri_base
@@ -191,19 +201,31 @@ aspace_O.login( "admin", "admin" )
 rep_O = Repository.new( aspace_O, repository_num )
 #Se.pom(rep_O)
 #Se.pov(rep_O)
-res_buf_O = Resource.new( rep_O, resource_num ).new_buffer.read
+res_O = Resource.new( rep_O, resource_num )
+res_buf_O = res_O.new_buffer.read
 #Se.pom(res_buf_O)
 #Se.pov(res_buf_O)
 
+res_all_AO_query_O = nil
 if ( cmdln_AO_ref ) then
     initial_parent_AO_uri = get_A_of_AO_ref( AO_Query.new( rep_O ).get_H_of_A_of_AO_ref__find_by_ref( [ cmdln_AO_ref ] ).result ) [ 0 ]
     Se.puts "#{Se.lineno}: initial_parent_AO_uri = #{initial_parent_AO_uri}"
-    initial_parent_AO_H = Archival_Object.new(res_buf_O, initial_parent_AO_uri).new_buffer.read.record_H
+    initial_parent_AO_H = Archival_Object.new( res_buf_O, initial_parent_AO_uri).new_buffer.read.record_H
+elsif ( cmdln_AO_num ) then
+    initial_parent_AO_H = Archival_Object.new( res_buf_O, cmdln_AO_num ).new_buffer.read.record_H
+    initial_parent_AO_uri = initial_parent_AO_H[ K.uri ]
+    Se.puts "#{Se.lineno}: initial_parent_AO_uri = #{initial_parent_AO_uri}"
 else
     initial_parent_AO_H = res_buf_O.record_H
     initial_parent_AO_uri = initial_parent_AO_H[ K.uri ]
     Se.puts "#{Se.lineno}: initial_parent_AO_uri = #{initial_parent_AO_uri}"
+    res_all_AO_query_O = Resource_Query.new( res_O ).get_all_AO
+    cnt = 0; res_all_AO_query_O.buf_O_A.each do | ao_buf_O |
+        cnt += 1
+        puts "#{cnt} #{ao_buf_O.record_H[ K.uri ]} #{ao_buf_O.record_H[ K.position ]} #{ao_buf_O.record_H[ K.title ]}"
+    end
 end
+exit
 
 array_of_TC_H = get_A_of_TC_H( res_buf_O, TC_Query.new( rep_O ).get_A_of_TC_nums( { 'all_ids' => 'true' } ).result )
 #Se.pp "#{Se.lineno}: array_of_TC_H = ", array_of_TC_H

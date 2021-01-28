@@ -41,11 +41,11 @@ cmdln_option = { "repository-num" => 2  ,
                  "resource-num" => nil  ,
                  "filter" => false }
 OptionParser.new do |option|
-    option.banner = "Usage: #{myself_name} [ options ] --resource-num n [res] [(ao|tc) n,n,...]..."
-    option.on( "--repository-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
+    option.banner = "Usage: #{myself_name} [ options ] --res-num n [res] [(ao|tc) n,n,...]..."
+    option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
         cmdln_option[ 'repository-num' ] = opt_arg
     end
-    option.on( "--resource-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
+    option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
         cmdln_option[ 'resource-num' ] = opt_arg
     end
     option.on( "--filter", "apply-read-filter" ) do |opt_arg|
@@ -70,7 +70,7 @@ if ( cmdln_option[ 'repository-num' ] ) then
     repository_num = cmdln_option[ 'repository-num' ]
     rep_O = Repository.new( aspace_O, repository_num )
 else
-    Se.puts "The --repository-num option is required."
+    Se.puts "The --rep-num option is required."
     raise
 end
 if ( cmdln_option[ 'resource-num' ] ) then
@@ -86,7 +86,7 @@ ARGV.push('res') if (ARGV.empty?)
 ARGV.each do | element | 
     if ( element.in? [ 'ao', 'tc' ]) then
         if ( not res_buf_O ) then
-            Se.puts "The --resource-num option is required."
+            Se.puts "The --res-num option is required."
             raise
         end
         current_record_type = element
@@ -94,7 +94,7 @@ ARGV.each do | element |
     end
     if ( element == 'res' ) then
         if ( not res_buf_O ) then
-            Se.puts "The --resource-num option is required."
+            Se.puts "The --res-num option is required."
             raise
         end
         current_record_type = element
@@ -113,15 +113,15 @@ ARGV.each do | element |
         pp res_buf_O.record_H
     when 'ao'
         puts "Archival_Object: #{element}:"
-        ao_buf_O = Archival_Object.new(res_buf_O, element ).new_buffer.read( record_filter_B )
+        ao_buf_O = Archival_Object.new( res_buf_O, element ).new_buffer.read( record_filter_B )
         pp ao_buf_O.record_H
     when 'tc'
         puts "Top_Container: #{element}:"
-        tc_buf_O = Top_Container.new(res_buf_O, element ).new_buffer.read( record_filter_B )
+        tc_buf_O = Top_Container.new( res_buf_O, element ).new_buffer.read( record_filter_B )
         pp tc_buf_O.record_H
     when 'loc'
         puts "Location: #{element}:"
-        ao_buf_O = Location.new(aspace_O, element ).new_buffer.read( record_filter_B )
+        ao_buf_O = Location.new( aspace_O, element ).new_buffer.read( record_filter_B )
         pp ao_buf_O.record_H
     else
         puts "Unknown record_type: #{current_record_type}"
