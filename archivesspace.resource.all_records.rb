@@ -88,7 +88,7 @@ rep_O = Repository.new( aspace_O, repository_num )
 #Se.pov(rep_O)
 
 res_O = Resource.new( rep_O, resource_num )
-cnt = 0; Resource_Query.new( res_O ).get_all_AO.buf_O_A.each do | ao_buf_O |
+cnt = 0; Resource_Query.new( res_O ).get_all_AO.buf_A.each do | ao_buf_O |
     cnt += 1
     puts "#{cnt} #{ao_buf_O.record_H[ K.uri ]} #{ao_buf_O.record_H[ K.position ]} #{ao_buf_O.record_H[ K.title ]}"
 end

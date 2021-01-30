@@ -6,17 +6,23 @@ Abbreviations,  AO = archival object (Everything's an AO, but there's also uri "
                 TC = top container
                 SC = Sub-container
                 _H = Hash
+                _J = Json string
                 _A = Array
                 _I = Index(of Array)
                 _O = Object
+                _Q = Query
                _0R = Zero Relative
 
 
-Usage: add_objects.rb --help
+Usage:  this_program.rb --res-num n [other options] FILE
+        this_program.rb --help
 
 To attach the records in FILE to the "Resource Record", only the --res-num option is needed.
-To attach the records to a specific AO, enter the --res-num option along with the --ao-ref
-of the child AO. The --ref is the long unique-id of the record.
+To attach the records to a specific AO, enter the --res-num option along with:
+    1)  the --ao-ref of the child AO. The --ao-ref is the long unique-id of the AO record that looks like this:
+            aspace_dd30f87692b9fcc97b9a1e3fe14f8b40  (sometimes it won't have the 'aspace_' prefix)
+    2)  the --ao-num of the child AO. The --ao-num is the number at the end of the AO's uri.
+    3)  OR used the 'new_parent' record-type in the input FILE.
 
 
 The input FILE has the following three formats( JSONized ):
@@ -24,11 +30,11 @@ The input FILE has the following three formats( JSONized ):
         1 = {
               K.record =>
                 {
-                  K.level => ''             # the AO level (eg. 'file', 'series', ...)
-                  K.title => '',            # the AO title field (or the K.new_parent record option.)
--optional-        K.dates => [ ],           # An array of AO date hashes, single or inclusive
--optional-        K.notes => [ ]            # An array of AO note hashes, singlepart or miltipart
--optional-        K.container_format_1 =>   # References to TC of "type > indicator", creates the TC if needed.
+                  K.level => ''             # the AO level (eg. 'file', 'series', 'recordgrp', ...) -OR- a value of K.new_parent.
+                  K.title => '',            # the AO title field.
+-optional-        K.dates => [ ],           # An array of AO date hashes, single or inclusive.
+-optional-        K.notes => [ ]            # An array of AO note hashes, singlepart or miltipart.
+-optional-        K.container_format_1 =>   # References to TC of "type => indicator", creates the TC if needed.
                     {
                       K.tc_type      => 'VALUE'     # eg. 'box'
                       K.tc_indicator => 'n'         # Box number (must be a number)
@@ -53,7 +59,8 @@ The input FILE has the following three formats( JSONized ):
             }
 
     Record format 1 is the data record.  As-of 3/18/2020 only the "series", "subseries", "recordgrp", and "file" AO-level types
-    were tested.
+    were tested.  If the record-type is 'K.new_parent' this causes the program to find an existing AO record equal to
+    the 'Title' value.  This AO then becomes the parent record for all subsequent records in FILE.
 
     Record format 2 causes all the records following the "indent => right" record to be attached to the record PRIOR to 
     the "indent => right" record.
@@ -80,34 +87,34 @@ require 'class.Archivesspace.TopContainer.rb'
 require 'class.Archivesspace.Resource.rb'
 
 def get_A_of_TC_H( p1_res_buf_O, p2_TC_num_A )
-    array_of_TC_H = [ ]
+    tc_A_of_H = [ ]
     p2_TC_num_A.each { |current_TC_num|
-        array_of_TC_H << Top_Container.new( p1_res_buf_O, current_TC_num ).new_buffer.read.record_H
+        tc_A_of_H << Top_Container.new( p1_res_buf_O, current_TC_num ).new_buffer.read.record_H
     }
-    return array_of_TC_H
+    return tc_A_of_H
 end
 
-def get_A_of_TC_H__for_all_unused_AND_for_this_resource( p1_res_buf_O, p2_array_of_TC_H )
-    array_of_TC_H__unused_and_this_resource=[ ]
-    p2_array_of_TC_H.each { |current_TC_H|
+def get_A_of_TC_H__for_all_unused_AND_for_this_resource( p1_res_buf_O, p2_tc_A_of_H )
+    tc_A_of_H__unused_and_this_resource=[ ]
+    p2_tc_A_of_H.each { |current_TC_H|
         if ( current_TC_H.key?( K.collection ) && current_TC_H[ K.collection ].count > 0 ) then
             current_TC_H[ K.collection ].each { |ref_A|
                 if ( ref_A.key?( K.ref ) ) then
                     if ( ref_A[ K.ref ] == p1_res_buf_O.uri ) then
-                        array_of_TC_H__unused_and_this_resource << [ '', current_TC_H ]
+                        tc_A_of_H__unused_and_this_resource << [ '', current_TC_H ]
                     end
                 end
             }
         else
-            array_of_TC_H__unused_and_this_resource << [ K.unused, current_TC_H ]
+            tc_A_of_H__unused_and_this_resource << [ K.unused, current_TC_H ]
         end
     }
-    return array_of_TC_H__unused_and_this_resource
+    return tc_A_of_H__unused_and_this_resource
 end
 
-def get_A_of_AO_ref( p1_hash_of_AO_ref_A )
+def get_A_of_AO_ref( p1_H_of_AO_ref_A )
     array_of_AO_ref= [ ]
-    p1_hash_of_AO_ref_A[ K.archival_objects ].each do |current_A_element| 
+    p1_H_of_AO_ref_A[ K.archival_objects ].each do |current_A_element| 
         array_of_AO_ref<< current_A_element[ K.ref ]
     end
 #   Se.pp "#{Se.lineno}: array_of_AO_ref:", array_of_AO_ref
@@ -206,7 +213,7 @@ res_buf_O = res_O.new_buffer.read
 #Se.pom(res_buf_O)
 #Se.pov(res_buf_O)
 
-res_all_AO_query_O = nil
+res_Q_all_AO_O = nil
 if ( cmdln_AO_ref ) then
     initial_parent_AO_uri = get_A_of_AO_ref( AO_Query.new( rep_O ).get_H_of_A_of_AO_ref__find_by_ref( [ cmdln_AO_ref ] ).result ) [ 0 ]
     Se.puts "#{Se.lineno}: initial_parent_AO_uri = #{initial_parent_AO_uri}"
@@ -219,20 +226,20 @@ else
     initial_parent_AO_H = res_buf_O.record_H
     initial_parent_AO_uri = initial_parent_AO_H[ K.uri ]
     Se.puts "#{Se.lineno}: initial_parent_AO_uri = #{initial_parent_AO_uri}"
-    res_all_AO_query_O = Resource_Query.new( res_O ).get_all_AO
-    cnt = 0; res_all_AO_query_O.buf_O_A.each do | ao_buf_O |
+    res_Q_all_AO_O = Resource_Query.new( res_O ).get_all_AO
+    cnt = 0; res_Q_all_AO_O.buf_A.each do | ao_buf_O |
         cnt += 1
         puts "#{ao_buf_O.record_H[ K.uri ]} #{ao_buf_O.record_H[ K.title ]}"
     end
 end
 
-array_of_TC_H = get_A_of_TC_H( res_buf_O, TC_Query.new( rep_O ).get_A_of_TC_nums( { 'all_ids' => 'true' } ).result )
-#Se.pp "#{Se.lineno}: array_of_TC_H = ", array_of_TC_H
-array_of_TC_H__all_unused_AND_for_this_resource = get_A_of_TC_H__for_all_unused_AND_for_this_resource( res_buf_O, array_of_TC_H )
-#Se.pp "#{Se.lineno}: array_of_TC_H__all_unused_AND_for_this_resource = ", array_of_TC_H__all_unused_AND_for_this_resource
+tc_A_of_H = get_A_of_TC_H( res_buf_O, TC_Query.new( rep_O ).get_A_of_TC_nums( { 'all_ids' => 'true' } ).result )
+#Se.pp "#{Se.lineno}: tc_A_of_H = ", tc_A_of_H
+tc_A_of_H__all_unused_AND_for_this_resource = get_A_of_TC_H__for_all_unused_AND_for_this_resource( res_buf_O, tc_A_of_H )
+#Se.pp "#{Se.lineno}: tc_A_of_H__all_unused_AND_for_this_resource = ", tc_A_of_H__all_unused_AND_for_this_resource
 
-hash_of_TC_uri__by_type_indicator = {}
-array_of_TC_H__all_unused_AND_for_this_resource.each do |element|
+tc_uri_H__by_type_and_indicator = {}
+tc_A_of_H__all_unused_AND_for_this_resource.each do |element|
     current_TC_H = element[ 1 ]
 #   Se.pp current_TC_H
     if ( element[ 0 ] == K.unused ) then
@@ -241,11 +248,11 @@ array_of_TC_H__all_unused_AND_for_this_resource.each do |element|
     else
         if ( current_TC_H.key?( K.type ) and current_TC_H.key?( K.indicator )) then
             stringer=current_TC_H[ K.type ] + current_TC_H[ K.indicator ]
-            if ( hash_of_TC_uri__by_type_indicator.key?( stringer ) ) then
+            if ( tc_uri_H__by_type_and_indicator.key?( stringer ) ) then
                 Se.puts "#{Se.lineno}: Duplicate current_TC_H 'type+indicator' #{stringer}, K.uri=#{current_TC_H[ K.uri ]}"
                 next
             end
-            hash_of_TC_uri__by_type_indicator[ stringer ] = current_TC_H[ K.uri ]
+            tc_uri_H__by_type_and_indicator[ stringer ] = current_TC_H[ K.uri ]
         end   
     end 
 end
@@ -253,7 +260,7 @@ if (delete_TC_records_only) then
     exit
 end
 
-#Se.pp "hash_of_TC_uri__by_type_indicator:", hash_of_TC_uri__by_type_indicator
+#Se.pp "tc_uri_H__by_type_and_indicator:", tc_uri_H__by_type_and_indicator
 
 indent_cnt = 0
 record_level_cnt = Hash.new(0)  # h.default works too...
@@ -262,18 +269,18 @@ parent_ref_stack_A = [ initial_parent_AO_uri ]
 initial_parent_AO_H = nil
 
 for argv in ARGV do
-    File.foreach( argv ) do |input_record_json|
+    File.foreach( argv ) do |input_record_J|
         if ( last_record_num != nil and $. > last_record_num ) then 
             break
         end
-        input_record_json.chomp!
-        if ( input_record_json.match?( /^\s*$/ ) ) then
+        input_record_J.chomp!
+        if ( input_record_J.match?( /^\s*$/ ) ) then
             next
         end
-        input_record_H = JSON.parse( input_record_json )
+        input_record_H = JSON.parse( input_record_J )
 
         if ( input_record_H.key?( K.indent ) ) then
-            Se.puts "#{Se.lineno}: Rec:#{$.}: '#{input_record_json}'"
+            Se.puts "#{Se.lineno}: Rec:#{$.}: '#{input_record_J}'"
             if ( input_record_H[ K.indent ][ 0 ] == K.right ) then
                 indent_cnt += 1
                 parent_ref_stack_A.push( last_AO_uri_created )
@@ -287,7 +294,7 @@ for argv in ARGV do
         end
 
         if ( input_record_H.key?( K.record ) ) then
-            Se.puts "#{Se.lineno}: Rec:#{$.}: '#{input_record_json}'"
+            Se.puts "#{Se.lineno}: Rec:#{$.}: '#{input_record_J}'"
             stringer = input_record_H[ K.record ][ K.level ]
             record_level_cnt[ stringer ] += 1
             if ( stringer == K.new_parent ) then
@@ -303,7 +310,7 @@ for argv in ARGV do
                     Se.pp "#{$.}: input_record_H:", input_record_H
                     raise
                 end
-                cnt = 0; res_all_AO_query_O.buf_O_A.each do | ao_buf_O |
+                cnt = 0; res_Q_all_AO_O.buf_A.each do | ao_buf_O |
                     if ( input_record_H[ K.record ][ K.title ] == ao_buf_O.record_H[ K.title ] ) then
                         parent_ref_stack_A[ 0 ] = ao_buf_O.record_H[ K.uri ]
                         Se.puts "New parent: #{ao_buf_O.record_H[ K.uri ]} '#{ao_buf_O.record_H[ K.title ]}'"
@@ -344,18 +351,18 @@ for argv in ARGV do
                 type      = "#{input_record_H[ K.record ][ K.container_format_1 ][ K.tc_type ]}"
                 indicator = "#{input_record_H[ K.record ][ K.container_format_1 ][ K.tc_indicator ]}"
                 unique_TC_key  = "#{type}#{indicator}"
-                if ( ! hash_of_TC_uri__by_type_indicator.key?( unique_TC_key ) ) then
+                if ( ! tc_uri_H__by_type_and_indicator.key?( unique_TC_key ) ) then
                     tc_buf_O = Top_Container.new( res_buf_O ).new_buffer.create
                     tc_buf_O.record_H = { K.type => type }
                     tc_buf_O.record_H = { K.indicator => indicator }
                     tc_buf_O.store
-                    hash_of_TC_uri__by_type_indicator[ unique_TC_key ] = tc_buf_O.uri
-                    Se.pp "#{Se.lineno}: hash_of_TC_uri__by_type_indicator:", hash_of_TC_uri__by_type_indicator
+                    tc_uri_H__by_type_and_indicator[ unique_TC_key ] = tc_buf_O.uri
+ #                  Se.pp "#{Se.lineno}: tc_uri_H__by_type_and_indicator:", tc_uri_H__by_type_and_indicator
                 end
 
                 mm_frag_O = Record_Format.new( :instance_type )
                 mm_frag_O.record_H = { K.instance_type => K.mixed_materials}
-                mm_frag_O.record_H = { K.sub_container => { K.top_container => { K.ref => hash_of_TC_uri__by_type_indicator[ unique_TC_key ] }}}
+                mm_frag_O.record_H = { K.sub_container => { K.top_container => { K.ref => tc_uri_H__by_type_and_indicator[ unique_TC_key ] }}}
                 mm_frag_O.record_H = { K.sub_container => { K.type_2 => input_record_H[ K.record ][ K.container_format_1 ][ K.sc_type ] }}
                 mm_frag_O.record_H = { K.sub_container => { K.indicator_2 => input_record_H[ K.record ][ K.container_format_1 ][ K.sc_indicator ] }}
 
@@ -372,6 +379,7 @@ for argv in ARGV do
         raise
     end
 end
+#Se.pp "tc_uri_H__by_type_and_indicator:", tc_uri_H__by_type_and_indicator 
 Se.puts "#{Se.lineno}: indent count = #{indent_cnt}"
 Se.pp "record counts:", record_level_cnt
-Se.pp "hash_of_TC_uri__by_type_indicator:", hash_of_TC_uri__by_type_indicator 
+

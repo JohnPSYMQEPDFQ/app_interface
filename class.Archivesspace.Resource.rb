@@ -117,9 +117,9 @@ class Resource_Query
             raise
         end 
         @res_O = res_O
-        @buf_O_A = nil
+        @buf_A = nil
     end
-    attr_reader :buf_O_A, :res_O
+    attr_reader :buf_A, :res_O
 
     def get_all_AO( starting_uri = '' )
 =begin
@@ -127,7 +127,7 @@ class Resource_Query
         loaded with the subset of AO data contained in the 'tree' records.
         The parameter allows one to start from anyplace on the resource's tree.
 =end
-        @buf_O_A = []
+        @buf_A = []
         process_each_node( starting_uri )
         return self
     end
@@ -178,7 +178,7 @@ class Resource_Query
                     raise
                 end
                 child_H[ K.resource ] = { K.ref => @res_O.uri }
-                @buf_O_A << Archival_Object.new( @res_O, child_H[ K.uri ] ).new_buffer.load( child_H )
+                @buf_A << Archival_Object.new( @res_O, child_H[ K.uri ] ).new_buffer.load( child_H )
                 if ( child_H[ K.child_count ] > 0 ) then
                     process_each_node( child_H[ K.uri ] )
                 end
@@ -212,7 +212,7 @@ class Resource_Query
             raise
         end		
 #       Se.pp http_response_body
-        @buf_O_A = load_children( http_response_body[ K.children], [] )
+        @buf_A = load_children( http_response_body[ K.children], [] )
     end
     
     def load_children( child_A, result )
