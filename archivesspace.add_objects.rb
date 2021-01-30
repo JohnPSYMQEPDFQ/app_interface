@@ -25,7 +25,7 @@ The input FILE has the following three formats( JSONized ):
               K.record =>
                 {
                   K.level => ''             # the AO level (eg. 'file', 'series', ...)
-                  K.title => '',            # the AO title field.
+                  K.title => '',            # the AO title field (or the K.new_parent record option.)
 -optional-        K.dates => [ ],           # An array of AO date hashes, single or inclusive
 -optional-        K.notes => [ ]            # An array of AO note hashes, singlepart or miltipart
 -optional-        K.container_format_1 =>   # References to TC of "type > indicator", creates the TC if needed.
@@ -291,6 +291,11 @@ for argv in ARGV do
             stringer = input_record_H[ K.record ][ K.level ]
             record_level_cnt[ stringer ] += 1
             if ( stringer == K.new_parent ) then
+                if ( cmdln_AO_ref or cmdln_AO_num ) then
+                    Se.puts "#{Se.lineno}: Hit 'new_parent' record, but"
+                    Se.puts "the --ao-ref and --ao-num options aren't allowed for this record type."
+                    raise
+                end
                 if ( parent_ref_stack_A.maxindex != 0 ) then
                     Se.puts "#{Se.lineno}: Hit 'new_parent' record, but parent_ref_stack_A.maxindex != 0"
                     Se.puts "The formatter should insure the indent level is at 0 for a 'new_parent' record."
