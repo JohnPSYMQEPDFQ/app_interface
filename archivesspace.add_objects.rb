@@ -222,10 +222,9 @@ else
     res_all_AO_query_O = Resource_Query.new( res_O ).get_all_AO
     cnt = 0; res_all_AO_query_O.buf_O_A.each do | ao_buf_O |
         cnt += 1
-        puts "#{cnt} #{ao_buf_O.record_H[ K.uri ]} #{ao_buf_O.record_H[ K.position ]} #{ao_buf_O.record_H[ K.title ]}"
+        puts "#{ao_buf_O.record_H[ K.uri ]} #{ao_buf_O.record_H[ K.title ]}"
     end
 end
-exit
 
 array_of_TC_H = get_A_of_TC_H( res_buf_O, TC_Query.new( rep_O ).get_A_of_TC_nums( { 'all_ids' => 'true' } ).result )
 #Se.pp "#{Se.lineno}: array_of_TC_H = ", array_of_TC_H
@@ -260,6 +259,7 @@ indent_cnt = 0
 record_level_cnt = Hash.new(0)  # h.default works too...
 last_AO_uri_created = ""
 parent_ref_stack_A = [ initial_parent_AO_uri ]
+initial_parent_AO_H = nil
 
 for argv in ARGV do
     File.foreach( argv ) do |input_record_json|
@@ -289,9 +289,37 @@ for argv in ARGV do
         if ( input_record_H.key?( K.record ) ) then
             Se.puts "#{Se.lineno}: Rec:#{$.}: '#{input_record_json}'"
             stringer = input_record_H[ K.record ][ K.level ]
+            record_level_cnt[ stringer ] += 1
+            if ( stringer == K.new_parent ) then
+                if ( parent_ref_stack_A.maxindex != 0 ) then
+                    Se.puts "#{Se.lineno}: Hit 'new_parent' record, but parent_ref_stack_A.maxindex != 0"
+                    Se.puts "The formatter should insure the indent level is at 0 for a 'new_parent' record."
+                    Se.pp "parent_ref_stack_A:", parent_ref_stack_A
+                    Se.pp "#{$.}: input_record_H:", input_record_H
+                    raise
+                end
+                cnt = 0; res_all_AO_query_O.buf_O_A.each do | ao_buf_O |
+                    if ( input_record_H[ K.record ][ K.title ] == ao_buf_O.record_H[ K.title ] ) then
+                        parent_ref_stack_A[ 0 ] = ao_buf_O.record_H[ K.uri ]
+                        Se.puts "New parent: #{ao_buf_O.record_H[ K.uri ]} '#{ao_buf_O.record_H[ K.title ]}'"
+                        cnt += 1
+                    end
+                end
+                if ( cnt == 0 ) then
+                    Se.puts "#{Se.lineno}: Hit '#{K.new_parent}' record, ",
+                            "but couldn't find an AO with a Title of '#{input_record_H[ K.record ][ K.title ]}'"
+                    raise
+                end
+                if ( cnt > 1 ) then
+                    Se.puts "#{Se.lineno}: Hit '#{K.new_parent}' record, ",
+                            "but found more than 1 AO with a Title of '#{input_record_H[ K.record ][ K.title ]}'"
+                    raise
+                end
+                next
+            end
+
             ao_buf_O = Archival_Object.new( res_buf_O ).new_buffer.create( stringer )
 #           Se.pp ao_buf_O.record_H
-            record_level_cnt[ stringer ] += 1
             if ( ao_buf_O.record_H[ K.resource ][ K.ref ] == parent_ref_stack_A[ parent_ref_stack_A.maxindex ] ) then
                 ao_buf_O.record_H = { K.parent => '' }
             else

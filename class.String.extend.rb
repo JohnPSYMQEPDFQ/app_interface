@@ -4,6 +4,9 @@ class String
     end
 
     def maxindex( )
+#
+#   A zero-relative length method
+#
         self.length - 1
     end
 

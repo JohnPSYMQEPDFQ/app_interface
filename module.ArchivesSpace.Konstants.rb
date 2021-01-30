@@ -23,7 +23,7 @@ module K
     def K.barcode; return 'barcode'.freeze; end   # top_container location
     def K.begin; return 'begin'.freeze; end   # dates
     def K.building; return 'building'.freeze; end   # location
-    def K.box; return 'box'.freeze; end   # top_container
+    def K.box; return 'Box'.freeze; end   # top_container
     def K.calendar; return 'calendar'.freeze; end   # dates
     def K.certainty; return 'certainty'.freeze; end   # dates
     def K.child_count; return 'child_count'.freeze; end  # trees
@@ -74,7 +74,7 @@ module K
     def K.finding_aid_status; return 'finding_aid_status'.freeze; end  # resource
     def K.finding_aid_title; return 'finding_aid_title'.freeze; end  # resource
     def K.floor; return 'floor'.freeze; end  # location
-    def K.folder; return 'folder'.freeze; end
+    def K.folder; return 'Folder'.freeze; end
     def K.has_unpublished_ancestor; return 'has_unpublished_ancestor'.freeze; end
     def K.id; return 'id'.freeze; end   # tree
     def K.id_0; return 'id_0'.freeze; end   # resource
@@ -104,6 +104,7 @@ module K
     def K.location; return 'location'.freeze; end  # location
     def K.lock_version; return 'lock_version'.freeze; end
     def K.mixed_materials; return 'mixed_materials'.freeze; end
+    def K.new_parent; return '__NEW_PARENT__'.freeze; end  # formatter
     def K.node_type; return 'node_type'.freeze; end   # tree
     def K.node_uri; return 'node_uri'.freeze; end   # tree
     def K.note_multipart; return 'note_multipart'.freeze; end   
