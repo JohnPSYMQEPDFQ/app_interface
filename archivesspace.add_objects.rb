@@ -86,30 +86,31 @@ require 'class.Archivesspace.Repository.rb'
 require 'class.Archivesspace.TopContainer.rb'
 require 'class.Archivesspace.Resource.rb'
 
-def get_A_of_TC_H( p1_res_buf_O, p2_TC_num_A )
-    tc_A_of_H = [ ]
+def get_TC_buf_A( p1_res_buf_O, p2_TC_num_A )
+    tc_buf_A = [ ]
     p2_TC_num_A.each { |current_TC_num|
-        tc_A_of_H << Top_Container.new( p1_res_buf_O, current_TC_num ).new_buffer.read.record_H
+        tc_buf_A << Top_Container.new( p1_res_buf_O, current_TC_num ).new_buffer.read
     }
-    return tc_A_of_H
+    return tc_buf_A
 end
 
-def get_A_of_TC_H__for_all_unused_AND_for_this_resource( p1_res_buf_O, p2_tc_A_of_H )
-    tc_A_of_H__unused_and_this_resource=[ ]
-    p2_tc_A_of_H.each { |current_TC_H|
-        if ( current_TC_H.key?( K.collection ) && current_TC_H[ K.collection ].count > 0 ) then
-            current_TC_H[ K.collection ].each { |ref_A|
+def get_TC_buf_A__for_all_unused_AND_for_this_resource( p1_res_buf_O, p2_tc_buf_A )
+    tc_buf_A__unused_and_this_resource=[ ]
+    p2_tc_buf_A.each { |tc_buf_O|
+        record_H = tc_buf_O.record_H
+        if ( record_H.key?( K.collection ) && record_H[ K.collection ].count > 0 ) then
+            record_H[ K.collection ].each { |ref_A|
                 if ( ref_A.key?( K.ref ) ) then
                     if ( ref_A[ K.ref ] == p1_res_buf_O.uri ) then
-                        tc_A_of_H__unused_and_this_resource << [ '', current_TC_H ]
+                        tc_buf_A__unused_and_this_resource << [ tc_buf_O, '' ]
                     end
                 end
             }
         else
-            tc_A_of_H__unused_and_this_resource << [ K.unused, current_TC_H ]
+            tc_buf_A__unused_and_this_resource << [ tc_buf_O, K.unused ]
         end
     }
-    return tc_A_of_H__unused_and_this_resource
+    return tc_buf_A__unused_and_this_resource
 end
 
 def get_A_of_AO_ref( p1_H_of_AO_ref_A )
@@ -233,26 +234,26 @@ else
     end
 end
 
-tc_A_of_H = get_A_of_TC_H( res_buf_O, TC_Query.new( rep_O ).get_A_of_TC_nums( { 'all_ids' => 'true' } ).result )
-#Se.pp "#{Se.lineno}: tc_A_of_H = ", tc_A_of_H
-tc_A_of_H__all_unused_AND_for_this_resource = get_A_of_TC_H__for_all_unused_AND_for_this_resource( res_buf_O, tc_A_of_H )
-#Se.pp "#{Se.lineno}: tc_A_of_H__all_unused_AND_for_this_resource = ", tc_A_of_H__all_unused_AND_for_this_resource
+tc_buf_A = get_TC_buf_A( res_buf_O, TC_Query.new( rep_O ).get_A_of_TC_nums( { 'all_ids' => 'true' } ).result )
+#Se.pp "#{Se.lineno}: tc_buf_A = ", tc_buf_A
+tc_buf_A__all_unused_AND_for_this_resource = get_TC_buf_A__for_all_unused_AND_for_this_resource( res_buf_O, tc_buf_A )
+#Se.pp "#{Se.lineno}: tc_buf_A__all_unused_AND_for_this_resource = ", tc_buf_A__all_unused_AND_for_this_resource
 
 tc_uri_H__by_type_and_indicator = {}
-tc_A_of_H__all_unused_AND_for_this_resource.each do |element|
-    current_TC_H = element[ 1 ]
-#   Se.pp current_TC_H
-    if ( element[ 0 ] == K.unused ) then
-        Se.puts "#{Se.lineno}: Delete top_container: #{current_TC_H[ K.uri ]}"
-        Top_Container.new( res_buf_O, current_TC_H[ K.uri ] ).new_buffer.delete
+tc_buf_A__all_unused_AND_for_this_resource.each do |element|
+    record_H = element[ 0 ].record_H
+#   Se.pp record_H
+    if ( element[ 1 ] == K.unused ) then
+        Se.puts "#{Se.lineno}: Delete top_container: #{record_H[ K.uri ]}"
+        Top_Container.new( res_buf_O, record_H[ K.uri ] ).new_buffer.delete
     else
-        if ( current_TC_H.key?( K.type ) and current_TC_H.key?( K.indicator )) then
-            stringer=current_TC_H[ K.type ] + current_TC_H[ K.indicator ]
+        if ( record_H.key?( K.type ) and record_H.key?( K.indicator )) then
+            stringer=record_H[ K.type ] + record_H[ K.indicator ]
             if ( tc_uri_H__by_type_and_indicator.key?( stringer ) ) then
-                Se.puts "#{Se.lineno}: Duplicate current_TC_H 'type+indicator' #{stringer}, K.uri=#{current_TC_H[ K.uri ]}"
+                Se.puts "#{Se.lineno}: Duplicate record_H 'type+indicator' #{stringer}, K.uri=#{record_H[ K.uri ]}"
                 next
             end
-            tc_uri_H__by_type_and_indicator[ stringer ] = current_TC_H[ K.uri ]
+            tc_uri_H__by_type_and_indicator[ stringer ] = record_H[ K.uri ]
         end   
     end 
 end
