@@ -230,7 +230,7 @@ else
     res_Q_all_AO_O = Resource_Query.new( res_O ).get_all_AO
     cnt = 0; res_Q_all_AO_O.buf_A.each do | ao_buf_O |
         cnt += 1
-        puts "#{ao_buf_O.record_H[ K.uri ]} #{ao_buf_O.record_H[ K.title ]}"
+        puts "#{ao_buf_O.record_H[ K.uri ]} '#{ao_buf_O.record_H[ K.title ]}'"
     end
 end
 
@@ -245,7 +245,7 @@ tc_buf_A__all_unused_AND_for_this_resource.each do |element|
 #   Se.pp record_H
     if ( element[ 1 ] == K.unused ) then
         Se.puts "#{Se.lineno}: Delete top_container: #{record_H[ K.uri ]}"
-        Top_Container.new( res_buf_O, record_H[ K.uri ] ).new_buffer.delete
+        element[ 0 ].delete
     else
         if ( record_H.key?( K.type ) and record_H.key?( K.indicator )) then
             stringer=record_H[ K.type ] + record_H[ K.indicator ]
@@ -257,7 +257,7 @@ tc_buf_A__all_unused_AND_for_this_resource.each do |element|
         end   
     end 
 end
-if (delete_TC_records_only) then
+if (delete_TC_records_only or ARGV.maxindex < 0 ) then
     exit
 end
 
@@ -312,7 +312,7 @@ for argv in ARGV do
                     raise
                 end
                 cnt = 0; res_Q_all_AO_O.buf_A.each do | ao_buf_O |
-                    if ( input_record_H[ K.record ][ K.title ] == ao_buf_O.record_H[ K.title ] ) then
+                    if ( input_record_H[ K.record ][ K.title ].downcase == ao_buf_O.record_H[ K.title ].downcase ) then
                         parent_ref_stack_A[ 0 ] = ao_buf_O.record_H[ K.uri ]
                         Se.puts "New parent: #{ao_buf_O.record_H[ K.uri ]} '#{ao_buf_O.record_H[ K.title ]}'"
                         cnt += 1
@@ -337,6 +337,9 @@ for argv in ARGV do
                 ao_buf_O.record_H = { K.parent => '' }
             else
                 ao_buf_O.record_H = { K.parent => { K.ref => parent_ref_stack_A[ parent_ref_stack_A.maxindex ] }} 
+            end
+            if ( input_record_H[ K.record ].key?( K.component_id )) then
+                ao_buf_O.record_H = { K.component_id => input_record_H[ K.record ][ K.component_id ] }
             end
             ao_buf_O.record_H = { K.title => input_record_H[ K.record ][ K.title ] }
             if ( input_record_H[ K.record ].key?( K.ao_date_array ) and

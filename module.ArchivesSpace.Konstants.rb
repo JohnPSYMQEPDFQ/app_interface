@@ -31,6 +31,7 @@ module K
     def K.classification; return 'classification'.freeze; end   # location
     def K.classifications; return 'classifications'.freeze; end   # resource  <<<< Danger Plural
     def K.collection; return 'collection'.freeze; end   # top_container
+    def K.component_id; return 'component_id'.freeze; end  # archival_object
     def K.coordinate_1_label; return 'coordinate_1_label'.freeze; end   # location
     def K.coordinate_1_indicator; return 'coordinate_1_indicator'.freeze; end   # location
     def K.coordinate_2_label; return 'coordinate_2_label'.freeze; end   # location

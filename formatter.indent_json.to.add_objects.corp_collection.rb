@@ -37,9 +37,11 @@ def put_indent( level_number_A, level_title_A )
     when 0
         output_record_H[ K.record ][ K.level ] = K.series
         output_record_H[ K.record ][ K.title ] = "Series #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+        output_record_H[ K.record ][ K.component_id ] = level_number_A.join( "." )
     when 1
         output_record_H[ K.record ][ K.level ] = K.subseries
         output_record_H[ K.record ][ K.title ] = "Subseries #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+        output_record_H[ K.record ][ K.component_id ] = level_number_A.join( "." )
     else     
         output_record_H[ K.record ][ K.level ] = K.recordgrp
         output_record_H[ K.record ][ K.title ] = "#{level_title_A.join( ". " )}" 

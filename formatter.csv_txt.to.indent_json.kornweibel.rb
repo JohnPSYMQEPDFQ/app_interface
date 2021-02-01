@@ -9,7 +9,6 @@ require 'module.Se.rb'
 require 'module.ArchivesSpace.Konstants.rb'
 require 'class.ArchivesSpace.rb'
 
-indent_keys = []
 
 #       OUTPUT record_values:
 #   Filing Location; top_container; (Data)
@@ -49,13 +48,18 @@ ARGF.each_line do |input_record|
     if ( input_record =~ /^filing Location/i ) then
         next
     end
-    if ( input_record =~ /^series /i ) then
-        indent_keys = [ ]
-        indent_keys[ 0 ] = input_record_A[ 2 ]
-        next
-    end
-    if ( input_record =~ /^subseries /i ) then
-        indent_keys[ 1 ] = input_record_A[ 2 ]
+
+    if ( input_record =~ /^(series|subseries)\s+[0-9]+:\s+/i ) then
+        input_record.gsub!( /\s+$/, "" )
+        output_record_H[ K.record_indent_keys ] = [ ]
+        record_values << [] 
+        record_values << []
+        record_values << input_record
+        output_record_H[ K.record_values ] = record_values
+        output_record_H[ K.level ] = K.new_parent
+        output_record_H[ K.record_num ] = "#{rec_cnt}"
+        output_record_H[ K.record_original ] = "#{input_record_save}"
+        puts output_record_H.to_json
         next
     end
     if ( input_record =~ /^drawer /i ) then
@@ -146,7 +150,7 @@ ARGF.each_line do |input_record|
     record_values << ao_date_A   #[1]
     record_values << input_record   #[2]
     
-    output_record_H[ K.record_indent_keys ] = indent_keys
+    output_record_H[ K.record_indent_keys ] = [ ]
     output_record_H[ K.record_values ] = record_values
     regexp = %r{^group: }i
     if ( input_record =~ regexp ) then
@@ -160,3 +164,4 @@ ARGF.each_line do |input_record|
     output_record_H[ K.record_original ] = "#{input_record_save}"
     puts output_record_H.to_json
 end
+Se.puts "#{Se.lineno}: The output from this program should not be sorted."

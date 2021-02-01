@@ -35,6 +35,7 @@ class Record_Format < Buffer_Base
                 } ,
                 K.title => K.undefined ,   #  "Southern Pacific" 
                 K.level => K.undefined ,
+                K.component_id => "",
                 K.publish =>  true ,
                 K.dates => [] ,
                 K.notes => [] ,
