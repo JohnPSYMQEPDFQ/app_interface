@@ -1,7 +1,8 @@
 module K
     def K.month_RE
-        regexp=%r{jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec
-                 |january|february|march|april|may|june|july|august|september|october|november|december
+        regexp=%r{january|february|march|april|may|june|july|august|september|october|november|december
+                 |jan\.|feb\.|mar\.|apr\.|may\.|jun\.|jul\.|aug\.|sep\.|oct\.|nov\.|dec\.
+                 |jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec
                  }xi.freeze
         return regexp
     end 
@@ -121,6 +122,7 @@ module K
     def K.password; return 'password'.freeze; end
     def K.persistent_id; return 'persistent_id'.freeze; end
     def K.physical_details; return 'physical_details'.freeze; end   # extents
+    def K.physloc; return 'physloc'.freeze; end   # note_singlepart (physical location)
     def K.portion; return 'portion'.freeze; end   # extents
     def K.position; return 'position'.freeze; end
     def K.precomputed_waypoints; return 'precomputed_waypoints'.freeze; end  # tree

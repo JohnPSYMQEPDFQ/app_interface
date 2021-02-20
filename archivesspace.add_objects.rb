@@ -32,8 +32,8 @@ The input FILE has the following three formats( JSONized ):
                 {
                   K.level => ''             # the AO level (eg. 'file', 'series', 'recordgrp', ...) -OR- a value of K.new_parent.
                   K.title => '',            # the AO title field.
--optional-        K.dates => [ ],           # An array of AO date hashes, single or inclusive.
--optional-        K.notes => [ ]            # An array of AO note hashes, singlepart or miltipart.
+-optional-        K.ao_date_array => [ ],   # An array of AO date hashes, single or inclusive.
+-optional-        K.ao_note_array => [ ],   # An array of AO note hashes, singlepart or miltipart.
 -optional-        K.container_format_1 =>   # References to TC of "type => indicator", creates the TC if needed.
                     {
                       K.tc_type      => 'VALUE'     # eg. 'box'
@@ -45,17 +45,11 @@ The input FILE has the following three formats( JSONized ):
             }
   
         2 = {
-              K.indent =>                   
-                {
-                  K.right => 'Any text'      # Text only used for debugging
-                }
+              K.indent => [ K.right, 'Any text' ]    # Text only used for debugging
             }
   
         3 = {
-              K.indent =>                   
-                {
-                  K.left => 'Any text'       # Text only used for debugging
-                }
+              K.indent => [ K.left, 'Any text' ]     # Text only used for debugging
             }
 
     Record format 1 is the data record.  As-of 3/18/2020 only the "series", "subseries", "recordgrp", and "file" AO-level types
@@ -137,7 +131,7 @@ cmdln_option = { :repository_num => 2  ,
                  :update => false ,
                  :last_record_num => nil}
 OptionParser.new do |option|
-    option.banner = "Usage: #{myself_name} [ options ] FILE"
+    option.banner = "Usage: #{myself_name} [options] FILE"
     option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
         cmdln_option[ :repository_num ] = opt_arg
     end
@@ -235,7 +229,8 @@ else
 end
 
 tc_buf_A = get_TC_buf_A( res_buf_O, TC_Query.new( rep_O ).get_A_of_TC_nums( { 'all_ids' => 'true' } ).result )
-#Se.pp "#{Se.lineno}: tc_buf_A = ", tc_buf_A
+#Se.pp "#{Se.lineno}: tc_buf_A.length = #{tc_buf_A.length}"
+
 tc_buf_A__all_unused_AND_for_this_resource = get_TC_buf_A__for_all_unused_AND_for_this_resource( res_buf_O, tc_buf_A )
 #Se.pp "#{Se.lineno}: tc_buf_A__all_unused_AND_for_this_resource = ", tc_buf_A__all_unused_AND_for_this_resource
 
@@ -263,7 +258,7 @@ end
 
 #Se.pp "tc_uri_H__by_type_and_indicator:", tc_uri_H__by_type_and_indicator
 
-indent_cnt = 0
+net_indent_cnt = 0
 record_level_cnt = Hash.new(0)  # h.default works too...
 last_AO_uri_created = ""
 parent_ref_stack_A = [ initial_parent_AO_uri ]
@@ -282,15 +277,19 @@ for argv in ARGV do
 
         if ( input_record_H.key?( K.indent ) ) then
             Se.puts "#{Se.lineno}: Rec:#{$.}: '#{input_record_J}'"
-            if ( input_record_H[ K.indent ][ 0 ] == K.right ) then
-                indent_cnt += 1
+            record_level_cnt[ input_record_H[ K.indent ][ 0 ] ] += 1
+            case input_record_H[ K.indent ][ 0 ]
+            when K.right then
+                net_indent_cnt += 1
                 parent_ref_stack_A.push( last_AO_uri_created )
                 next
-            end
-            if ( input_record_H[ K.indent ][ 0 ] == K.left ) then
-                indent_cnt += -1
+            when K.left then
+                net_indent_cnt += -1
                 last_AO_uri_created=parent_ref_stack_A.pop( 1 )[ 0 ]
                 next
+            else
+                Se.puts "#{Se.lineno}: Invalid indent direction '#{input_record_H[ K.indent ][ 0 ]}'"
+                raise                
             end
         end
 
@@ -384,6 +383,6 @@ for argv in ARGV do
     end
 end
 #Se.pp "tc_uri_H__by_type_and_indicator:", tc_uri_H__by_type_and_indicator 
-Se.puts "#{Se.lineno}: indent count = #{indent_cnt}"
+Se.puts "#{Se.lineno}: net indent count = #{net_indent_cnt}"
 Se.pp "record counts:", record_level_cnt
 
