@@ -65,10 +65,10 @@ class Record_Grouping_Indent
         return {} if ( @record_stack_A.maxindex < @record_stack_size_0R ) 
     
         first_record_H = @record_stack_A.shift( 1 )[ 0 ]
-        first_record_indent_keys_A = @indent_key_prefixes_A + first_record_H[ K.record_indent_keys ]
+        first_record_indent_keys_A = @indent_key_prefixes_A + first_record_H[ K.fmtr_record_indent_keys ]
         highest_matched_indent_key_idx_A = [ ] 
         @record_stack_A.each_with_index do |other_record_H, record_stack_I|
-            other_record_indent_keys_A = @indent_key_prefixes_A + other_record_H[ K.record_indent_keys ] 
+            other_record_indent_keys_A = @indent_key_prefixes_A + other_record_H[ K.fmtr_record_indent_keys ] 
             indent_key_I = 0; loop do
                 Se.p "indent_key_I=#{indent_key_I}, " +
                      "first_record_indent_keys_A.maxindex=#{first_record_indent_keys_A.maxindex}, " +
@@ -95,7 +95,7 @@ class Record_Grouping_Indent
                    @indent_key_stack_A[ indent_key_I ][ 0 ].downcase != first_record_indent_keys_A[ indent_key_I ].downcase ) then
                 a1 = @indent_key_stack_A.pop( 1 )[ 0 ]
                 output_record_H = {}
-                output_record_H[ K.indent ] = [ K.left, a1[ 0 ] ]
+                output_record_H[ K.fmtr_indent ] = [ K.fmtr_left, a1[ 0 ] ]
                 puts output_record_H.to_json 
             else
                 Se.p "first_record_indent_keys_A[ indent_key_I ].downcase=" +
@@ -139,7 +139,7 @@ class Record_Grouping_Indent
                             end
                             @indent_print_method.call( group_numbers_A, group_text_A )
                             output_record_H={}
-                            output_record_H[ K.indent ] = [ K.right,  "GROUP #{group_numbers_A.join( "." )}: #{group_text_A.join( ". " )}" ]
+                            output_record_H[ K.fmtr_indent ] = [ K.fmtr_right,  "GROUP #{group_numbers_A.join( "." )}: #{group_text_A.join( ". " )}" ]
                             puts output_record_H.to_json
                         end
                     end
@@ -180,21 +180,21 @@ end
 
 def put_indent( level_number_A, level_title_A )
     output_record_H={}
-    output_record_H[ K.record ] = {}
+    output_record_H[ K.fmtr_record ] = {}
     case level_number_A.maxindex 
     when -1
         Se.puts "#{Se.lineno}: =============================="
         Se.puts "Wasn't expecting param1 level_number_A to be empty"
         raise
     when 0
-        output_record_H[ K.record ][ K.level ] = K.series
-        output_record_H[ K.record ][ K.title ] = "Series #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.level ] = K.series
+        output_record_H[ K.fmtr_record ][ K.title ] = "Series #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
     when 1
-        output_record_H[ K.record ][ K.level ] = K.subseries
-        output_record_H[ K.record ][ K.title ] = "Subseries #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.level ] = K.subseries
+        output_record_H[ K.fmtr_record ][ K.title ] = "Subseries #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
     else     
-        output_record_H[ K.record ][ K.level ] = K.recordgrp
-        output_record_H[ K.record ][ K.title ] = "#{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.level ] = K.recordgrp
+        output_record_H[ K.fmtr_record ][ K.title ] = "#{level_title_A.join( ". " )}" 
     end
     puts output_record_H.to_json      # <<<< Write the indent record
 end
@@ -203,16 +203,16 @@ end
     The record-print routine is something like this:
 
 def put_record( stack_record_H )
-    stack_record__indent_keys_A = stack_record_H[ K.record_indent_keys ]
-    stack_record__values_A = stack_record_H[ K.record_values ]
+    stack_record__indent_keys_A = stack_record_H[ K.fmtr_record_indent_keys ]
+    stack_record__values_A = stack_record_H[ K.fmtr_record_values ]
 
     output_record_H={}
-    output_record_H[ K.record ] = {}
-    output_record_H[ K.record ][ K.level ] = stack_record_H[ K.level ]
+    output_record_H[ K.fmtr_record ] = {}
+    output_record_H[ K.fmtr_record ][ K.level ] = stack_record_H[ K.level ]
     stringer = stack_record__indent_keys_A[ 0..( stack_record__indent_keys_A.maxindex ) ].join( ". " ) +
                ". " +
                stack_record__values_A[ 0..( stack_record__values_A.maxindex - 1 ) ].join( " " )
-    output_record_H[ K.record ][ K.title ] = stringer.strip.gsub( /\.$/,'' )
+    output_record_H[ K.fmtr_record ][ K.title ] = stringer.strip.gsub( /\.$/,'' )
 
     puts output_record_H.to_json    # <<<< Write the data record
 end

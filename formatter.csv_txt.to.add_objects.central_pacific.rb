@@ -7,28 +7,41 @@ require 'class.ArchivesSpace.rb'
 
 =begin        output_record_H
 {
-              K.record =>
+              K.fmtr_record =>
                 {
-                  K.level => ''                     # the AO level (eg. 'file', 'series', 'recordgrp', ...) -OR- a value of K.new_parent.
+                  K.level => ''                     # the AO level (eg. 'file', 'series', 'recordgrp', ...) -OR- a value of K.fmtr_new_parent.
                   K.title => '',                    # the AO title field.
--optional-        K.ao_date_array => [ ],           # An array of AO date hashes, single or inclusive.
--optional-        K.ao_note_array => [ ],           # An array of AO note hashes, singlepart or miltipart.
--optional-        K.container_format_1 =>           # References to TC of "type => indicator", creates the TC if needed.
+-optional-        K.dates => [ ],                   # An array of AO date hashes, single or inclusive.
+-optional-        K.notes => [ ],                   # An array of AO note hashes, singlepart or miltipart.
+-optional-        K.fmtr_container =>               # References to TC of "type => indicator", creates the TC if needed.
                     {
-                      K.tc_type      => 'VALUE'     # eg. 'box'
-                      K.tc_indicator => 'n'         # Box number (must be a number)
-                      K.sc_type      => 'VALUE'     # eg. 'folder'
-                      K.sc_indicator => 'STRING'    # Anything identifing the folder
+                      K.fmtr_tc_type      => 'VALUE'     # eg. 'box'
+                      K.fmtr_tc_indicator => 'n'         # Box number (must be a number)
+                      K.fmtr_sc_type      => 'VALUE'     # eg. 'folder'
+                      K.fmtr_sc_indicator => 'STRING'    # Anything identifing the folder
                     }
                 }
             }
 =end
 
 
-=begin          input_record format:
+=begin          post manually edited input_record format:
 
 Series 1: Financial Records
 Abstract of disbursements, [Volume] Jan. 1910 - Dec. 1911 [Item 965, Box 299, Shelf I2.200.J6]
+
+>: Abstract of earnings and operating expenses
+[Volume] 1864 - 1870 [Box 6, Shelf I2.300.H10]
+[Volume] 1876 - 1879 [Item 252, Shelf I2.200.C10]
+[Volume] 1880 - 1882 [Item 253, Shelf I2.200.C10]
+[Volume] 1883 - 1885 [Item 254, Shelf I2.200.C10]
+<:
+
+Abstracts of cash disbursements, Sacramento Division, [Volume] Apr. - May 1912 [Item 653, Box 208, Shelf I2.200.C7]
+Abstract of disbursements, [Volume] 1910-1912 [Shelf I2.308.Q4]
+Abstract of earnings and operating expenses, [Volume] 1876 - 1879
+Accounts payable, 1, [Volume] Jul. 1900 - Apr. 1906 [Item 312, Box 121, Shelf I2.200.B2]
+Accounts payable journal, [Volume] May 1906 - Jun. 1959 [Item 109, Box 49, Shelf I2.200.A6]
 
 =end
 
@@ -70,24 +83,24 @@ ARGF.each_line do |input_record|
 #   Se.p input_record
     
     output_record_H = {}
-    output_record_H[ K.record ] = {}
+    output_record_H[ K.fmtr_record ] = {}
     
     regexp = %r/^(indent|\>):\s*/i
     if ( input_record =~ regexp ) then
         indent_A << input_record
         input_record.sub!( regexp, "" )
-        output_record_H[ K.record ][ K.level ] = K.recordgrp
-        output_record_H[ K.record ][ K.title ] = input_record
+        output_record_H[ K.fmtr_record ][ K.level ] = K.recordgrp
+        output_record_H[ K.fmtr_record ][ K.title ] = input_record
         if ( ! cmdln_option[ 's' ] ) then
             puts output_record_H.to_json
         end     
-        output_record_H = { K.indent => [ K.right, input_record ] }
+        output_record_H = { K.fmtr_indent => [ K.fmtr_right, input_record ] }
         puts output_record_H.to_json
         next
     end
     if ( input_record =~ /^(outdent|\<):/i ) then
         indent_A.pop
-        output_record_H = { K.indent => [ K.left, input_record ] }
+        output_record_H = { K.fmtr_indent => [ K.fmtr_left, input_record ] }
         puts output_record_H.to_json
         next
     end
@@ -99,8 +112,8 @@ ARGF.each_line do |input_record|
             Se.puts input_record
             raise
         end
-        output_record_H[ K.record ][ K.level ] = K.new_parent
-        output_record_H[ K.record ][ K.title ] = input_record
+        output_record_H[ K.fmtr_record ][ K.level ] = K.fmtr_new_parent
+        output_record_H[ K.fmtr_record ][ K.title ] = input_record
         puts output_record_H.to_json
         next
     end   
@@ -109,8 +122,8 @@ ARGF.each_line do |input_record|
         next
     end
 
-    output_record_H[ K.record ][ K.level ] = K.file 
-    output_record_H[ K.record ][ K.ao_note_array ] = [ ] 
+    output_record_H[ K.fmtr_record ][ K.level ] = K.file 
+    output_record_H[ K.fmtr_record ][ K.notes ] = [ ] 
     
     if ( location_string = input_record.scan( /\[.*?\]/ ).grep( /(box|folder|item|shelf) /i )[0] ) then
     
@@ -118,10 +131,10 @@ ARGF.each_line do |input_record|
         
         input_record[ location_string ] = ""
         location_item_A = location_string[ 1..location_string.maxindex - 1 ].split( "," ).map( &:to_s ).map( &:strip )
-        container_format_1 = { K.tc_type => K.undefined ,
-                               K.tc_indicator => K.undefined ,
-                               K.sc_type => "" ,
-                               K.sc_indicator => "" 
+        container_format_1 = { K.fmtr_tc_type => K.undefined ,
+                               K.fmtr_tc_indicator => K.undefined ,
+                               K.fmtr_sc_type => "" ,
+                               K.fmtr_sc_indicator => "" 
                              }
         location_item_A.each do |location_item|
             k, v, extra = location_item.split.map( &:to_s ).map( &:strip )
@@ -138,42 +151,42 @@ ARGF.each_line do |input_record|
                     Se.puts input_record
                     raise
                 end
-                container_format_1[ K.tc_type ] = K.box
-                container_format_1[ K.tc_indicator ] = v
+                container_format_1[ K.fmtr_tc_type ] = K.box
+                container_format_1[ K.fmtr_tc_indicator ] = v
             when 'folder' 
                 if ( not v.integer? ) then
                     Se.puts "#{Se.lineno}: non-numeric Item number '#{v}'"
                     Se.puts input_record
                     raise
                 end   
-                if ( container_format_1[ K.sc_type ] != "" ) then           
-                    Se.puts "#{Se.lineno}: container_format_1[ K.sc_type ] = '#{container_format_1[ K.sc_type ]}', should be blank." 
+                if ( container_format_1[ K.fmtr_sc_type ] != "" ) then           
+                    Se.puts "#{Se.lineno}: container_format_1[ K.fmtr_sc_type ] = '#{container_format_1[ K.fmtr_sc_type ]}', should be blank." 
                     Se.puts input_record
                     raise                   
                 end
-                container_format_1[ K.sc_type ] = K.folder
-                container_format_1[ K.sc_indicator ] = v
+                container_format_1[ K.fmtr_sc_type ] = K.folder
+                container_format_1[ K.fmtr_sc_indicator ] = v
             when 'item' 
                 if ( not v.integer? ) then
                     Se.puts "#{Se.lineno}: non-numeric Item number '#{v}'"
                     Se.puts input_record
                     raise
                 end
-                if ( container_format_1[ K.sc_type ] != "" ) then
-                    Se.puts "#{Se.lineno}: container_format_1[ K.sc_type ] = '#{container_format_1[ K.sc_type ]}', should be blank." 
+                if ( container_format_1[ K.fmtr_sc_type ] != "" ) then
+                    Se.puts "#{Se.lineno}: container_format_1[ K.fmtr_sc_type ] = '#{container_format_1[ K.fmtr_sc_type ]}', should be blank." 
                     Se.puts input_record
                     raise                   
                 end                
-                container_format_1[ K.sc_type ] = K.object   # 'Item'
-                container_format_1[ K.sc_indicator ] = v
+                container_format_1[ K.fmtr_sc_type ] = K.object   # 'Item'
+                container_format_1[ K.fmtr_sc_indicator ] = v
             when 'shelf'
                 next
             else
                 Se.puts "#{Se.lineno}: Unknown location type=#{k}"
             end
         end
-        if ( container_format_1[ K.tc_type ] == K.box ) then    
-            output_record_H[ K.record][ K.container_format_1 ] = container_format_1
+        if ( container_format_1[ K.fmtr_tc_type ] == K.box ) then    
+            output_record_H[ K.fmtr_record][ K.fmtr_container ] = container_format_1
             location_item_A = location_item_A.grep_v( /^(box|folder|item) /i )  # leave the 'shelf' in there.
         end
         if ( location_item_A.maxindex >= 0 ) then
@@ -184,11 +197,11 @@ ARGF.each_line do |input_record|
                                                 K.content => [ location_item_A.join(", ") ],
                                                 K.label => 'Statewide Museum Collections Center',
                                             }
-            output_record_H[ K.record ][ K.ao_note_array ] << note_singlepart_O.record_H
+            output_record_H[ K.fmtr_record ][ K.notes ] << note_singlepart_O.record_H
         end
     end
    
-    output_record_H[ K.record ][ K.title ] = input_record
+    output_record_H[ K.fmtr_record ][ K.title ] = input_record
     puts output_record_H.to_json
 end
 

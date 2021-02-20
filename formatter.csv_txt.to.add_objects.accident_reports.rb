@@ -28,9 +28,9 @@ ARGF.each_line do |input_record|
         idx += 1
     end
 
-    output_record_H[ K.record ] = {}
-    output_record_H[ K.record ][ K.level ] = K.file 
-    output_record_H[ K.record ][ K.title ] = a1[ 0 ] + " " + a1[ 1 ]
+    output_record_H[ K.fmtr_record ] = {}
+    output_record_H[ K.fmtr_record ][ K.level ] = K.file 
+    output_record_H[ K.fmtr_record ][ K.title ] = a1[ 0 ] + " " + a1[ 1 ]
     
     if ( not ( a1[ 2 ] ==  "" ) ) then
         begin
@@ -46,11 +46,11 @@ ARGF.each_line do |input_record|
                     "#{input_record} -> #{record_date} -> Failed conversion"
             raise
         end
-        output_record_H[ K.record ][ K.ao_date_array ] = [ ]
+        output_record_H[ K.fmtr_record ][ K.dates ] = [ ]
         single_date_O = Record_Format.new( :single_date )
         single_date_O.record_H = { K.label => K.existence }
         single_date_O.record_H = { K.begin => date_type }
-        output_record_H[ K.record ][ K.ao_date_array ].push( single_date_O.record_H )
+        output_record_H[ K.fmtr_record ][ K.dates ].push( single_date_O.record_H )
     end
 
     puts output_record_H.to_json

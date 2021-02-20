@@ -80,24 +80,24 @@ def put_record( a1, a2 )
 #   else
 #       stringer = "#{ a1[ 0 ]} through #{a2[ 0 ]}"
 #   end
-#   container_rec = { K.tc_type => K.box ,
-#                     K.tc_indicator => box_id ,
-#                     K.sc_type => K.folder ,
-#                     K.sc_indicator' => stringer ,
+#   container_rec = { K.fmtr_tc_type => K.box ,
+#                     K.fmtr_tc_indicator => box_id ,
+#                     K.fmtr_sc_type => K.folder ,
+#                     K.fmtr_sc_indicator' => stringer ,
 #                   }
 
     output_record_H = {}
-    output_record_H[ K.record ] = {}
-    output_record_H[ K.record ][ K.level ] = K.file
-    output_record_H[ K.record ][ K.title ] = a1[ 1 ]
-#   output_record_H[ K.record ][ K.container_format_1 ] = container_rec
-    output_record_H[ K.record ][ K.ao_date_array ] = [ ]
+    output_record_H[ K.fmtr_record ] = {}
+    output_record_H[ K.fmtr_record ][ K.level ] = K.file
+    output_record_H[ K.fmtr_record ][ K.title ] = a1[ 1 ]
+#   output_record_H[ K.fmtr_record ][ K.fmtr_container ] = container_rec
+    output_record_H[ K.fmtr_record ][ K.dates ] = [ ]
 
     if ( a1[ 2 ] != "" ) then
         single_date_fragment_O = Record_Format.new( :single_date )
         single_date_fragment_O.record_H= { K.label => K.existence }
         single_date_fragment_O.record_H= { K.begin => a1[ 2 ] }
-        output_record_H[ K.record ][ K.ao_date_array ].push( single_date_fragment_O.record_H )
+        output_record_H[ K.fmtr_record ][ K.dates ].push( single_date_fragment_O.record_H )
     end
 
     puts output_record_H.to_json

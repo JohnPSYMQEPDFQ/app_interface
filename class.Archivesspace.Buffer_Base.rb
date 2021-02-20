@@ -20,6 +20,7 @@ class Buffer_Base
         @record_H = Hash.new( )
         @cant_change_A = [ ]
         @cant_change_A << K.jsonmodel_type 
+        @cant_change_A << K.persistent_id
     end
     attr_reader :cant_change_A
     #  Shouldn't be an attr_reader :record_H here.

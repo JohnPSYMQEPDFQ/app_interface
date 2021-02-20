@@ -28,32 +28,32 @@ To attach the records to a specific AO, enter the --res-num option along with:
 The input FILE has the following three formats( JSONized ):
 
         1 = {
-              K.record =>
+              K.fmtr_record =>
                 {
-                  K.level => ''             # the AO level (eg. 'file', 'series', 'recordgrp', ...) -OR- a value of K.new_parent.
+                  K.level => ''             # the AO level (eg. 'file', 'series', 'recordgrp', ...) -OR- a value of K.fmtr_new_parent.
                   K.title => '',            # the AO title field.
--optional-        K.ao_date_array => [ ],   # An array of AO date hashes, single or inclusive.
--optional-        K.ao_note_array => [ ],   # An array of AO note hashes, singlepart or miltipart.
--optional-        K.container_format_1 =>   # References to TC of "type => indicator", creates the TC if needed.
+-optional-        K.dates => [ ],           # An array of AO date hashes, single or inclusive.
+-optional-        K.notes => [ ],           # An array of AO note hashes, singlepart or miltipart.
+-optional-        K.fmtr_container =>       # References to TC of "type => indicator", creates the TC if needed.
                     {
-                      K.tc_type      => 'VALUE'     # eg. 'box'
-                      K.tc_indicator => 'n'         # Box number (must be a number)
-                      K.sc_type      => 'VALUE'     # eg. 'folder'
-                      K.sc_indicator => 'STRING'    # Anything identifing the folder
+                      K.fmtr_tc_type      => 'VALUE'     # eg. 'box'
+                      K.fmtr_tc_indicator => 'n'         # Box number (must be a number)
+                      K.fmtr_sc_type      => 'VALUE'     # eg. 'folder'
+                      K.fmtr_sc_indicator => 'STRING'    # Anything identifing the folder
                     }
                 }
             }
   
         2 = {
-              K.indent => [ K.right, 'Any text' ]    # Text only used for debugging
+              K.fmtr_indent => [ K.fmtr_right, 'Any text' ]    # Text only used for debugging
             }
   
         3 = {
-              K.indent => [ K.left, 'Any text' ]     # Text only used for debugging
+              K.fmtr_indent => [ K.fmtr_left, 'Any text' ]     # Text only used for debugging
             }
 
     Record format 1 is the data record.  As-of 3/18/2020 only the "series", "subseries", "recordgrp", and "file" AO-level types
-    were tested.  If the record-type is 'K.new_parent' this causes the program to find an existing AO record equal to
+    were tested.  If the record-type is 'K.fmtr_new_parent' this causes the program to find an existing AO record equal to
     the 'Title' value.  This AO then becomes the parent record for all subsequent records in FILE.
 
     Record format 2 causes all the records following the "indent => right" record to be attached to the record PRIOR to 
@@ -101,7 +101,7 @@ def get_TC_buf_A__for_all_unused_AND_for_this_resource( p1_res_buf_O, p2_tc_buf_
                 end
             }
         else
-            tc_buf_A__unused_and_this_resource << [ tc_buf_O, K.unused ]
+            tc_buf_A__unused_and_this_resource << [ tc_buf_O, K.undefined ]
         end
     }
     return tc_buf_A__unused_and_this_resource
@@ -238,7 +238,7 @@ tc_uri_H__by_type_and_indicator = {}
 tc_buf_A__all_unused_AND_for_this_resource.each do |element|
     record_H = element[ 0 ].record_H
 #   Se.pp record_H
-    if ( element[ 1 ] == K.unused ) then
+    if ( element[ 1 ] == K.undefined ) then
         Se.puts "#{Se.lineno}: Delete top_container: #{record_H[ K.uri ]}"
         element[ 0 ].delete
     else
@@ -275,29 +275,29 @@ for argv in ARGV do
         end
         input_record_H = JSON.parse( input_record_J )
 
-        if ( input_record_H.key?( K.indent ) ) then
+        if ( input_record_H.key?( K.fmtr_indent ) ) then
             Se.puts "#{Se.lineno}: Rec:#{$.}: '#{input_record_J}'"
-            record_level_cnt[ input_record_H[ K.indent ][ 0 ] ] += 1
-            case input_record_H[ K.indent ][ 0 ]
-            when K.right then
+            record_level_cnt[ input_record_H[ K.fmtr_indent ][ 0 ] ] += 1
+            case input_record_H[ K.fmtr_indent ][ 0 ]
+            when K.fmtr_right then
                 net_indent_cnt += 1
                 parent_ref_stack_A.push( last_AO_uri_created )
                 next
-            when K.left then
+            when K.fmtr_left then
                 net_indent_cnt += -1
                 last_AO_uri_created=parent_ref_stack_A.pop( 1 )[ 0 ]
                 next
             else
-                Se.puts "#{Se.lineno}: Invalid indent direction '#{input_record_H[ K.indent ][ 0 ]}'"
+                Se.puts "#{Se.lineno}: Invalid indent direction '#{input_record_H[ K.fmtr_indent ][ 0 ]}'"
                 raise                
             end
         end
 
-        if ( input_record_H.key?( K.record ) ) then
+        if ( input_record_H.key?( K.fmtr_record ) ) then
             Se.puts "#{Se.lineno}: Rec:#{$.}: '#{input_record_J}'"
-            stringer = input_record_H[ K.record ][ K.level ]
+            stringer = input_record_H[ K.fmtr_record ][ K.level ]
             record_level_cnt[ stringer ] += 1
-            if ( stringer == K.new_parent ) then
+            if ( stringer == K.fmtr_new_parent ) then
                 if ( cmdln_AO_ref or cmdln_AO_num ) then
                     Se.puts "#{Se.lineno}: Hit 'new_parent' record, but"
                     Se.puts "the --ao-ref and --ao-num options aren't allowed for this record type."
@@ -311,20 +311,20 @@ for argv in ARGV do
                     raise
                 end
                 cnt = 0; res_Q_all_AO_O.buf_A.each do | ao_buf_O |
-                    if ( input_record_H[ K.record ][ K.title ].downcase == ao_buf_O.record_H[ K.title ].downcase ) then
+                    if ( input_record_H[ K.fmtr_record ][ K.title ].downcase == ao_buf_O.record_H[ K.title ].downcase ) then
                         parent_ref_stack_A[ 0 ] = ao_buf_O.record_H[ K.uri ]
                         Se.puts "New parent: #{ao_buf_O.record_H[ K.uri ]} '#{ao_buf_O.record_H[ K.title ]}'"
                         cnt += 1
                     end
                 end
                 if ( cnt == 0 ) then
-                    Se.puts "#{Se.lineno}: Hit '#{K.new_parent}' record, ",
-                            "but couldn't find an AO with a Title of '#{input_record_H[ K.record ][ K.title ]}'"
+                    Se.puts "#{Se.lineno}: Hit '#{K.fmtr_new_parent}' record, ",
+                            "but couldn't find an AO with a Title of '#{input_record_H[ K.fmtr_record ][ K.title ]}'"
                     raise
                 end
                 if ( cnt > 1 ) then
-                    Se.puts "#{Se.lineno}: Hit '#{K.new_parent}' record, ",
-                            "but found more than 1 AO with a Title of '#{input_record_H[ K.record ][ K.title ]}'"
+                    Se.puts "#{Se.lineno}: Hit '#{K.fmtr_new_parent}' record, ",
+                            "but found more than 1 AO with a Title of '#{input_record_H[ K.fmtr_record ][ K.title ]}'"
                     raise
                 end
                 next
@@ -337,22 +337,22 @@ for argv in ARGV do
             else
                 ao_buf_O.record_H = { K.parent => { K.ref => parent_ref_stack_A[ parent_ref_stack_A.maxindex ] }} 
             end
-            if ( input_record_H[ K.record ].key?( K.component_id )) then
-                ao_buf_O.record_H = { K.component_id => input_record_H[ K.record ][ K.component_id ] }
+            if ( input_record_H[ K.fmtr_record ].key?( K.component_id )) then
+                ao_buf_O.record_H = { K.component_id => input_record_H[ K.fmtr_record ][ K.component_id ] }
             end
-            ao_buf_O.record_H = { K.title => input_record_H[ K.record ][ K.title ] }
-            if ( input_record_H[ K.record ].key?( K.ao_date_array ) and
-               ! input_record_H[ K.record ][ K.ao_date_array ].empty? ) then
-                ao_buf_O.record_H = { K.dates => input_record_H[ K.record ][ K.ao_date_array ] }
+            ao_buf_O.record_H = { K.title => input_record_H[ K.fmtr_record ][ K.title ] }
+            if ( input_record_H[ K.fmtr_record ].key?( K.dates ) and
+               ! input_record_H[ K.fmtr_record ][ K.dates ].empty? ) then
+                ao_buf_O.record_H = { K.dates => input_record_H[ K.fmtr_record ][ K.dates ] }
             end
-            if ( input_record_H[ K.record ].key?( K.ao_note_array ) and
-               ! input_record_H[ K.record ][ K.ao_note_array ].empty? ) then
-                ao_buf_O.record_H = { K.notes => input_record_H[ K.record ][ K.ao_note_array ] }
+            if ( input_record_H[ K.fmtr_record ].key?( K.notes ) and
+               ! input_record_H[ K.fmtr_record ][ K.notes ].empty? ) then
+                ao_buf_O.record_H = { K.notes => input_record_H[ K.fmtr_record ][ K.notes ] }
             end
-            if ( input_record_H[ K.record ].key?( K.container_format_1 ) and 
-               ! input_record_H[ K.record ][ K.container_format_1 ].empty? ) then
-                type      = "#{input_record_H[ K.record ][ K.container_format_1 ][ K.tc_type ]}"
-                indicator = "#{input_record_H[ K.record ][ K.container_format_1 ][ K.tc_indicator ]}"
+            if ( input_record_H[ K.fmtr_record ].key?( K.fmtr_container ) and 
+               ! input_record_H[ K.fmtr_record ][ K.fmtr_container ].empty? ) then
+                type      = "#{input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.fmtr_tc_type ]}"
+                indicator = "#{input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.fmtr_tc_indicator ]}"
                 unique_TC_key  = "#{type}#{indicator}"
                 if ( ! tc_uri_H__by_type_and_indicator.key?( unique_TC_key ) ) then
                     tc_buf_O = Top_Container.new( res_buf_O ).new_buffer.create
@@ -366,8 +366,8 @@ for argv in ARGV do
                 mm_frag_O = Record_Format.new( :instance_type )
                 mm_frag_O.record_H = { K.instance_type => K.mixed_materials}
                 mm_frag_O.record_H = { K.sub_container => { K.top_container => { K.ref => tc_uri_H__by_type_and_indicator[ unique_TC_key ] }}}
-                mm_frag_O.record_H = { K.sub_container => { K.type_2 => input_record_H[ K.record ][ K.container_format_1 ][ K.sc_type ] }}
-                mm_frag_O.record_H = { K.sub_container => { K.indicator_2 => input_record_H[ K.record ][ K.container_format_1 ][ K.sc_indicator ] }}
+                mm_frag_O.record_H = { K.sub_container => { K.type_2 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.fmtr_sc_type ] }}
+                mm_frag_O.record_H = { K.sub_container => { K.indicator_2 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.fmtr_sc_indicator ] }}
 
                 ao_buf_O.record_H = { K.instances => [ mm_frag_O.record_H ] }
             end

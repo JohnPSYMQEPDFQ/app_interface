@@ -80,24 +80,24 @@ ARGF.each_line do |input_record|
         
     end
     
-    output_record_H[ K.record ] = {}
-    output_record_H[ K.record ][ K.level ] = K.file 
-    output_record_H[ K.record ][ K.title ] = a1[ 0 ]
+    output_record_H[ K.fmtr_record ] = {}
+    output_record_H[ K.fmtr_record ][ K.level ] = K.file 
+    output_record_H[ K.fmtr_record ][ K.title ] = a1[ 0 ]
 
     if ( date_A.maxindex >= 0 ) then
-        output_record_H[ K.record ][ K.ao_date_array ] = [ ]
+        output_record_H[ K.fmtr_record ][ K.dates ] = [ ]
         if ( date_A.maxindex == 0 ) then
             single_date_O = Record_Format.new( :single_date )
             single_date_O.record_H = { K.label => K.existence }
             single_date_O.record_H = { K.begin => date_A[ 0 ] }
-            output_record_H[ K.record ][ K.ao_date_array ].push( single_date_O.record_H )
+            output_record_H[ K.fmtr_record ][ K.dates ].push( single_date_O.record_H )
         end
         if ( date_A.maxindex == 1 ) then
             inclusive_dates_O = Record_Format.new( :inclusive_dates )
             inclusive_dates_O.record_H[ K.label ] = K.existence 
             inclusive_dates_O.record_H[ K.begin ] = date_A[ 0 ]
             inclusive_dates_O.record_H[ K.end ] = date_A[ 1 ]
-            output_record_H[ K.record ][ K.ao_date_array ].push( inclusive_dates_O.record_H )
+            output_record_H[ K.fmtr_record ][ K.dates ].push( inclusive_dates_O.record_H )
         end
         if ( date_A.maxindex > 1 ) then
             Se.puts "#{Se.lineno}: Didn't expect date_A.maxindex to be > 1, the value is: #{date_A.maxindex}"

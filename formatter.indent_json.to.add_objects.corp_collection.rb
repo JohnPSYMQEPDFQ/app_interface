@@ -28,42 +28,42 @@ require 'class.formatter.Record_Grouping_Indent.rb'
 
 def put_indent( level_number_A, level_title_A )
     output_record_H={}
-    output_record_H[ K.record ] = {}
+    output_record_H[ K.fmtr_record ] = {}
     case level_number_A.maxindex 
     when -1
         Se.puts "#{Se.lineno}: =============================="
         Se.puts "Wasn't expecting param1 level_number_A to be empty"
         raise
     when 0
-        output_record_H[ K.record ][ K.level ] = K.series
-        output_record_H[ K.record ][ K.title ] = "Series #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
-        output_record_H[ K.record ][ K.component_id ] = level_number_A.join( "." )
+        output_record_H[ K.fmtr_record ][ K.level ] = K.series
+        output_record_H[ K.fmtr_record ][ K.title ] = "Series #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.component_id ] = level_number_A.join( "." )
     when 1
-        output_record_H[ K.record ][ K.level ] = K.subseries
-        output_record_H[ K.record ][ K.title ] = "Subseries #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
-        output_record_H[ K.record ][ K.component_id ] = level_number_A.join( "." )
+        output_record_H[ K.fmtr_record ][ K.level ] = K.subseries
+        output_record_H[ K.fmtr_record ][ K.title ] = "Subseries #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.component_id ] = level_number_A.join( "." )
     else     
-        output_record_H[ K.record ][ K.level ] = K.recordgrp
-        output_record_H[ K.record ][ K.title ] = "#{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.level ] = K.recordgrp
+        output_record_H[ K.fmtr_record ][ K.title ] = "#{level_title_A.join( ". " )}" 
     end
     puts output_record_H.to_json
 end
 
 def put_record( stack_record_H )
 
-    stack_record__indent_keys_A = stack_record_H[ K.record_indent_keys ]
-    stack_record__values_A = stack_record_H[ K.record_values ]
+    stack_record__indent_keys_A = stack_record_H[ K.fmtr_record_indent_keys ]
+    stack_record__values_A = stack_record_H[ K.fmtr_record_values ]
     date_A = stack_record__values_A.pop( 1 )[ 0 ]
 
     output_record_H={}
-    output_record_H[ K.record ] = {}
-    output_record_H[ K.record ][ K.level ] = stack_record_H[ K.level ]
+    output_record_H[ K.fmtr_record ] = {}
+    output_record_H[ K.fmtr_record ][ K.level ] = stack_record_H[ K.level ]
     stringer = stack_record__indent_keys_A[ 0..( stack_record__indent_keys_A.maxindex ) ].join( ". " ) +
                ". " +
                stack_record__values_A[ 0..( stack_record__values_A.maxindex - 1 ) ].join( " " )
-    output_record_H[ K.record ][ K.title ] = stringer.strip.gsub( /\.$/,'' )
-    output_record_H[ K.record ][ K.ao_note_array ] = [ ]
-    output_record_H[ K.record ][ K.ao_date_array ] = [ ]
+    output_record_H[ K.fmtr_record ][ K.title ] = stringer.strip.gsub( /\.$/,'' )
+    output_record_H[ K.fmtr_record ][ K.notes ] = [ ]
+    output_record_H[ K.fmtr_record ][ K.dates ] = [ ]
 
     if ( date_A.maxindex >= 0 ) then
         note_multipart_O = Record_Format.new( :note_multipart )
@@ -71,28 +71,28 @@ def put_record( stack_record_H )
         note_text_O = Record_Format.new( :note_text )
         note_text_O.record_H = { K.content => "Dates converted." } 
         note_multipart_O.record_H = { K.subnotes => [ note_text_O.record_H ] }
-        output_record_H[ K.record ][ K.ao_note_array ].push( note_multipart_O.record_H )
+        output_record_H[ K.fmtr_record ][ K.notes ].push( note_multipart_O.record_H )
 
         note_multipart_O = Record_Format.new( :note_multipart )
         note_multipart_O.record_H = {  K.type  => K.processinfo }
         note_text_O = Record_Format.new( :note_text )
-        note_text_O.record_H = { K.content =>  "Original record num: #{stack_record_H[ K.record_num ]}, " +
-                                               "Original record text: '#{stack_record_H[ K.record_original ]}'" }
+        note_text_O.record_H = { K.content =>  "Original record num: #{stack_record_H[ K.fmtr_record_num ]}, " +
+                                               "Original record text: '#{stack_record_H[ K.fmtr_record_original ]}'" }
         note_multipart_O.record_H = {  K.subnotes => [ note_text_O.record_H ] }
-        output_record_H[ K.record ][ K.ao_note_array ].push( note_multipart_O.record_H )
+        output_record_H[ K.fmtr_record ][ K.notes ].push( note_multipart_O.record_H )
 
         if ( date_A.maxindex == 0 ) then
             single_date_O = Record_Format.new( :single_date )
             single_date_O.record_H = { K.label => K.existence }
             single_date_O.record_H = { K.begin => date_A[ 0 ] }
-            output_record_H[ K.record ][ K.ao_date_array ].push( single_date_O.record_H )
+            output_record_H[ K.fmtr_record ][ K.dates ].push( single_date_O.record_H )
         end
         if ( date_A.maxindex == 1 ) then
             inclusive_dates_O = Record_Format.new( :inclusive_dates )
             inclusive_dates_O.record_H[ K.label ] = K.existence 
             inclusive_dates_O.record_H[ K.begin ] = date_A[ 0 ]
             inclusive_dates_O.record_H[ K.end ] = date_A[ 1 ]
-            output_record_H[ K.record ][ K.ao_date_array ].push( inclusive_dates_O.record_H )
+            output_record_H[ K.fmtr_record ][ K.dates ].push( inclusive_dates_O.record_H )
         end
         if ( date_A.maxindex > 1 ) then
             Se.puts "#{Se.lineno}: Didn't expect date_A.maxindex to be > 1, the value is: #{date_A.maxindex}"
@@ -106,7 +106,7 @@ def put_record( stack_record_H )
             note_text_O = Record_Format.new( :note_text )
             note_text_O.record_H = { K.content => "Unable to convert dates." }
             note_multipart_O.record_H = { K.subnotes => [  note_text_O.record_H ]}
-            output_record_H[ K.record ][ K.ao_note_array ].push( note_multipart_O.record_H )
+            output_record_H[ K.fmtr_record ][ K.notes ].push( note_multipart_O.record_H )
 
             note_multipart_O = Record_Format.new( :note_multipart )
             note_multipart_O.record_H = { K.type => K.processinfo }
@@ -114,7 +114,7 @@ def put_record( stack_record_H )
             note_text_O.record_H = { K.content =>  "Original record num: #{stack_record_H[ 'record_num' ]}, " +
                                                    "Original record text: '#{stack_record_H[ 'original_input_record' ]}'"}
             note_multipart_O.record_H = { K.subnotes => [  note_text_O.record_H ]}
-            output_record_H[ K.record ][ K.ao_note_array ].push( note_multipart_O.record_H )
+            output_record_H[ K.fmtr_record ][ K.notes ].push( note_multipart_O.record_H )
         end
     end
     puts output_record_H.to_json

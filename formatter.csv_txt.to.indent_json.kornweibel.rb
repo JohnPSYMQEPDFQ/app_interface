@@ -22,10 +22,10 @@ require 'class.ArchivesSpace.rb'
 #   GROUP: WOMAN
 #   Commissaries. Dining Car Department (2)
 
-container_rec = { K.tc_type => K.undefined ,
-                  K.tc_indicator => K.undefined ,
-                  K.sc_type => K.undefined ,
-                  K.sc_indicator => K.undefined }
+container_rec = { K.fmtr_tc_type => K.undefined ,
+                  K.fmtr_tc_indicator => K.undefined ,
+                  K.fmtr_sc_type => K.undefined ,
+                  K.fmtr_sc_indicator => K.undefined }
 rec_cnt = 0
 ARGF.each_line do |input_record|
 
@@ -51,48 +51,48 @@ ARGF.each_line do |input_record|
 
     if ( input_record =~ /^(series|subseries)\s+[0-9]+:\s+/i ) then
         input_record.gsub!( /\s+$/, "" )
-        output_record_H[ K.record_indent_keys ] = [ ]
+        output_record_H[ K.fmtr_record_indent_keys ] = [ ]
         record_values << [] 
         record_values << []
         record_values << input_record
-        output_record_H[ K.record_values ] = record_values
-        output_record_H[ K.level ] = K.new_parent
-        output_record_H[ K.record_num ] = "#{rec_cnt}"
-        output_record_H[ K.record_original ] = "#{input_record_save}"
+        output_record_H[ K.fmtr_record_values ] = record_values
+        output_record_H[ K.level ] = K.fmtr_new_parent
+        output_record_H[ K.fmtr_record_num ] = "#{rec_cnt}"
+        output_record_H[ K.fmtr_record_original ] = "#{input_record_save}"
         puts output_record_H.to_json
         next
     end
     if ( input_record =~ /^drawer /i ) then
-        container_rec[ K.tc_type ] = K.object 
-        container_rec[ K.tc_indicator ] = "Drawer " + input_record_A[ 1 ] 
+        container_rec[ K.fmtr_tc_type ] = K.object 
+        container_rec[ K.fmtr_tc_indicator ] = "Drawer " + input_record_A[ 1 ] 
         next
     end
     if ( input_record =~ /^box /i ) then
-        container_rec[ K.tc_type ] = K.box
-        container_rec[ K.tc_indicator ] = input_record_A[ 1 ] 
+        container_rec[ K.fmtr_tc_type ] = K.box
+        container_rec[ K.fmtr_tc_indicator ] = input_record_A[ 1 ] 
         next
     end
 
     
-    if ( container_rec[ K.tc_type ] == K.object ) then
+    if ( container_rec[ K.fmtr_tc_type ] == K.object ) then
         match_O = input_record.match( /\s*\(([0-9]+)\)/ )   # Folder count pattern match
         if ( match_O ) then
             input_record.sub!( /\s*\(([0-9]+)\)/,"" )
-            container_rec[ K.sc_type ] =  K.folder
-            container_rec[ K.sc_indicator ] =  "Count " + match_O[ 1 ] 
+            container_rec[ K.fmtr_sc_type ] =  K.folder
+            container_rec[ K.fmtr_sc_indicator ] =  "Count " + match_O[ 1 ] 
         else
-            container_rec[ K.sc_type ] =  K.folder
-            container_rec[ K.sc_indicator ] =  "Count 1"
+            container_rec[ K.fmtr_sc_type ] =  K.folder
+            container_rec[ K.fmtr_sc_indicator ] =  "Count 1"
         end
     else
         regexp = %r{^folder\s+(?<folder_cnt>[0-9]+)\s+}i
         if (match_vars = input_record.match( regexp )) then
             input_record.gsub!( regexp, "")
-            container_rec[ K.sc_type ] =  K.folder
-            container_rec[ K.sc_indicator ] =  match_vars[:folder_cnt]
+            container_rec[ K.fmtr_sc_type ] =  K.folder
+            container_rec[ K.fmtr_sc_indicator ] =  match_vars[:folder_cnt]
         else
-            container_rec[ K.sc_type ] = ""
-            container_rec[ K.sc_indicator ] =  ""
+            container_rec[ K.fmtr_sc_type ] = ""
+            container_rec[ K.fmtr_sc_indicator ] =  ""
         end
     end
     record_values << container_rec   #[0]
@@ -150,8 +150,8 @@ ARGF.each_line do |input_record|
     record_values << ao_date_A   #[1]
     record_values << input_record   #[2]
     
-    output_record_H[ K.record_indent_keys ] = [ ]
-    output_record_H[ K.record_values ] = record_values
+    output_record_H[ K.fmtr_record_indent_keys ] = [ ]
+    output_record_H[ K.fmtr_record_values ] = record_values
     regexp = %r{^group: }i
     if ( input_record =~ regexp ) then
         input_record.sub!( regexp, "" )
@@ -160,8 +160,8 @@ ARGF.each_line do |input_record|
     else
         output_record_H[ K.level ] = K.file
     end
-    output_record_H[ K.record_num ] = "#{rec_cnt}"
-    output_record_H[ K.record_original ] = "#{input_record_save}"
+    output_record_H[ K.fmtr_record_num ] = "#{rec_cnt}"
+    output_record_H[ K.fmtr_record_original ] = "#{input_record_save}"
     puts output_record_H.to_json
 end
 Se.puts "#{Se.lineno}: The output from this program should not be sorted."

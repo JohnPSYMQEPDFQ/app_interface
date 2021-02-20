@@ -28,21 +28,21 @@ require 'class.formatter.Record_Grouping_Indent.rb'
 
 def put_indent( level_number_A, level_title_A )
     output_record_H={}
-    output_record_H[ K.record ] = {}
+    output_record_H[ K.fmtr_record ] = {}
     case level_number_A.maxindex 
     when -1
         Se.puts "#{Se.lineno}: =============================="
         Se.puts "Wasn't expecting param1 level_number_A to be empty"
         raise
     when 0
-        output_record_H[ K.record ][ K.level ] = K.series
-        output_record_H[ K.record ][ K.title ] = "Series #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.level ] = K.series
+        output_record_H[ K.fmtr_record ][ K.title ] = "Series #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
     when 1
-        output_record_H[ K.record ][ K.level ] = K.subseries
-        output_record_H[ K.record ][ K.title ] = "Subseries #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.level ] = K.subseries
+        output_record_H[ K.fmtr_record ][ K.title ] = "Subseries #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
     else     
-        output_record_H[ K.record ][ K.level ] = K.recordgrp
-        output_record_H[ K.record ][ K.title ] = "#{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.level ] = K.recordgrp
+        output_record_H[ K.fmtr_record ][ K.title ] = "#{level_title_A.join( ". " )}" 
     end
     puts output_record_H.to_json
 end
@@ -50,23 +50,23 @@ end
 def put_record( stack_record_H )
 
     output_record_H={}
-    output_record_H[ K.record ] = {}
-    output_record_H[ K.record ][ K.level ] = stack_record_H[ K.level ]
+    output_record_H[ K.fmtr_record ] = {}
+    output_record_H[ K.fmtr_record ][ K.level ] = stack_record_H[ K.level ]
 
-#   stack_record__indent_keys_A = stack_record_H[ K.record_indent_keys ]
-    stack_record__values_A = stack_record_H[ K.record_values ]
-    output_record_H[ K.record ][ K.container_format_1 ] = stack_record__values_A.shift( 1 )[ 0 ]
+#   stack_record__indent_keys_A = stack_record_H[ K.fmtr_record_indent_keys ]
+    stack_record__values_A = stack_record_H[ K.fmtr_record_values ]
+    output_record_H[ K.fmtr_record ][ K.fmtr_container ] = stack_record__values_A.shift( 1 )[ 0 ]
 
     stringer = stack_record__values_A[ 0.. stack_record__values_A.maxindex ].join( " " )
-    output_record_H[ K.record ][ K.title ] = stringer.strip.gsub( /\.$/,'' )
+    output_record_H[ K.fmtr_record ][ K.title ] = stringer.strip.gsub( /\.$/,'' )
 
-    output_record_H[ K.record ][ K.ao_note_array ] = [ ]
+    output_record_H[ K.fmtr_record ][ K.notes ] = [ ]
     note_multipart_O = Record_Format.new( :note_multipart )
     note_multipart_O.record_H = { K.type => K.processinfo }
     note_text_O = Record_Format.new( :note_text )
-    note_text_O.record_H = { K.content =>  "Original record text: '#{stack_record_H[ K.record_original ]}'"}
+    note_text_O.record_H = { K.content =>  "Original record text: '#{stack_record_H[ K.fmtr_record_original ]}'"}
     note_multipart_O.record_H = { K.subnotes => [  note_text_O.record_H ]}
-    output_record_H[ K.record ][ K.ao_note_array ].push( note_multipart_O.record_H )
+    output_record_H[ K.fmtr_record ][ K.notes ].push( note_multipart_O.record_H )
     puts output_record_H.to_json
 end
 

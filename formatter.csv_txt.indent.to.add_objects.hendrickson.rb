@@ -27,32 +27,32 @@ require 'class.formatter.Record_Grouping_Indent.rb'
 
 def put_indent( level_number_A, level_title_A )
     output_record_H={}
-    output_record_H[ K.record ] = {}
+    output_record_H[ K.fmtr_record ] = {}
     case level_number_A.maxindex 
     when -1
         Se.puts "#{Se.lineno}: =============================="
         Se.puts "Wasn't expecting param1 level_number_A to be empty"
         raise
     when 0
-        output_record_H[ K.record ][ K.level ] = K.series
-        output_record_H[ K.record ][ K.title ] = "Series #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.level ] = K.series
+        output_record_H[ K.fmtr_record ][ K.title ] = "Series #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
     when 1
-        output_record_H[ K.record ][ K.level ] = K.subseries
-        output_record_H[ K.record ][ K.title ] = "Subseries #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.level ] = K.subseries
+        output_record_H[ K.fmtr_record ][ K.title ] = "Subseries #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
     else     
-        output_record_H[ K.record ][ K.level ] = K.recordgrp
-        output_record_H[ K.record ][ K.title ] = "#{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.level ] = K.recordgrp
+        output_record_H[ K.fmtr_record ][ K.title ] = "#{level_title_A.join( ". " )}" 
     end
     puts output_record_H.to_json
 end
 
 def put_record( stack_record_H )
     output_record_H = {}
-    stack_record__values = stack_record_H[ K.record_values ]
-    output_record_H[ K.record ] = {}
-    output_record_H[ K.record ][ K.level ] = K.file
-    output_record_H[ K.record ][ K.title ] = stack_record__values[ 0 ]
-    output_record_H[ K.record ][ K.container_format_1 ] = stack_record__values[ 1 ]
+    stack_record__values = stack_record_H[ K.fmtr_record_values ]
+    output_record_H[ K.fmtr_record ] = {}
+    output_record_H[ K.fmtr_record ][ K.level ] = K.file
+    output_record_H[ K.fmtr_record ][ K.title ] = stack_record__values[ 0 ]
+    output_record_H[ K.fmtr_record ][ K.fmtr_container ] = stack_record__values[ 1 ]
     puts output_record_H.to_json
 end
 
@@ -101,7 +101,7 @@ Record_Grouping_Indent.new_with_flush( method( :put_record ), method( :put_inden
             Se.puts "indent_keys.empty"
             raise
         end
-        input_record__H[ K.record_indent_keys ] =  indent_keys 
+        input_record__H[ K.fmtr_record_indent_keys ] =  indent_keys 
         box_num = a1[1]
         if ( ! box_folder_cnt__H.has_key? (box_num) ) then
             box_folder_cnt__H[ box_num ] = 0
@@ -114,13 +114,13 @@ Record_Grouping_Indent.new_with_flush( method( :put_record ), method( :put_inden
         else
             stringer = "#{cnt} - #{box_folder_cnt__H[ box_num ]}"
         end
-        container_rec = { K.tc_type => K.box ,
-                          K.tc_indicator => box_num ,
-                          K.sc_type => K.folder ,
-                          K.sc_indicator => stringer  }
-        input_record__H[ K.record_values ] = [ a1[0], container_rec ]
-        input_record__H[ K.record_num ] = "#{$.}"
-        input_record__H[ K.record_original ] = "#{input_record}"
+        container_rec = { K.fmtr_tc_type => K.box ,
+                          K.fmtr_tc_indicator => box_num ,
+                          K.fmtr_sc_type => K.folder ,
+                          K.fmtr_sc_indicator => stringer  }
+        input_record__H[ K.fmtr_record_values ] = [ a1[0], container_rec ]
+        input_record__H[ K.fmtr_record_num ] = "#{$.}"
+        input_record__H[ K.fmtr_record_original ] = "#{input_record}"
         rgi_O.add_record( input_record__H )
     end
 end

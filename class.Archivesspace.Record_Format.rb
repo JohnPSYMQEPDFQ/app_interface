@@ -157,8 +157,7 @@ class Record_Format < Buffer_Base
                 K.type => K.undefined,    #(physloc)
                 K.publish =>  true,
                 K.content => [ ],
-                K.label => '',
-                K.persistent_id => ''
+                K.label => ''
             }
         @record_H.merge!( h )
         return h

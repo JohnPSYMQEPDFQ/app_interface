@@ -156,11 +156,11 @@ ARGF.each_line do |input_record|
         end
     end
     
-    output_record_H[ K.record_indent_keys ] = indent_keys
-    output_record_H[ K.record_values ] = record_values
+    output_record_H[ K.fmtr_record_indent_keys ] = indent_keys
+    output_record_H[ K.fmtr_record_values ] = record_values
     output_record_H[ K.level ] = K.file
-    output_record_H[ K.record_num ] = "#{$.}"
-    output_record_H[ K.record_original ] = "#{input_record}"
+    output_record_H[ K.fmtr_record_num ] = "#{$.}"
+    output_record_H[ K.fmtr_record_original ] = "#{input_record}"
     puts output_record_H.to_json
 end
 #p stack_of_recs

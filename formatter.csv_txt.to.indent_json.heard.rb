@@ -13,7 +13,7 @@ require 'class.ArchivesSpace.rb'
 =begin
 
 This formatter has a new feature of being able to supply a parent record to attach sub-record to.
-When a 'new_parent' record is wanted, the K.new_parent constant is put in the 'level' field of output_record_H.
+When a 'new_parent' record is wanted, the K.fmtr_new_parent constant is put in the 'level' field of output_record_H.
 The title of this record is then searched for in the add_objects program.  That then become the new_parent record
 for subsequent records.   The add_objects program will fail if there's no match, more than one match,
 or if the indent-level isn't 0.
@@ -41,10 +41,10 @@ Folder 24; Contacts
 =end
 
 def initialize_container_format_1_H()
-    container_format_1_H = { K.tc_type => K.undefined ,
-                                          K.tc_indicator => K.undefined ,
-                                          K.sc_type => K.undefined ,
-                                          K.sc_indicator => K.undefined }
+    container_format_1_H = { K.fmtr_tc_type => K.undefined ,
+                                          K.fmtr_tc_indicator => K.undefined ,
+                                          K.fmtr_sc_type => K.undefined ,
+                                          K.fmtr_sc_indicator => K.undefined }
     return container_format_1_H
 end
 
@@ -70,33 +70,33 @@ ARGF.each_line do |input_record|
     if ( input_record =~ /^series [0-9]+: /i ) then
         record_values << []                                 # No container info
         record_values << input_record
-        output_record_H[ K.level ] = K.new_parent
-        output_record_H[ K.record_indent_keys ] = []
-        output_record_H[ K.record_values ] = record_values
-        output_record_H[ K.record_num ] = "#{rec_cnt}"
-        output_record_H[ K.record_original ] = "#{input_record_save}"
+        output_record_H[ K.level ] = K.fmtr_new_parent
+        output_record_H[ K.fmtr_record_indent_keys ] = []
+        output_record_H[ K.fmtr_record_values ] = record_values
+        output_record_H[ K.fmtr_record_num ] = "#{rec_cnt}"
+        output_record_H[ K.fmtr_record_original ] = "#{input_record_save}"
         puts output_record_H.to_json
         next
     end
 
     if ( input_record =~ /^box +[0-9]+ *$/i ) then           # Box record with no subject info.
-        container_format_1_H[ K.tc_type ] = K.box
-        container_format_1_H[ K.tc_indicator ] = input_record.split( /\s/ ).map( &:to_s ).map( &:strip )[ 1 ]
-        container_format_1_H[ K.sc_type ] = K.undefined
-        container_format_1_H[ K.sc_indicator ] = K.undefined 
+        container_format_1_H[ K.fmtr_tc_type ] = K.box
+        container_format_1_H[ K.fmtr_tc_indicator ] = input_record.split( /\s/ ).map( &:to_s ).map( &:strip )[ 1 ]
+        container_format_1_H[ K.fmtr_sc_type ] = K.undefined
+        container_format_1_H[ K.fmtr_sc_indicator ] = K.undefined 
         next
     end
 
     if ( input_record_A[ 0 ] =~ /^box [0-9]+$/i ) then                         # Box record with subject, subject is in input_record_A[ 1 ]
-        container_format_1_H[ K.tc_type ] = K.box
-        container_format_1_H[ K.tc_indicator ] = input_record_A[ 0 ].split( /\s/ ).map( &:to_s ).map( &:strip )[ 1 ]
-        container_format_1_H[ K.sc_type ] = ""                                 # No folder info
-        container_format_1_H[ K.sc_indicator ] = "" 
+        container_format_1_H[ K.fmtr_tc_type ] = K.box
+        container_format_1_H[ K.fmtr_tc_indicator ] = input_record_A[ 0 ].split( /\s/ ).map( &:to_s ).map( &:strip )[ 1 ]
+        container_format_1_H[ K.fmtr_sc_type ] = ""                                 # No folder info
+        container_format_1_H[ K.fmtr_sc_indicator ] = "" 
         output_record_H[ K.level ] = K.file
         record_values << container_format_1_H   
         record_values << input_record_A[ 1 ]  
- #      container_format_1_H[ K.tc_type ] = K.undefined               The boxes on these style records, shouldn't bleed-over to the next record.
- #      container_format_1_H[ K.tc_indicator ] = K.undefined          BUT, this doesn't work because the '<<' operator copies JUST the point of container_format_1_H,
+ #      container_format_1_H[ K.fmtr_tc_type ] = K.undefined               The boxes on these style records, shouldn't bleed-over to the next record.
+ #      container_format_1_H[ K.fmtr_tc_indicator ] = K.undefined          BUT, this doesn't work because the '<<' operator copies JUST the point of container_format_1_H,
                                                                     # so setting the elements changes their value for when the pointer to the array is 
                                                                     # referenced below!
         container_format_1_H = initialize_container_format_1_H()    # Just do this to be save.
@@ -104,8 +104,8 @@ ARGF.each_line do |input_record|
         regexp = %r{^folder[s]? +}i
         if ( input_record_A[ 0 ] =~ regexp ) then                                    # Folder record, subject is in input_record_A[ 1 ]
             input_record_A[ 0 ].sub!( regexp, "" )
-            container_format_1_H[ K.sc_type ] = K.folder
-            container_format_1_H[ K.sc_indicator ] = input_record_A[ 0 ]
+            container_format_1_H[ K.fmtr_sc_type ] = K.folder
+            container_format_1_H[ K.fmtr_sc_indicator ] = input_record_A[ 0 ]
             output_record_H[ K.level ] = K.file
             record_values << container_format_1_H 
             record_values << input_record_A[ 1 ]              
@@ -116,10 +116,10 @@ ARGF.each_line do |input_record|
         end
     end
     
-    output_record_H[ K.record_indent_keys ] = []
-    output_record_H[ K.record_values ] = record_values
-    output_record_H[ K.record_num ] = "#{rec_cnt}"
-    output_record_H[ K.record_original ] = "#{input_record_save}"
+    output_record_H[ K.fmtr_record_indent_keys ] = []
+    output_record_H[ K.fmtr_record_values ] = record_values
+    output_record_H[ K.fmtr_record_num ] = "#{rec_cnt}"
+    output_record_H[ K.fmtr_record_original ] = "#{input_record_save}"
     puts output_record_H.to_json
 
 end
