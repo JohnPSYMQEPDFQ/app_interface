@@ -1,3 +1,4 @@
+require 'pp'
 module Se
     def Se.puts(*params)
         params.each do |e|
