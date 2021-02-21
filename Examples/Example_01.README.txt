@@ -1,5 +1,8 @@
+This is best read using a text-editor that can be set to NOT word-wrap.  
+(I don't have the patience to learn Markdown...) 
+
 This is an example of loading a simple text file into a Resource.
-It's only text.  No delimited records.   There a 4 record formats in the raw data:
+It's only text.  No delimited records.   There are 4 record formats in the raw data:
 
     1)  Series/subseries records
     2)  Indent right, to start a record group
