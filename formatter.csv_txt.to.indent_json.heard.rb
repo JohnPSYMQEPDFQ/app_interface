@@ -40,15 +40,15 @@ Folder 24; Contacts
 
 =end
 
-def initialize_container_format_1_H()
-    container_format_1_H = { K.fmtr_tc_type => K.undefined ,
-                                          K.fmtr_tc_indicator => K.undefined ,
-                                          K.fmtr_sc_type => K.undefined ,
-                                          K.fmtr_sc_indicator => K.undefined }
-    return container_format_1_H
+def initialize_fmtr_container_H()
+    fmtr_container_H = { K.fmtr_tc_type => K.undefined ,
+                         K.fmtr_tc_indicator => K.undefined ,
+                         K.fmtr_sc_type => K.undefined ,
+                         K.fmtr_sc_indicator => K.undefined }
+    return fmtr_container_H
 end
 
-container_format_1_H = initialize_container_format_1_H()
+fmtr_container_H = initialize_fmtr_container_H()
 rec_cnt = 0
 ARGF.each_line do |input_record|
 
@@ -80,34 +80,34 @@ ARGF.each_line do |input_record|
     end
 
     if ( input_record =~ /^box +[0-9]+ *$/i ) then           # Box record with no subject info.
-        container_format_1_H[ K.fmtr_tc_type ] = K.box
-        container_format_1_H[ K.fmtr_tc_indicator ] = input_record.split( /\s/ ).map( &:to_s ).map( &:strip )[ 1 ]
-        container_format_1_H[ K.fmtr_sc_type ] = K.undefined
-        container_format_1_H[ K.fmtr_sc_indicator ] = K.undefined 
+        fmtr_container_H[ K.fmtr_tc_type ] = K.box
+        fmtr_container_H[ K.fmtr_tc_indicator ] = input_record.split( /\s/ ).map( &:to_s ).map( &:strip )[ 1 ]
+        fmtr_container_H[ K.fmtr_sc_type ] = K.undefined
+        fmtr_container_H[ K.fmtr_sc_indicator ] = K.undefined 
         next
     end
 
     if ( input_record_A[ 0 ] =~ /^box [0-9]+$/i ) then                         # Box record with subject, subject is in input_record_A[ 1 ]
-        container_format_1_H[ K.fmtr_tc_type ] = K.box
-        container_format_1_H[ K.fmtr_tc_indicator ] = input_record_A[ 0 ].split( /\s/ ).map( &:to_s ).map( &:strip )[ 1 ]
-        container_format_1_H[ K.fmtr_sc_type ] = ""                                 # No folder info
-        container_format_1_H[ K.fmtr_sc_indicator ] = "" 
+        fmtr_container_H[ K.fmtr_tc_type ] = K.box
+        fmtr_container_H[ K.fmtr_tc_indicator ] = input_record_A[ 0 ].split( /\s/ ).map( &:to_s ).map( &:strip )[ 1 ]
+        fmtr_container_H[ K.fmtr_sc_type ] = ""                                 # No folder info
+        fmtr_container_H[ K.fmtr_sc_indicator ] = "" 
         output_record_H[ K.level ] = K.file
-        record_values << container_format_1_H   
+        record_values << fmtr_container_H   
         record_values << input_record_A[ 1 ]  
- #      container_format_1_H[ K.fmtr_tc_type ] = K.undefined               The boxes on these style records, shouldn't bleed-over to the next record.
- #      container_format_1_H[ K.fmtr_tc_indicator ] = K.undefined          BUT, this doesn't work because the '<<' operator copies JUST the point of container_format_1_H,
+ #      fmtr_container_H[ K.fmtr_tc_type ] = K.undefined               The boxes on these style records, shouldn't bleed-over to the next record.
+ #      fmtr_container_H[ K.fmtr_tc_indicator ] = K.undefined          BUT, this doesn't work because the '<<' operator copies JUST the point of fmtr_container_H,
                                                                     # so setting the elements changes their value for when the pointer to the array is 
                                                                     # referenced below!
-        container_format_1_H = initialize_container_format_1_H()    # Just do this to be save.
+        fmtr_container_H = initialize_fmtr_container_H()    # Just do this to be save.
     else
         regexp = %r{^folder[s]? +}i
         if ( input_record_A[ 0 ] =~ regexp ) then                                    # Folder record, subject is in input_record_A[ 1 ]
             input_record_A[ 0 ].sub!( regexp, "" )
-            container_format_1_H[ K.fmtr_sc_type ] = K.folder
-            container_format_1_H[ K.fmtr_sc_indicator ] = input_record_A[ 0 ]
+            fmtr_container_H[ K.fmtr_sc_type ] = K.folder
+            fmtr_container_H[ K.fmtr_sc_indicator ] = input_record_A[ 0 ]
             output_record_H[ K.level ] = K.file
-            record_values << container_format_1_H 
+            record_values << fmtr_container_H 
             record_values << input_record_A[ 1 ]              
         else 
             output_record_H[ K.level ] = K.recordgrp

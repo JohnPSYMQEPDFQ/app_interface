@@ -22,10 +22,10 @@ require 'class.ArchivesSpace.rb'
 #   GROUP: WOMAN
 #   Commissaries. Dining Car Department (2)
 
-container_rec = { K.fmtr_tc_type => K.undefined ,
-                  K.fmtr_tc_indicator => K.undefined ,
-                  K.fmtr_sc_type => K.undefined ,
-                  K.fmtr_sc_indicator => K.undefined }
+fmtr_container_H = { K.fmtr_tc_type => K.undefined ,
+                     K.fmtr_tc_indicator => K.undefined ,
+                     K.fmtr_sc_type => K.undefined ,
+                     K.fmtr_sc_indicator => K.undefined }
 rec_cnt = 0
 ARGF.each_line do |input_record|
 
@@ -63,39 +63,39 @@ ARGF.each_line do |input_record|
         next
     end
     if ( input_record =~ /^drawer /i ) then
-        container_rec[ K.fmtr_tc_type ] = K.object 
-        container_rec[ K.fmtr_tc_indicator ] = "Drawer " + input_record_A[ 1 ] 
+        fmtr_container_H[ K.fmtr_tc_type ] = K.object 
+        fmtr_container_H[ K.fmtr_tc_indicator ] = "Drawer " + input_record_A[ 1 ] 
         next
     end
     if ( input_record =~ /^box /i ) then
-        container_rec[ K.fmtr_tc_type ] = K.box
-        container_rec[ K.fmtr_tc_indicator ] = input_record_A[ 1 ] 
+        fmtr_container_H[ K.fmtr_tc_type ] = K.box
+        fmtr_container_H[ K.fmtr_tc_indicator ] = input_record_A[ 1 ] 
         next
     end
 
     
-    if ( container_rec[ K.fmtr_tc_type ] == K.object ) then
+    if ( fmtr_container_H[ K.fmtr_tc_type ] == K.object ) then
         match_O = input_record.match( /\s*\(([0-9]+)\)/ )   # Folder count pattern match
         if ( match_O ) then
             input_record.sub!( /\s*\(([0-9]+)\)/,"" )
-            container_rec[ K.fmtr_sc_type ] =  K.folder
-            container_rec[ K.fmtr_sc_indicator ] =  "Count " + match_O[ 1 ] 
+            fmtr_container_H[ K.fmtr_sc_type ] =  K.folder
+            fmtr_container_H[ K.fmtr_sc_indicator ] =  "Count " + match_O[ 1 ] 
         else
-            container_rec[ K.fmtr_sc_type ] =  K.folder
-            container_rec[ K.fmtr_sc_indicator ] =  "Count 1"
+            fmtr_container_H[ K.fmtr_sc_type ] =  K.folder
+            fmtr_container_H[ K.fmtr_sc_indicator ] =  "Count 1"
         end
     else
         regexp = %r{^folder\s+(?<folder_cnt>[0-9]+)\s+}i
         if (match_vars = input_record.match( regexp )) then
             input_record.gsub!( regexp, "")
-            container_rec[ K.fmtr_sc_type ] =  K.folder
-            container_rec[ K.fmtr_sc_indicator ] =  match_vars[:folder_cnt]
+            fmtr_container_H[ K.fmtr_sc_type ] =  K.folder
+            fmtr_container_H[ K.fmtr_sc_indicator ] =  match_vars[:folder_cnt]
         else
-            container_rec[ K.fmtr_sc_type ] = ""
-            container_rec[ K.fmtr_sc_indicator ] =  ""
+            fmtr_container_H[ K.fmtr_sc_type ] = ""
+            fmtr_container_H[ K.fmtr_sc_indicator ] =  ""
         end
     end
-    record_values << container_rec   #[0]
+    record_values << fmtr_container_H   #[0]
 
     ao_date_A = []
     loop do

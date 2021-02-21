@@ -131,11 +131,11 @@ ARGF.each_line do |input_record|
         
         input_record[ location_string ] = ""
         location_item_A = location_string[ 1..location_string.maxindex - 1 ].split( "," ).map( &:to_s ).map( &:strip )
-        container_format_1 = { K.fmtr_tc_type => K.undefined ,
-                               K.fmtr_tc_indicator => K.undefined ,
-                               K.fmtr_sc_type => "" ,
-                               K.fmtr_sc_indicator => "" 
-                             }
+        fmtr_container_H = { K.fmtr_tc_type => K.undefined ,
+                             K.fmtr_tc_indicator => K.undefined ,
+                             K.fmtr_sc_type => "" ,
+                             K.fmtr_sc_indicator => "" 
+                           }
         location_item_A.each do |location_item|
             k, v, extra = location_item.split.map( &:to_s ).map( &:strip )
 #           Se.puts "#{Se.lineno}: k=#{k}, v=#{v}, extra='#{extra}'"
@@ -151,42 +151,42 @@ ARGF.each_line do |input_record|
                     Se.puts input_record
                     raise
                 end
-                container_format_1[ K.fmtr_tc_type ] = K.box
-                container_format_1[ K.fmtr_tc_indicator ] = v
+                fmtr_container_H[ K.fmtr_tc_type ] = K.box
+                fmtr_container_H[ K.fmtr_tc_indicator ] = v
             when 'folder' 
                 if ( not v.integer? ) then
                     Se.puts "#{Se.lineno}: non-numeric Item number '#{v}'"
                     Se.puts input_record
                     raise
                 end   
-                if ( container_format_1[ K.fmtr_sc_type ] != "" ) then           
-                    Se.puts "#{Se.lineno}: container_format_1[ K.fmtr_sc_type ] = '#{container_format_1[ K.fmtr_sc_type ]}', should be blank." 
+                if ( fmtr_container_H[ K.fmtr_sc_type ] != "" ) then           
+                    Se.puts "#{Se.lineno}: fmtr_container_H[ K.fmtr_sc_type ] = '#{fmtr_container_H[ K.fmtr_sc_type ]}', should be blank." 
                     Se.puts input_record
                     raise                   
                 end
-                container_format_1[ K.fmtr_sc_type ] = K.folder
-                container_format_1[ K.fmtr_sc_indicator ] = v
+                fmtr_container_H[ K.fmtr_sc_type ] = K.folder
+                fmtr_container_H[ K.fmtr_sc_indicator ] = v
             when 'item' 
                 if ( not v.integer? ) then
                     Se.puts "#{Se.lineno}: non-numeric Item number '#{v}'"
                     Se.puts input_record
                     raise
                 end
-                if ( container_format_1[ K.fmtr_sc_type ] != "" ) then
-                    Se.puts "#{Se.lineno}: container_format_1[ K.fmtr_sc_type ] = '#{container_format_1[ K.fmtr_sc_type ]}', should be blank." 
+                if ( fmtr_container_H[ K.fmtr_sc_type ] != "" ) then
+                    Se.puts "#{Se.lineno}: fmtr_container_H[ K.fmtr_sc_type ] = '#{fmtr_container_H[ K.fmtr_sc_type ]}', should be blank." 
                     Se.puts input_record
                     raise                   
                 end                
-                container_format_1[ K.fmtr_sc_type ] = K.object   # 'Item'
-                container_format_1[ K.fmtr_sc_indicator ] = v
+                fmtr_container_H[ K.fmtr_sc_type ] = K.object   # 'Item'
+                fmtr_container_H[ K.fmtr_sc_indicator ] = v
             when 'shelf'
                 next
             else
                 Se.puts "#{Se.lineno}: Unknown location type=#{k}"
             end
         end
-        if ( container_format_1[ K.fmtr_tc_type ] == K.box ) then    
-            output_record_H[ K.fmtr_record][ K.fmtr_container ] = container_format_1
+        if ( fmtr_container_H[ K.fmtr_tc_type ] == K.box ) then    
+            output_record_H[ K.fmtr_record][ K.fmtr_container ] = fmtr_container_H
             location_item_A = location_item_A.grep_v( /^(box|folder|item) /i )  # leave the 'shelf' in there.
         end
         if ( location_item_A.maxindex >= 0 ) then

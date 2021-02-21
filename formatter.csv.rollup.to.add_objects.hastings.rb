@@ -80,17 +80,17 @@ def put_record( a1, a2 )
 #   else
 #       stringer = "#{ a1[ 0 ]} through #{a2[ 0 ]}"
 #   end
-#   container_rec = { K.fmtr_tc_type => K.box ,
-#                     K.fmtr_tc_indicator => box_id ,
-#                     K.fmtr_sc_type => K.folder ,
-#                     K.fmtr_sc_indicator' => stringer ,
-#                   }
+#   fmtr_container_H = { K.fmtr_tc_type => K.box ,
+#                        K.fmtr_tc_indicator => box_id ,
+#                        K.fmtr_sc_type => K.folder ,
+#                        K.fmtr_sc_indicator' => stringer ,
+#                      }
 
     output_record_H = {}
     output_record_H[ K.fmtr_record ] = {}
     output_record_H[ K.fmtr_record ][ K.level ] = K.file
     output_record_H[ K.fmtr_record ][ K.title ] = a1[ 1 ]
-#   output_record_H[ K.fmtr_record ][ K.fmtr_container ] = container_rec
+#   output_record_H[ K.fmtr_record ][ K.fmtr_container ] = fmtr_container_H
     output_record_H[ K.fmtr_record ][ K.dates ] = [ ]
 
     if ( a1[ 2 ] != "" ) then

@@ -114,11 +114,11 @@ Record_Grouping_Indent.new_with_flush( method( :put_record ), method( :put_inden
         else
             stringer = "#{cnt} - #{box_folder_cnt__H[ box_num ]}"
         end
-        container_rec = { K.fmtr_tc_type => K.box ,
-                          K.fmtr_tc_indicator => box_num ,
-                          K.fmtr_sc_type => K.folder ,
-                          K.fmtr_sc_indicator => stringer  }
-        input_record__H[ K.fmtr_record_values ] = [ a1[0], container_rec ]
+        fmtr_container_H = { K.fmtr_tc_type => K.box ,
+                             K.fmtr_tc_indicator => box_num ,
+                             K.fmtr_sc_type => K.folder ,
+                             K.fmtr_sc_indicator => stringer  }
+        input_record__H[ K.fmtr_record_values ] = [ a1[0], fmtr_container_H ]
         input_record__H[ K.fmtr_record_num ] = "#{$.}"
         input_record__H[ K.fmtr_record_original ] = "#{input_record}"
         rgi_O.add_record( input_record__H )
