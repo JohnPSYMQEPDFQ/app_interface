@@ -70,8 +70,6 @@ end.parse!  # Bang because ARGV is altered
 
 indent_A = []
 ARGF.each_line do |input_record|
-
-
     if ( cmdln_option[ 'r' ] and $. > cmdln_option[ 'r' ] ) then 
         break
     end

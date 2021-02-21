@@ -282,10 +282,13 @@ for argv in ARGV do
             when K.fmtr_right then
                 net_indent_cnt += 1
                 parent_ref_stack_A.push( last_AO_uri_created )
+                Se.puts "New parent: #{last_AO_uri_created}"
                 next
             when K.fmtr_left then
                 net_indent_cnt += -1
-                last_AO_uri_created=parent_ref_stack_A.pop( 1 )[ 0 ]
+                parent_ref_stack_A.pop( 1 )
+                last_AO_uri_created = parent_ref_stack_A[ parent_ref_stack_A.maxindex ]
+                Se.puts "New parent: #{last_AO_uri_created}"
                 next
             else
                 Se.puts "#{Se.lineno}: Invalid indent direction '#{input_record_H[ K.fmtr_indent ][ 0 ]}'"

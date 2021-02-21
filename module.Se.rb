@@ -6,14 +6,15 @@ module Se
     end
     def Se.pp(*params)
         params.each do |e|
-            $stderr.puts "#{Se.lineno(3)}:" + PP.pp(e, '')
+            $stderr.puts PP.pp(e, '')
         end
     end
     def Se.p(*params)
         params.each do |e|
-            $stderr.puts "#{Se.lineno(3)}:" + e.inspect
+            $stderr.puts e.inspect
         end
     end
+    
     def Se.pov( p1_O )  # Print Object's Variables
         Se.puts "#{Se.lineno(1)}:#{p1_O.class.name} Variables:"
         p1_O.instance_variables.map{|var| Se.puts [ var, p1_O.instance_variable_get( var ) ].join( "=" )}
@@ -25,5 +26,16 @@ module Se
     def Se.lineno( e = 0 )
         return caller[e].sub(/^.*\//,"").sub(/:in .* in /,":in ")
     end
+
+    def Se.pp_stack()
+        $stderr.puts PP.pp(Se.stack, '')
+    end
+    def Se.stack()
+        a = []
+        caller.each do |e|
+            a << e.sub(/^.*\//,"").sub(/:in .* in /,":in ")
+        end
+        return a
+    end    
 end
 
