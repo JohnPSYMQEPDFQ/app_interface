@@ -62,37 +62,37 @@ ruby -w -S archivesspace.add_objects.rb --res-num NNN [--update] central_pacific
 
 The output will looks something like:
 
-archivesspace.add_objects.rb:223:in `<main>': initial_parent_AO_uri = /repositories/2/resources/126     <<<<  The default parent of all records.
+archivesspace.add_objects.rb:223:in '<main>': initial_parent_AO_uri = /repositories/2/resources/126     <<<<  The default parent of all records.
 /repositories/2/archival_objects/167792 'Series 1: Financial Records'                                   <<<<  A list of all the current AO's in the resource.
 /repositories/2/archival_objects/167793 'Series 2: Engineering Department Records'
 /repositories/2/archival_objects/167800 'Subseries 1: Invoices and Vouchers'
 /repositories/2/archival_objects/167801 'Subseries 2: Payroll'
 ...
-archivesspace.add_objects.rb:242:in <main>': Delete top_container: /repositories/2/top_containers/1666  <<<<  Any unused "top containers" are deleted.
+archivesspace.add_objects.rb:242:in '<main>': Delete top_container: /repositories/2/top_containers/1666  <<<<  Any unused "top containers" are deleted.
 ...
-archivesspace.add_objects.rb:299:in <main>': Rec:1: '{"__RECORD__":{"level":"__NEW_PARENT__","title":"Series 1: Financial Records"}}'               <<< A "new parent" input record.
+archivesspace.add_objects.rb:299:in '<main>': Rec:1: '{"__RECORD__":{"level":"__NEW_PARENT__","title":"Series 1: Financial Records"}}'              <<< A "new parent" input record.
 New parent: /repositories/2/archival_objects/167792 'Series 1: Financial Records'                                                                   <<< The matched uri
 
-archivesspace.add_objects.rb:299:in <main>': Rec:2: '{"__RECORD__":{"level":"file","notes":[{"jsonmodel_type":"note_singlepart","ingest_problem":"","type":"physloc","publish":true,"content":["Shelf I2.200.J6"],"label":"Statewide Museum Collections Center"}],"__CONTAINER__":{"__TC_TYPE__":"Box","__TC_INDICATOR__":"299","__SC_TYPE__":"object","__SC_INDICATOR__":"965"},"title":"Abstract of disbursements, [Volume] Jan. 1910 - Dec. 1911 "}}'
-class.Archivesspace.TopContainer.rb:133:in `store': Created TopContainer, uri = /repositories/2/top_containers/1739                                 <<<  Created a "top container" for record 2
-class.Archivesspace.ArchivalObject.rb:167:in `store': Created ArchivalObject, uri = /repositories/2/archival_objects/167808                         <<<  Created a "AO" for record 2
+archivesspace.add_objects.rb:299:in '<main>': Rec:2: '{"__RECORD__":{"level":"file","notes":[{"jsonmodel_type":"note_singlepart","ingest_problem":"","type":"physloc","publish":true,"content":["Shelf I2.200.J6"],"label":"Statewide Museum Collections Center"}],"__CONTAINER__":{"__TC_TYPE__":"Box","__TC_INDICATOR__":"299","__SC_TYPE__":"object","__SC_INDICATOR__":"965"},"title":"Abstract of disbursements, [Volume] Jan. 1910 - Dec. 1911 "}}'
+class.Archivesspace.TopContainer.rb:133:in 'store': Created TopContainer, uri = /repositories/2/top_containers/1739                                 <<<  Created a "top container" for record 2
+class.Archivesspace.ArchivalObject.rb:167:in 'store': Created ArchivalObject, uri = /repositories/2/archival_objects/167808                         <<<  Created a "AO" for record 2
 
-archivesspace.add_objects.rb:299:in <main>': Rec:3: '{"__RECORD__":{"level":"recordgrp","title":"Abstract of earnings and operating expenses"}}'    <<<  A new "record group"
-class.Archivesspace.ArchivalObject.rb:167:in `store': Created ArchivalObject, uri = /repositories/2/archival_objects/167809                         <<<  Created the AO
-archivesspace.add_objects.rb:279:in <main>': Rec:4: '{"__INDENT__":["__RIGHT__","Abstract of earnings and operating expenses"]}'                    <<<  The following "Indent"
+archivesspace.add_objects.rb:299:in '<main>': Rec:3: '{"__RECORD__":{"level":"recordgrp","title":"Abstract of earnings and operating expenses"}}'   <<<  A new "record group"
+class.Archivesspace.ArchivalObject.rb:167:in 'store': Created ArchivalObject, uri = /repositories/2/archival_objects/167809                         <<<  Created the AO
+archivesspace.add_objects.rb:279:in '<main>': Rec:4: '{"__INDENT__":["__RIGHT__","Abstract of earnings and operating expenses"]}'                   <<<  The following "Indent"
 New parent: /repositories/2/archival_objects/167809                                                                                                 <<<  So the "New parent" uri is now 167809
 
-archivesspace.add_objects.rb:299:in <main>': Rec:5: '{"__RECORD__":{"level":"file","notes":[{"jsonmodel_type":"note_singlepart","ingest_problem":"","type":"physloc","publish":true,"content":["Shelf I2.300.H10"],"label":"Statewide Museum Collections Center"}],"__CONTAINER__":{"__TC_TYPE__":"Box","__TC_INDICATOR__":"6","__SC_TYPE__":"","__SC_INDICATOR__":""},"title":"[Volume] 1864 - 1870 "}}'
-class.Archivesspace.TopContainer.rb:133:in `store': Created TopContainer, uri = /repositories/2/top_containers/1740                                 <<<  Created another "top container" for record 5
+archivesspace.add_objects.rb:299:in '<main>': Rec:5: '{"__RECORD__":{"level":"file","notes":[{"jsonmodel_type":"note_singlepart","ingest_problem":"","type":"physloc","publish":true,"content":["Shelf I2.300.H10"],"label":"Statewide Museum Collections Center"}],"__CONTAINER__":{"__TC_TYPE__":"Box","__TC_INDICATOR__":"6","__SC_TYPE__":"","__SC_INDICATOR__":""},"title":"[Volume] 1864 - 1870 "}}'
+class.Archivesspace.TopContainer.rb:133:in 'store': Created TopContainer, uri = /repositories/2/top_containers/1740                                 <<<  Created another "top container" for record 5
 
-class.Archivesspace.ArchivalObject.rb:167:in `store': Created ArchivalObject, uri = /repositories/2/archival_objects/167810
-archivesspace.add_objects.rb:299:in <main>': Rec:6: '{"__RECORD__":{"level":"file","notes":[{"jsonmodel_type":"note_singlepart","ingest_problem":"","type":"physloc","publish":true,"content":["Item 252, Shelf I2.200.C10"],"label":"Statewide Museum Collections Center"}],"title":"[Volume] 1876 - 1879 "}}'
-class.Archivesspace.ArchivalObject.rb:167:in `store': Created ArchivalObject, uri = /repositories/2/archival_objects/167811
-archivesspace.add_objects.rb:299:in <main>': Rec:7: '{"__RECORD__":{"level":"file","notes":[{"jsonmodel_type":"note_singlepart","ingest_problem":"","type":"physloc","publish":true,"content":["Item 253, Shelf I2.200.C10"],"label":"Statewide Museum Collections Center"}],"title":"[Volume] 1880 - 1882 "}}'
-class.Archivesspace.ArchivalObject.rb:167:in `store': Created ArchivalObject, uri = /repositories/2/archival_objects/167812
-archivesspace.add_objects.rb:299:in <main>': Rec:8: '{"__RECORD__":{"level":"file","notes":[{"jsonmodel_type":"note_singlepart","ingest_problem":"","type":"physloc","publish":true,"content":["Item 254, Shelf I2.200.C10"],"label":"Statewide Museum Collections Center"}],"title":"[Volume] 1883 - 1885 "}}'
-class.Archivesspace.ArchivalObject.rb:167:in `store': Created ArchivalObject, uri = /repositories/2/archival_objects/167813
-archivesspace.add_objects.rb:279:in <main>': Rec:9: '{"__INDENT__":["__LEFT__","<:"]}'                                                              <<< End of "record group"
+class.Archivesspace.ArchivalObject.rb:167:in 'store': Created ArchivalObject, uri = /repositories/2/archival_objects/167810
+archivesspace.add_objects.rb:299:in '<main>': Rec:6: '{"__RECORD__":{"level":"file","notes":[{"jsonmodel_type":"note_singlepart","ingest_problem":"","type":"physloc","publish":true,"content":["Item 252, Shelf I2.200.C10"],"label":"Statewide Museum Collections Center"}],"title":"[Volume] 1876 - 1879 "}}'
+class.Archivesspace.ArchivalObject.rb:167:in 'store': Created ArchivalObject, uri = /repositories/2/archival_objects/167811
+archivesspace.add_objects.rb:299:in '<main>': Rec:7: '{"__RECORD__":{"level":"file","notes":[{"jsonmodel_type":"note_singlepart","ingest_problem":"","type":"physloc","publish":true,"content":["Item 253, Shelf I2.200.C10"],"label":"Statewide Museum Collections Center"}],"title":"[Volume] 1880 - 1882 "}}'
+class.Archivesspace.ArchivalObject.rb:167:in 'store': Created ArchivalObject, uri = /repositories/2/archival_objects/167812
+archivesspace.add_objects.rb:299:in '<main>': Rec:8: '{"__RECORD__":{"level":"file","notes":[{"jsonmodel_type":"note_singlepart","ingest_problem":"","type":"physloc","publish":true,"content":["Item 254, Shelf I2.200.C10"],"label":"Statewide Museum Collections Center"}],"title":"[Volume] 1883 - 1885 "}}'
+class.Archivesspace.ArchivalObject.rb:167:in 'store': Created ArchivalObject, uri = /repositories/2/archival_objects/167813
+archivesspace.add_objects.rb:279:in '<main>': Rec:9: '{"__INDENT__":["__LEFT__","<:"]}'                                                             <<< End of "record group"
 New parent: /repositories/2/archival_objects/167792                                                                                                 <<< So the "new parent" uri is the "Series 1:"
-archivesspace.add_objects.rb:299:in <main>': Rec:10: '{"__RECORD__":{"level":"file","notes":[{"jsonmodel_type":"note_singlepart","ingest_problem":"","type":"physloc","publish":true,"content":["Shelf I2.200.C7"],"label":"Statewide Museum Collections Center"}],"__CONTAINER__":{"__TC_TYPE__":"Box","__TC_INDICATOR__":"208","__SC_TYPE__":"object","__SC_INDICATOR__":"653"},"title":"Abstracts of cash disbursements, Sacramento Division, [Volume] Apr. - May 1912 "}}'
-class.Archivesspace.TopContainer.rb:133:in `store': Created TopContainer, uri = /repositories/2/top_containers/1741
+archivesspace.add_objects.rb:299:in '<main>': Rec:10: '{"__RECORD__":{"level":"file","notes":[{"jsonmodel_type":"note_singlepart","ingest_problem":"","type":"physloc","publish":true,"content":["Shelf I2.200.C7"],"label":"Statewide Museum Collections Center"}],"__CONTAINER__":{"__TC_TYPE__":"Box","__TC_INDICATOR__":"208","__SC_TYPE__":"object","__SC_INDICATOR__":"653"},"title":"Abstracts of cash disbursements, Sacramento Division, [Volume] Apr. - May 1912 "}}'
+class.Archivesspace.TopContainer.rb:133:in 'store': Created TopContainer, uri = /repositories/2/top_containers/1741
