@@ -1,0 +1,258 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=Generator content="Microsoft Word 15 (filtered)">
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+@font-face
+	{font-family:Cambria;
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin-top:0in;
+	margin-right:0in;
+	margin-bottom:10.0pt;
+	margin-left:0in;
+	line-height:115%;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;}
+h1
+	{mso-style-link:"Heading 1 Char";
+	margin-top:12.0pt;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:0in;
+	line-height:115%;
+	page-break-after:avoid;
+	font-size:16.0pt;
+	font-family:"Cambria",serif;
+	color:#365F91;
+	font-weight:normal;}
+p.MsoListParagraph, li.MsoListParagraph, div.MsoListParagraph
+	{margin-top:0in;
+	margin-right:0in;
+	margin-bottom:10.0pt;
+	margin-left:.5in;
+	line-height:115%;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;}
+p.MsoListParagraphCxSpFirst, li.MsoListParagraphCxSpFirst, div.MsoListParagraphCxSpFirst
+	{margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.5in;
+	line-height:115%;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;}
+p.MsoListParagraphCxSpMiddle, li.MsoListParagraphCxSpMiddle, div.MsoListParagraphCxSpMiddle
+	{margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.5in;
+	line-height:115%;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;}
+p.MsoListParagraphCxSpLast, li.MsoListParagraphCxSpLast, div.MsoListParagraphCxSpLast
+	{margin-top:0in;
+	margin-right:0in;
+	margin-bottom:10.0pt;
+	margin-left:.5in;
+	line-height:115%;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;}
+span.Heading1Char
+	{mso-style-name:"Heading 1 Char";
+	mso-style-link:"Heading 1";
+	font-family:"Cambria",serif;
+	color:#365F91;}
+.MsoChpDefault
+	{font-size:10.0pt;
+	font-family:"Calibri",sans-serif;}
+@page WordSection1
+	{size:11.0in 8.5in;
+	margin:.5in .5in .5in .5in;}
+div.WordSection1
+	{page:WordSection1;}
+ /* List Definitions */
+ ol
+	{margin-bottom:0in;}
+ul
+	{margin-bottom:0in;}
+-->
+</style>
+
+</head>
+
+<body lang=EN-US style='word-wrap:break-word'>
+
+<div class=WordSection1>
+
+<h1 align=center style='text-align:center'>ArchivesSpace Backend App interface</h1>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>This code was written (over a two-year period) to support
+the California State Railroad Museum Library migration of data to
+ArchivesSpace.</p>
+
+<p class=MsoNormal>The basic requirement was:</p>
+
+<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in'>1)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>Data is
+located in some database, spreadsheet, or other text-oriented document.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in'>2)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>The data
+needs to edited and (sometimes) grouped by &quot;subjects&quot; (for
+indentation purposes. The series, subseries, group things...) </p>
+
+<p class=MsoListParagraphCxSpLast style='text-indent:-.25in'>3)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>The data
+needs to be loaded into ArchivesSpace and attached to an existing Resource,
+sometimes as children of an existing Archival-Object.</p>
+
+<p class=MsoNormal>The basic solution was:</p>
+
+<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in'>1)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>The data
+would be extracted from the &quot;other place”, delimited with semicolons.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in'>2)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>The data
+would be edited (if needed) and &quot;lightly&quot; formatted using a
+&quot;good&quot; text-editor (not notepad or wordpad).</p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in'>3)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>The data
+would be passed through a custom formatter that would (depending on the data):</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:.75in;text-indent:-.25in'>a)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>Convert
+free-format dates into Aspace friendly dates.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:.75in;text-indent:-.25in'>b)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>Assign
+&quot;top-container&quot; info to the records (stuff like: box numbers and
+folder numbers). </p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:.75in;text-indent:-.25in'>c)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>Create
+&quot;note data&quot; with information like: &quot;I couldn't format a
+date&quot; -or- &quot;here's the original record&quot;.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:.75in;text-indent:-.25in'>d)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>Split the
+record data into &quot;Group Key Data&quot; and &quot;Not Group Key data&quot;
+(two sets of data).</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:.75in;text-indent:-.25in'>e)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>Output a
+jsonized record for input into the &quot;Group Indenter Program&quot; or the
+&quot;Archival-Object Loader&quot; program.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in'>4)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>If the
+data was &quot;indent aware&quot;, the file from step 3 was passed into the
+&quot;Group Indenter Program&quot; which:</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:.75in;text-indent:-.25in'>a)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>sorted the
+data (actually this was done with Unix 'sort' but was easier to type here).</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:.75in;text-indent:-.25in'>b)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>Process
+the &quot;Group Key Data&quot; (see 3e) and create &quot;Indent Right&quot; or
+&quot;Indent Left&quot; records with group   <br>
+        sequencing numbers (like:  Series 1.2.7: Southern Pacific. Locomotives.
+Steam Engines</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:.75in;text-indent:-.25in'>c)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>Output the
+record data (and records from 4b) in processing order.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in'>5)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>Load the
+file from Step 4 (or 3, if grouping wasn't needed) into ArchivesSpace, which
+does:</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:.75in;text-indent:-.25in'>a)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>Get the
+Resource Record and (optionally) an existing Archival-Object record to attach
+the new records to (as children).<br>
+        This initial parent-record is added to a parent-stack.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:.75in;text-indent:-.25in'>b)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>Read each
+input record.   Determine if it's a regular data record or an &quot;indent
+right/left&quot; record (see 4b).</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;text-indent:-.25in'>i)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>For
+a regular data record:</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.25in;text-indent:-.25in'>(1)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp; </span>Initialize a new
+Archival-Object record.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.25in;text-indent:-.25in'>(2)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp; </span>Look-up the
+top-container data and &quot;post&quot; a new top-container record (if needed)</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.25in;text-indent:-.25in'>(3)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp; </span>Store the new or
+existing top-container &quot;refid&quot; in the initialize AO record.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.25in;text-indent:-.25in'>(4)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp; </span>Create any note and
+date sub-records in the AO records.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.25in;text-indent:-.25in'>(5)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp; </span>Store the parent-refid
+in the initialized Archival-Object record.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.25in;text-indent:-.25in'>(6)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp; </span>&quot;Post&quot; the
+new Archival-Object record.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;text-indent:-.25in'>ii)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span>For an
+&quot;Indent Right&quot; record:</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.25in;text-indent:-.25in'>(1)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp; </span>Initialize a new
+Archival-Object record.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.25in;text-indent:-.25in'>(2)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp; </span>Store the parent-ref
+in the initialized Archival-Object record.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.25in;text-indent:-.25in'>(3)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp; </span>&quot;Post&quot; the
+new Archival-Object record.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.25in;text-indent:-.25in'>(4)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp; </span>Push the (new created)
+uri of this record onto the parent-stack.</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;text-indent:-.25in'>iii)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp; </span>For an
+&quot;Indent Left&quot; record:</p>
+
+<p class=MsoListParagraphCxSpLast style='margin-left:1.25in;text-indent:-.25in'>(1)<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp; </span>Pop the parent-stack.</p>
+
+<p class=MsoNormal>That's basically it.</p>
+
+</div>
+
+</body>
+
+</html>
