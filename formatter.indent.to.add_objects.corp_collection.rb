@@ -8,6 +8,7 @@ Abbreviations,  AO = archival object (Everything's an AO, but there's also uri "
                 _A = Array
                 _I = Index (of Array)
                 _O = Object
+                _G = Global
                _0R = Zero Relative
 
 Usage: format_for_add_object.rb --help
@@ -29,23 +30,41 @@ require 'class.formatter.Record_Grouping_Indent.rb'
 def put_indent( level_number_A, level_title_A )
     output_record_H={}
     output_record_H[ K.fmtr_record ] = {}
-    case level_number_A.maxindex 
-    when -1
+    case level_number_A.length 
+    when 0
         Se.puts "#{Se.lineno}: =============================="
         Se.puts "Wasn't expecting param1 level_number_A to be empty"
         raise
-    when 0
-        output_record_H[ K.fmtr_record ][ K.level ] = K.series
-        output_record_H[ K.fmtr_record ][ K.title ] = "Series #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
-        output_record_H[ K.fmtr_record ][ K.component_id ] = level_number_A.join( "." )
     when 1
+        output_record_H[ K.fmtr_record ][ K.level ] = K.series
+        stringer = "Series"
+        if ( level_number_A.length <= $cmdln_option_G[ :max_levels ] ) then
+            stringer += " #{level_number_A.join( "." )}" 
+            output_record_H[ K.fmtr_record ][ K.component_id ] = level_number_A.join( "." )
+        end
+        stringer += ": #{level_title_A.join( ". " )}"  
+        output_record_H[ K.fmtr_record ][ K.title ] = stringer
+    
+    when 2 .. $cmdln_option_G[ :max_series ] 
         output_record_H[ K.fmtr_record ][ K.level ] = K.subseries
-        output_record_H[ K.fmtr_record ][ K.title ] = "Subseries #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
-        output_record_H[ K.fmtr_record ][ K.component_id ] = level_number_A.join( "." )
+        stringer = "Subseries"
+        if ( level_number_A.length <= $cmdln_option_G[ :max_levels ] ) then
+            stringer += " #{level_number_A.join( "." )}" 
+            output_record_H[ K.fmtr_record ][ K.component_id ] = level_number_A.join( "." ) 
+        end
+        stringer += ": #{level_title_A.join( ". " )}"  
+        output_record_H[ K.fmtr_record ][ K.title ] = stringer        
     else     
         output_record_H[ K.fmtr_record ][ K.level ] = K.recordgrp
-        output_record_H[ K.fmtr_record ][ K.title ] = "#{level_title_A.join( ". " )}" 
+        stringer = ""
+        if ( level_number_A.length <= $cmdln_option_G[ :max_levels ] )
+            stringer += "#{level_number_A.join( "." )}: " 
+            output_record_H[ K.fmtr_record ][ K.component_id ] = level_number_A.join( "." ) 
+        end
+        stringer += "#{level_title_A.join( ". " )}"
+        output_record_H[ K.fmtr_record ][ K.title ] = stringer
     end
+    output_record_H[ K.fmtr_record ][ K.title ]
     puts output_record_H.to_json
 end
 
@@ -125,28 +144,42 @@ END {}
 
 myself_name = File.basename( $0 )
 
-cmdln_option = { "stack-size" => 2, "last-record-num" => nil }
+$cmdln_option_G = { :min_group_size => 5, 
+                    :max_series => 2,
+                    :max_levels => nil,
+                    :r => nil }
 OptionParser.new do |option|
-    option.banner = "Usage: #{myself_name} [ --stack-size n ] [--last-record-num n ]"
-    option.on( "--stack-size n", OptionParser::DecimalInteger, "Zero relative stack size ( default = 2 )" ) do |opt_arg|
-        cmdln_option[ 'stack-size' ] = opt_arg
+    option.banner = "Usage: #{myself_name} [options] [file]"
+    option.on( "-g n", "--min-group-size n", OptionParser::DecimalInteger, "Min records in a Series/Subseries/Record-group (default = 5)" ) do |opt_arg|
+        $cmdln_option_G[ :min_group_size ] = opt_arg
     end
-    option.on( "--last-record-num n", OptionParser::DecimalInteger, "Stop after record N" ) do |opt_arg|
-        cmdln_option[ 'last-record-num' ] = opt_arg
+    option.on( "-s n", "--max-series n", OptionParser::DecimalInteger, "Max number of Series/Subseries (default = 2)" ) do |opt_arg|
+        $cmdln_option_G[ :max_series ] = opt_arg
     end
-    option.on( "-h","--help" ) do
+    option.on( "-l n", "--max-levels n", OptionParser::DecimalInteger, "Max number of N.N.N things to show (default --max-series)" ) do |opt_arg|
+        $cmdln_option_G[ :max_levels ] = opt_arg
+    end
+    option.on( "-r n", OptionParser::DecimalInteger, "Stop after N input records" ) do |opt_arg|
+        $cmdln_option_G[ :r ] = opt_arg
+    end
+    option.on( "-h", "--help" ) do
         warn option
         exit
     end
 end.parse!  # Bang because ARGV is altered
-last_record_num = cmdln_option[ 'last-record-num' ]
+$cmdln_option_G[ :min_group_size ] -= 1                   # min-group-size is zero relative.
+$cmdln_option_G[ :min_group_size ] = 0 if ( $cmdln_option_G[ :min_group_size ] < 0 )
 
-Record_Grouping_Indent.new_with_flush( method( :put_record ), method( :put_indent ), cmdln_option[ 'stack-size' ] ) do |rgi_O|
+if ( not $cmdln_option_G[ :max_levels] ) then
+    $cmdln_option_G[ :max_levels ] = $cmdln_option_G[ :max_series]
+end
+
+Record_Grouping_Indent.new_with_flush( method( :put_record ), method( :put_indent ), $cmdln_option_G[ :min_group_size ] ) do |rgi_O|
 
     ARGF.each_line do |input_record|
 
         input_record_H = JSON.parse( input_record )
-        if ( ! last_record_num.nil? and $. > last_record_num ) then 
+        if ( $cmdln_option_G[ :r ] and $. > $cmdln_option_G[ :r ] ) then 
             break
         end
 

@@ -8,16 +8,36 @@ require 'class.String.extend.rb'
 require 'module.Se.rb'
 require 'module.ArchivesSpace.Konstants.rb'
 
+myself_name = File.basename( $0 )
+
+$cmdln_option_G = { :max_levels => 5,
+                    :r => nil }
+OptionParser.new do |option|
+    option.banner = "Usage: #{myself_name} [options] [file]"
+    option.on( "-l n", "--max-levels n", OptionParser::DecimalInteger, "Max number of level to group on (default 5)" ) do |opt_arg|
+        $cmdln_option_G[ :max_levels ] = opt_arg
+    end
+    option.on( "-r n", OptionParser::DecimalInteger, "Stop after N input records" ) do |opt_arg|
+        $cmdln_option_G[ :r ] = opt_arg
+    end
+    option.on( "-h", "--help" ) do
+        warn option
+        exit
+    end
+end.parse!  # Bang because ARGV is altered
+$cmdln_option_G[ :max_levels ] -= 1                   # :max_levels is zero relative.
+$cmdln_option_G[ :max_levels ] = 1 if ( $cmdln_option_G[ :max_levels ] < 1 )
+
 output_record_H = {}
 
 #   Record ID;Subject Heading;General Heading Note;Title;Number;Date;Geographic Location;-Corporate Name;Personal Name
 #   0         1               2                    3     4      5    6                   7               8
 ARGF.each_line do |input_record|
 
+    if ( $cmdln_option_G[ :r ] and $. > $cmdln_option_G[ :r ] ) then 
+        break
+    end
 
-#   if ( $. > 10 ) then 
-#       break
-#   end
     input_record.chomp!
     if ( input_record.match?( /^\s*$/ ) ) then
         next
@@ -131,7 +151,7 @@ ARGF.each_line do |input_record|
         stringer=a2.pop( 1 )[ 0 ]
         got_record = ( got_record or stringer != "" )
         record_values.unshift( stringer )
-        break if ( got_record and a2.maxindex < 4 ) 
+        break if ( got_record and a2.maxindex < $cmdln_option_G[ :max_levels ] ) 
     end
 
     indent_keys = [ ] 
@@ -163,4 +183,5 @@ ARGF.each_line do |input_record|
     output_record_H[ K.fmtr_record_original ] = "#{input_record}"
     puts output_record_H.to_json
 end
+Se.puts "#{Se.lineno}: The output from #{myself_name} SHOULD BE SORTED for the indenter program!"
 #p stack_of_recs
