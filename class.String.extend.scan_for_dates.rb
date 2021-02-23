@@ -13,8 +13,8 @@ class String
             raise
         end
         if ( param_H.key?( :date_format ) ) then
-            if ( param_H[ :date_format ] ) then
-                return scan_for_dates_mm_dd_yyyy( param_H )
+            if ( param_H[ :date_format ] == "mmm_dd_yyyy" ) then
+                return scan_for_dates_mmm_dd_yyyy( param_H )
             else
                 Se.puts "#{Se.lineno}: Unknown date format '#{param_H[ :date_format ]}' to scan for."
                 raise
@@ -24,7 +24,7 @@ class String
         raise
     end
 
-    def scan_for_dates_mm_dd_yyyy( param_H )
+    def scan_for_dates_mmm_dd_yyyy( param_H )
         if ( not param_H.is_a?( Hash ) ) then
             Se.puts "#{Se.lineno}: Expected param to be a type HASH."
             Se.pp param_H
@@ -179,5 +179,5 @@ class String
         end 
         return output_date_A 
     end
-    private :scan_for_dates_mm_dd_yyyy
+    private :scan_for_dates_mmm_dd_yyyy
 end
