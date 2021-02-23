@@ -82,7 +82,7 @@ class String
         output_date_A = []
         scan_O.each_with_index do |row, r_idx| 
 #           p row.join(" | ")
-            date_delimiter = row[ scan_idx_0R_H[ :leading_delimiter ]]
+            leading_delimiter = row[ scan_idx_0R_H[ :leading_delimiter ]]
             whole_replace_string = row[ scan_idx_0R_H[ :whole_replace_string ]]
             from_thru_date_A_A = []
             if ( row[ scan_idx_0R_H[ :single_date ]] ) then
@@ -166,12 +166,12 @@ class String
             when 0
         #       Se.puts "#{Se.lineno}: bad date: #{r_idx},#{ft_idx}: #{whole_replace_string} Not converted"
             when 1
-                output_date_A << [ date_delimiter + whole_replace_string, converted_date_A ]
+                output_date_A << [ leading_delimiter + whole_replace_string, converted_date_A ]
             when 2
                 if ( converted_date_A[ 0 ][ 1 ] > converted_date_A[ 1 ][ 1 ] ) then
                     Se.puts "#{Se.lineno}: bad date: #{r_idx},#{ft_idx}: #{whole_replace_string} From date > thru date"
                 else
-                    output_date_A << [ date_delimiter + whole_replace_string, converted_date_A ]
+                    output_date_A << [ leading_delimiter + whole_replace_string, converted_date_A ]
                 end
             else
         #       Se.puts "#{Se.lineno}: bad date: #{r_idx},#{ft_idx}: #{whole_replace_string} converted_date_A.length = #{converted_date_A.length}"
