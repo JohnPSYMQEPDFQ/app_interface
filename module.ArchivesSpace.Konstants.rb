@@ -14,6 +14,10 @@ module K
         regexp=%r{1[89][0-9][0-9]|20[0-9][0-9]}.freeze
         return regexp
     end 
+    def K.year2_RE
+        regexp=%r{[0-9][0-9]}.freeze
+        return regexp
+    end 
     def K.active_restrictions; return 'active_restrictions'.freeze; end   # top_container
     def K.ancestors; return 'ancestors'.freeze; end   # archival_object
     def K.archival_object; return 'archival_object'.freeze; end   # root

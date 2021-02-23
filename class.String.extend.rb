@@ -1,4 +1,6 @@
+
 class String
+
     def in?( array )
         array.include?( self )
     end
@@ -17,4 +19,3 @@ class String
         return true
     end   
 end
-
