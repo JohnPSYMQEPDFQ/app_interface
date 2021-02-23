@@ -20,7 +20,7 @@ class String
                 raise
             end
         end
-        Se.puts "#{Se.lineno}: Unknown date format '#{param_H[ :date_format ]}' to scan for."
+        Se.puts "#{Se.lineno}: No :date_format in param Hash."
         raise
     end
 
