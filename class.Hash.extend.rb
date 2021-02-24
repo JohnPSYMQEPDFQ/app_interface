@@ -1,4 +1,4 @@
-class ::Hash
+class Hash
 
 def deep_keys_from_stackexchange
     h_map_output_A = self.map do |k, v|
