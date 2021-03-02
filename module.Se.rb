@@ -25,7 +25,11 @@ module Se
         Se.puts ( p1_O.methods - Object.methods ).map{|x| x = "#{p1_O.class.name} #{x}"}.sort
     end
     def Se.lineno( e = 0 )
-        return caller[e].sub(/^.*\//,"").sub(/:in .* in /,":in ")
+        s = caller[e].sub(/^.*\//,"").sub(/:in .* in /,":in ").gsub(/[`']/,"")
+        if ( defined?( $. ) and $. and $. > 0 ) then
+            s += " $.=#{$.}"
+        end
+        return s
     end
 
     def Se.pp_stack()
@@ -34,7 +38,7 @@ module Se
     def Se.stack()
         a = []
         caller.each do |e|
-            a << e.sub(/^.*\//,"").sub(/:in .* in /,":in ")
+            a << e.sub(/^.*\//,"").sub(/:in .* in /,":in ").gsub(/[`']/,"")
         end
         return a
     end    

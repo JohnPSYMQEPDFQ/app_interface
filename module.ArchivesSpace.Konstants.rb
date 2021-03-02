@@ -1,21 +1,21 @@
 module K
     def K.month_RE
-        regexp=%r{january|february|march|april|may|june|july|august|september|october|november|december
+        regexp=%r{(january|february|march|april|may|june|july|august|september|october|november|december
                  |jan\.|feb\.|mar\.|apr\.|may\.|jun\.|jul\.|aug\.|sep\.|oct\.|nov\.|dec\.
                  |jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec
-                 }xi.freeze
+                 ){1}}xi.freeze
         return regexp
     end 
     def K.day_RE
-        regexp=%r{[0-9]|[012][1-9]|3[01]}.freeze
+        regexp=%r{([0-9]|[012][0-9]|3[01]){1}}.freeze
         return regexp
     end 
     def K.year4_RE
-        regexp=%r{1[89][0-9][0-9]|20[0-9][0-9]}.freeze
+        regexp=%r{(1[89][0-9][0-9]|20[0-9][0-9]){1}}.freeze
         return regexp
     end 
     def K.year2_RE
-        regexp=%r{[0-9][0-9]}.freeze
+        regexp=%r{([0-9][0-9]){1}}.freeze
         return regexp
     end 
     def K.active_restrictions; return 'active_restrictions'.freeze; end   # top_container

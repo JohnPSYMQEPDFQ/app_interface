@@ -12,9 +12,8 @@ class String
         self.length - 1
     end
 
-    def integer?( )
-        return false if ( self == nil ) 
-        val = Integer self rescue nil
+    def integer?( all_your_base_are_belong_to_us = 10 )
+        val = Integer( self, all_your_base_are_belong_to_us ) rescue nil
         return false if ( val == nil ) 
         return true
     end   

@@ -5,6 +5,7 @@ require 'optparse'
 
 require 'class.Array.extend.rb'
 require 'class.String.extend.rb'
+require 'class.Find_Dates_in_String.rb'
 require 'module.Se.rb'
 require 'module.ArchivesSpace.Konstants.rb'
 
@@ -28,6 +29,9 @@ end.parse!  # Bang because ARGV is altered
 $cmdln_option_G[ :max_levels ] -= 1                   # :max_levels is zero relative.
 $cmdln_option_G[ :max_levels ] = 1 if ( $cmdln_option_G[ :max_levels ] < 1 )
 
+find_dates_O = Find_Dates_in_String.new( { :date_morality => { :good  => :remove },
+                                           :pattern_name_RE_A => [ %r{.} ] } )
+    
 output_record_H = {}
 
 #   Record ID;Subject Heading;General Heading Note;Title;Number;Date;Geographic Location;-Corporate Name;Personal Name
@@ -50,9 +54,15 @@ ARGF.each_line do |input_record|
         idx += 1
     end
 
-    input_date_A = [ ]
+    from_thru_date_A = [ ]
     if ( ! ( a1[ 5 ].downcase.in?( [ 'not dated', "" ] ) ) ) then
-        input_date_string="#{a1[ 5 ]}"
+        find_dates_O.do_find( a1[ 5 ] )
+        find_dates_O.good_date_A_S.each do | good_date_S |
+            from_thru_date_A << good_date_S.from_date
+            from_thru_date_A << good_date_S.thru_date if ( good_date_S.thru_date != "")
+        end
+        
+=begin
         if ( a1[ 5 ] =~ /^[12][0-9]{3}\-[12][0-9]{3}$/ ) then
             input_date_string.gsub!( /\-/, ">" ) 
         end
@@ -63,7 +73,7 @@ ARGF.each_line do |input_record|
                 next
             end
             if ( current_date =~ /^[12][0-9]{3}$/ ) then
-                input_date_A.push( current_date )
+                from_thru_date_A.push( current_date )
 #               Se.puts "#{Se.lineno}: good date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> #{current_date} -> year-only"
                 next
             end
@@ -93,7 +103,7 @@ ARGF.each_line do |input_record|
 #                       Se.puts "#{Se.lineno}: MOD date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> " +
 #                                   "#{current_date} -> changed year to 1900"
                     end
-                    input_date_A.push( date_type )
+                    from_thru_date_A.push( date_type )
 #                   Se.puts "#{Se.lineno}: good date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> " +
 #                               "#{current_date} -> #{date_type}"
                     next
@@ -102,18 +112,18 @@ ARGF.each_line do |input_record|
                 Se.puts "#{Se.lineno}: bad date: #{idx}: #{a1[ 5 ]} -> #{input_date_string} -> #{current_date}"
             end
         end
-        if ( input_date_A.maxindex > 1 ) then
-            Se.puts "#{Se.lineno}: bad date: #{a1[ 5 ]} -> #{input_date_string} -> #{input_date_A} -> more than 2 dates"
-            input_date_A = [ ]
+        if ( from_thru_date_A.maxindex > 1 ) then
+            Se.puts "#{Se.lineno}: bad date: #{a1[ 5 ]} -> #{input_date_string} -> #{from_thru_date_A} -> more than 2 dates"
+            from_thru_date_A = [ ]
         end
-        if ( input_date_A.maxindex == 1 ) then
-            if ( input_date_A[1] < input_date_A[0] ) then
-                Se.puts "#{Se.lineno}: bad date: #{a1[ 5 ]} -> #{input_date_string} -> #{input_date_A} -> " +
-                            "input_date_A[1] < input_date_A[0]"
-                input_date_A = [ ]
+        if ( from_thru_date_A.maxindex == 1 ) then
+            if ( from_thru_date_A[1] < from_thru_date_A[0] ) then
+                Se.puts "#{Se.lineno}: bad date: #{a1[ 5 ]} -> #{input_date_string} -> #{from_thru_date_A} -> " +
+                            "from_thru_date_A[1] < from_thru_date_A[0]"
+                from_thru_date_A = [ ]
             end
         end 
-        
+=end        
     end
     
     a2 = [ ]
@@ -127,7 +137,7 @@ ARGF.each_line do |input_record|
     end
     a2.push( a1[ 3 ] )                      # 4
     a2.push( a1[ 4 ] )                      # 5
-    if ( input_date_A.maxindex >= 0 ) then
+    if ( from_thru_date_A.maxindex >= 0 ) then
         a2.push( "" )                       # 6
     else
         if ( a1[ 5 ].downcase.in?( [ "", "not dated" ] ) ) then
@@ -142,7 +152,7 @@ ARGF.each_line do |input_record|
         a2.push( "Person #{a1[ 8 ]}" )      # 7
     end
     a2.push( a1[ 0 ] )                      # 8
-    a2.push( input_date_A )                 # 9
+    a2.push( from_thru_date_A )                 # 9
 
     record_values = [ ]
     got_record=false
