@@ -29,8 +29,10 @@ end.parse!  # Bang because ARGV is altered
 $cmdln_option_G[ :max_levels ] -= 1                   # :max_levels is zero relative.
 $cmdln_option_G[ :max_levels ] = 1 if ( $cmdln_option_G[ :max_levels ] < 1 )
 
-find_dates_O = Find_Dates_in_String.new( { :date_morality => { :good  => :remove },
-                                           :pattern_name_RE_A => [ %r{.} ] } )
+find_dates_O = Find_Dates_in_String.new( {  :date_morality => { :good  => :remove },
+                                            :pattern_name_RE_A => [ %r{.}],
+                                            :date_string_composition => :only_dates,
+                                         } )
     
 output_record_H = {}
 

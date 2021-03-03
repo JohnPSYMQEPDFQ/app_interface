@@ -27,13 +27,13 @@ class Find_Dates_in_String
                 @param_H[ param_H_key ].keys do | key, value |
                     case key
                     when :good
-                        if ( not value.in?( [ :keep, :remove ] ) ) then
+                        if ( not ( value.is_a?( Symbol ) and value.in?( [ :keep, :remove ] ) ) ) then
                             Se.puts "#{Se.lineno}: param_H[ :morality_replace_option ][ #{key} ] should be [ :keep, :remove ]"
                             Se.pp param_H
                             raise
                         end
                     when :bad
-                        if ( not value.in?( [ :keep, :remove ] ) ) then
+                        if ( not ( value.is_a?( Symbol ) and value.in?( [ :keep, :remove ] ) ) ) then
                             Se.puts "#{Se.lineno}: param_H[ :morality_replace_option ][ #{key} ] should be [ :keep, :remove ]"
                             Se.pp param_H
                             raise
@@ -65,6 +65,13 @@ class Find_Dates_in_String
                     raise
                 end
                 @param_H[ :default_century ] = @param_H[ param_H_key ][0..1]
+            when :date_string_composition
+                date_string_composition = @param_H[ param_H_key ]
+                if ( not (date_string_composition.is_a?( Symbol ) and date_string_composition.in?( :only_dates, :dates_in_text ))) then
+                    Se.puts "#{Se.lineno}: Expected :date_string_composition to be :only_dates or :dates_in_text, not '#{date_string_composition}'"
+                    raise
+                end
+                @param_H[ :default_century ] = @param_H[ param_H_key ][0..1]
             else
                 Se.puts "#{Se.lineno}: invalid param_H option: '#{param_H_key}'"
                 pp @param_H
@@ -80,6 +87,9 @@ class Find_Dates_in_String
         if ( not @param_H[ :morality_replace_option ].key?( :bad ) ) then
             @param_H[ :morality_replace_option ][ :bad ] = :keep
         end
+        if ( not @param_H[ :thru_date_separator ] ) then
+            @param_H[ :thru_date_separator ] = '-'
+        end
         if ( not @param_H[ :only_do_these_pattern_names_A ] )
         then
             @param_H[ :only_do_these_pattern_names_A ] = [ ]
@@ -92,8 +102,8 @@ class Find_Dates_in_String
         then
             @param_H[ :default_century ] = "19"
         end
-        if ( not @param_H[ :thru_date_separator ] ) then
-            @param_H[ :thru_date_separator ] = '-'
+        if ( not @param_H[ :date_string_composition ] ) then
+            @param_H[ :date_string_composition ] = :dates_in_text
         end
         
         month_RE = %r{(?:([a-z]{3,11}|[a-z]{3,3}\.)){1}}xi.freeze      
@@ -101,90 +111,90 @@ class Find_Dates_in_String
         year4_RE = %r{[0-9]{4}}.freeze
         year2_RE = %r{[0-9]{2}}.freeze
         year_xx_RE = %r{(#{year4_RE}|#{year2_RE}){1}}.freeze
-        extra_date_RE = %r{( (((#{month_RE})\s{0,3}         ((#{day_RE})\s{0,2},\s{0,3}){0,1}){0,1}    (#{year_xx_RE}))
-                           | (((#{day_RE})\s{0,2}[-]\s{0,2} ((#{month_RE})s{0,2}[-]\s{0,2}){0,1}){0,1} (#{year_xx_RE})))}xi.freeze
+        extra_date_RE = %r{( (((#{month_RE})\s{0,3}              ((#{day_RE})\s{0,2},\s{0,3}){0,1}){0,1}      (#{year_xx_RE}))
+                           | (((#{day_RE})\s{0,2}[\-\/]\s{0,2} ((#{month_RE})s{0,2}[\-\/]\s{0,2}){0,1}){0,1}  (#{year_xx_RE})))}xi.freeze
 
         @begin_date_delim_RE = %r{(^|,|\s){1}\s*}x
         @end_date_delim_RE   = %r{\s*(\s|,|$){1}}x
         thru_date_separator_RE = %r{(\s{0,2}#{@param_H[ :thru_date_separator ]}\s{0,2}){1}}x
         
         date_pattern_RE_S = Struct.new( :priority, :pattern_name, :length, :regex )     # :pattern_name and length are computed and added later
-        #################################################################   BACK TO BEFORE THIS LINE (SAVE6) #############################################################################
+        # NOTE!!! pattern_names ending in __double are prioritized higher than __singles of the same priority.
 
-        initial_date_pattern_RE_A_S = []  # contains [ regex, lenght, pattern_name ]    elements 1..2 set below
+        initial_date_pattern_RE_A_S = []  
         
                                         #  fmt001 Dates in '(mmm) (dd,) yy[yy]' format with spaces between 'mmm' 'dd', with from and thru dates (double)
 
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil,
-                                    /(?<fmt001__mmm_dd_yyyy__double>(?<month_M>#{month_RE})\s{0,3}     (?<day_M>#{day_RE})\s{0,2},\s{0,3}     (?<year_M>#{year4_RE})\
-                                        #{thru_date_separator_RE}(?<thru_month_M>#{month_RE})\s{0,3}(?<thru_day_M>#{day_RE})\s{0,2},\s{0,3}(?<thru_year_M>#{year_xx_RE})\
-                      (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
+                                    /(?<fmt001__mmm_dd_yyyy__double> (?<month_M>#{month_RE})\s{0,3}       (?<day_M>#{day_RE})\s{0,2},\s{0,3}      (?<year_M>#{year4_RE})\
+                                       #{thru_date_separator_RE}(?<thru_month_M>#{month_RE})\s{0,3}  (?<thru_day_M>#{day_RE})\s{0,2},\s{0,3} (?<thru_year_M>#{year_xx_RE})\
+                     (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil,
-                                    /(?<fmt001__mmm_dd_yyyy__single>(?<month_M>#{month_RE})\s{0,3}     (?<day_M>#{day_RE})\s{0,2},\s{0,3}     (?<year_M>#{year4_RE}))/x )
+                                    /(?<fmt001__mmm_dd_yyyy__single> (?<month_M>#{month_RE})\s{0,3}       (?<day_M>#{day_RE})\s{0,2},\s{0,3}      (?<year_M>#{year4_RE}))/x )
     
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil,
-                                    /(?<fmt001__mmm_dd_yy__double>  (?<month_M>#{month_RE})\s{0,3}     (?<day_M>#{day_RE})\s{0,2},\s{0,3}     (?<year_M>#{year2_RE})\
-                                        #{thru_date_separator_RE}(?<thru_month_M>#{month_RE})\s{0,3}(?<thru_day_M>#{day_RE})\s{0,2},\s{0,3}(?<thru_year_M>#{year_xx_RE})\
-                      (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
+                                    /(?<fmt001__mmm_dd_yy__double>   (?<month_M>#{month_RE})\s{0,3}       (?<day_M>#{day_RE})\s{0,2},\s{0,3}       (?<year_M>#{year2_RE})\
+                                       #{thru_date_separator_RE}(?<thru_month_M>#{month_RE})\s{0,3}  (?<thru_day_M>#{day_RE})\s{0,2},\s{0,3}  (?<thru_year_M>#{year_xx_RE})\
+                     (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil, 
-                                    /(?<fmt001__mmm_dd_yy__single>  (?<month_M>#{month_RE})\s{0,3}     (?<day_M>#{day_RE})\s{0,2},\s{0,3}     (?<year_M>#{year2_RE}))/x )
+                                    /(?<fmt001__mmm_dd_yy__single>   (?<month_M>#{month_RE})\s{0,3}       (?<day_M>#{day_RE})\s{0,2},\s{0,3}       (?<year_M>#{year2_RE}))/x )
     
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil, 
-                                    /(?<fmt001__mmm_yyyy__double>   (?<month_M>#{month_RE})\s{0,3}                                            (?<year_M>#{year4_RE})\
-                                        #{thru_date_separator_RE}(?<thru_month_M>#{month_RE})\s{0,3}                                       (?<thru_year_M>#{year_xx_RE})\
-                      (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
+                                    /(?<fmt001__mmm_yyyy__double>    (?<month_M>#{month_RE})\s{0,3}                                                 (?<year_M>#{year4_RE})\
+                                       #{thru_date_separator_RE}(?<thru_month_M>#{month_RE})\s{0,3}                                            (?<thru_year_M>#{year_xx_RE})\
+                     (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil,
-                                    /(?<fmt001__mmm_yyyy__single>   (?<month_M>#{month_RE})\s{0,3}                                            (?<year_M>#{year4_RE}))/x )
+                                    /(?<fmt001__mmm_yyyy__single>    (?<month_M>#{month_RE})\s{0,3}                                                 (?<year_M>#{year4_RE}))/x )
     
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil, 
-                                    /(?<fmt001__mmm_yy__double>     (?<month_M>#{month_RE})\s{0,3}                                            (?<year_M>#{year2_RE})\
-                                        #{thru_date_separator_RE}(?<thru_month_M>#{month_RE})\s{0,3}                                       (?<thru_year_M>#{year_xx_RE})\
-                      (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
+                                    /(?<fmt001__mmm_yy__double>      (?<month_M>#{month_RE})\s{0,3}                                                 (?<year_M>#{year2_RE})\
+                                       #{thru_date_separator_RE}(?<thru_month_M>#{month_RE})\s{0,3}                                            (?<thru_year_M>#{year_xx_RE})\
+                     (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil, 
-                                    /(?<fmt001__mmm_yy__single>     (?<month_M>#{month_RE})\s{0,3}                                            (?<year_M>#{year2_RE}))/x )
+                                    /(?<fmt001__mmm_yy__single>      (?<month_M>#{month_RE})\s{0,3}                                                 (?<year_M>#{year2_RE}))/x )
     
-        initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil, 
-                                    /(?<fmt001__yyyy__double>                                                                                 (?<year_M>#{year4_RE})\
-                                        #{thru_date_separator_RE}                                                                          (?<thru_year_M>#{year_xx_RE})\
-                      (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
+        initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil,  
+                                    /(?<fmt001__yyyy__double>                                                                                       (?<year_M>#{year4_RE})\
+                                       #{thru_date_separator_RE}                                                                               (?<thru_year_M>#{year_xx_RE})\
+                     (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil,
-                                    /(?<fmt001__yyyy__single>                                                                                 (?<year_M>#{year4_RE}))/x )
+                                    /(?<fmt001__yyyy__single>                                                                                       (?<year_M>#{year4_RE}))/x )
     
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil,
-                                    /(?<fmt001__yy__double>                                                                                   (?<year_M>#{year2_RE})\
-                                        #{thru_date_separator_RE}                                                                          (?<thru_year_M>#{year_xx_RE})\
-                      (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
+                                    /(?<fmt001__yy__double>                                                                                          (?<year_M>#{year2_RE})\
+                                       #{thru_date_separator_RE}                                                                                (?<thru_year_M>#{year_xx_RE})\
+                     (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
     
 
                                         #  fmt002 = Dates in 'mmm [-/] (dd) [-/] yy[yy]' format, but a dash only between 'mmm-yy', with from and thru dates (double)
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 60, nil, nil,
-                                    /(?<fmt002__dd_mmm_yyyy__double>(?<day_M>#{day_RE})\s{0,2}[-]\s{0,2}     (?<month_M>#{month_RE})\s{0,2}[-]\s{0,2}       (?<year_M>#{year4_RE})\
-                                        #{thru_date_separator_RE}(?<thru_day_M>#{day_RE})\s{0,2}[-]\s{0,2}(?<thru_month_M>#{month_RE})\s{0,2}[-]\s{0,2}  (?<thru_year_M>#{year_xx_RE})\
-                      (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
-        initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil,
-                                    /(?<fmt002__dd_mmm_yyyy__single>(?<day_M>#{day_RE})\s{0,2}[-]\s{0,2}     (?<month_M>#{month_RE})\s{0,2}[-]\s{0,2}       (?<year_M>#{year4_RE}))/x )
+                                    /(?<fmt002__dd_mmm_yyyy__double> (?<day_M>#{day_RE})\s{0,2}[\-\/]\s{0,2}     (?<month_M>#{month_RE})\s{0,2}[\-\/]\s{0,2}       (?<year_M>#{year4_RE})\
+                                       #{thru_date_separator_RE}(?<thru_day_M>#{day_RE})\s{0,2}[\-\/]\s{0,2}(?<thru_month_M>#{month_RE})\s{0,2}[\-\/]\s{0,2}  (?<thru_year_M>#{year_xx_RE})\
+                     (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
+        initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 60, nil, nil,
+                                    /(?<fmt002__dd_mmm_yyyy__single> (?<day_M>#{day_RE})\s{0,2}[\-\/]\s{0,2}     (?<month_M>#{month_RE})\s{0,2}[\-\/]\s{0,2}       (?<year_M>#{year4_RE}))/x )
     
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 60, nil, nil,
-                                    /(?<fmt002__dd_mmm_yy__double>  (?<day_M>#{day_RE})\s{0,2}[-]\s{0,2}     (?<month_M>#{month_RE})\s{0,2}[-]\s{0,2}       (?<year_M>#{year2_RE})\
-                                        #{thru_date_separator_RE}(?<thru_day_M>#{day_RE})\s{0,2}[-]\s{0,2}(?<thru_month_M>#{month_RE})\s{0,2}[-]\s{0,2}  (?<thru_year_M>#{year_xx_RE})\
-                      (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
+                                    /(?<fmt002__dd_mmm_yy__double>   (?<day_M>#{day_RE})\s{0,2}[\-\/]\s{0,2}     (?<month_M>#{month_RE})\s{0,2}[\-\/]\s{0,2}       (?<year_M>#{year2_RE})\
+                                       #{thru_date_separator_RE}(?<thru_day_M>#{day_RE})\s{0,2}[\-\/]\s{0,2}(?<thru_month_M>#{month_RE})\s{0,2}[\-\/]\s{0,2}  (?<thru_year_M>#{year_xx_RE})\
+                     (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 60, nil, nil,
-                                    /(?<fmt002__dd_mmm_yy__single>  (?<day_M>#{day_RE})\s{0,2}[-]\s{0,2}     (?<month_M>#{month_RE})\s{0,2}[-]\s{0,2}       (?<year_M>#{year2_RE}))/x )
+                                    /(?<fmt002__dd_mmm_yy__single>   (?<day_M>#{day_RE})\s{0,2}[\-\/]\s{0,2}     (?<month_M>#{month_RE})\s{0,2}[\-\/]\s{0,2}       (?<year_M>#{year2_RE}))/x )
     
      
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 60, nil, nil, 
-                                    /(?<fmt002__mmm_yyyy__double>                                            (?<month_M>#{month_RE})\s{0,2}-\s{0,2}         (?<year_M>#{year4_RE})\
-                                        #{thru_date_separator_RE}                                         (?<thru_month_M>#{month_RE})\s{0,2}-\s{0,2}    (?<thru_year_M>#{year_xx_RE})\
-                      (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
-        initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 50, nil, nil, 
-                                    /(?<fmt002__mmm_yyyy__single>                                            (?<month_M>#{month_RE})\s{0,2}-\s{0,2}         (?<year_M>#{year4_RE}))/x )
+                                    /(?<fmt002__mmm_yyyy__double>                                                (?<month_M>#{month_RE})\s{0,2}-\s{0,2}            (?<year_M>#{year4_RE})\
+                                       #{thru_date_separator_RE}                                            (?<thru_month_M>#{month_RE})\s{0,2}-\s{0,2}       (?<thru_year_M>#{year_xx_RE})\
+                     (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
+        initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 60, nil, nil, 
+                                    /(?<fmt002__mmm_yyyy__single>                                                (?<month_M>#{month_RE})\s{0,2}-\s{0,2}            (?<year_M>#{year4_RE}))/x )
     
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 60, nil, nil,
-                                    /(?<fmt002__mmm_yy__double>                                              (?<month_M>#{month_RE})\s{0,2}-\s{0,2}         (?<year_M>#{year2_RE})\
-                                        #{thru_date_separator_RE}                                         (?<thru_month_M>#{month_RE})\s{0,2}-\s{0,2}    (?<thru_year_M>#{year_xx_RE})\
-                      (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
+                                    /(?<fmt002__mmm_yy__double>                                                  (?<month_M>#{month_RE})\s{0,2}-\s{0,2}            (?<year_M>#{year2_RE})\
+                                       #{thru_date_separator_RE}                                            (?<thru_month_M>#{month_RE})\s{0,2}-\s{0,2}       (?<thru_year_M>#{year_xx_RE})\
+                     (?<extra_dates_M>(#{thru_date_separator_RE}#{extra_date_RE})*))/x )
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 60, nil, nil, 
-                                    /(?<fmt002__mmm_yy__single>                                             (?<month_M>#{month_RE})\s{0,2}-\s{0,2}          (?<year_M>#{year2_RE}))/x )
+                                    /(?<fmt002__mmm_yy__single>                                                  (?<month_M>#{month_RE})\s{0,2}-\s{0,2}            (?<year_M>#{year2_RE}))/x )
 
                                         #  fmt003 = Dates in 'mmm  dd - yy[yy]' format, but no doubles
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 70, nil, nil,
@@ -199,7 +209,7 @@ class Find_Dates_in_String
                                        #{thru_date_separator_RE}                                  (?<thru_day_M>#{day_RE})\s{0,2},\s{0,3}     (?<year_M>#{year4_RE}))/x )
         initial_date_pattern_RE_A_S << date_pattern_RE_S.new( 70, nil, nil,
                                     /(?<fmt004__mmm_dd_dd_yy>       (?<month_M>#{month_RE})\s{0,3}     (?<day_M>#{day_RE})\
-                                       #{thru_date_separator_RE}                                  (?<thru_day_M>#{day_RE})\s{0,2},\s{0,3}     (?<year_M>#{year2_RE}))/x )
+                                      #{thru_date_separator_RE}                                   (?<thru_day_M>#{day_RE})\s{0,2},\s{0,3}     (?<year_M>#{year2_RE}))/x )
     
     
         initial_date_pattern_RE_A_S.each_index do | date_pattern_idx |  
@@ -213,32 +223,32 @@ class Find_Dates_in_String
             initial_date_pattern_RE_A_S[ date_pattern_idx ].pattern_name = pattern_name
         end
         
-        @date_pattern_RE_H = {}
+        @date_pattern_name_H_of_pattern_RE_A_idx = {}
         @date_pattern_RE_A_S = [ ]
         initial_date_pattern_RE_A_S.each_index do | date_pattern_idx |
             pattern_name = initial_date_pattern_RE_A_S[ date_pattern_idx ].pattern_name
             @param_H[ :pattern_name_RE_A ].each do | pattern_name_RE |
                 if ( pattern_name =~ pattern_name_RE ) then
                     @date_pattern_RE_A_S.push( initial_date_pattern_RE_A_S[ date_pattern_idx ] )
-                    if ( @date_pattern_RE_H.key?( pattern_name ) ) then
+                    if ( @date_pattern_name_H_of_pattern_RE_A_idx.key?( pattern_name ) ) then
                         Se.puts "#{Se.lineno}: I shouldn't be here: duplicate pattern_name '#{pattern_name}'"
                         raise
                     end   
-                    @date_pattern_RE_H[ pattern_name ] = @date_pattern_RE_A_S.maxindex
+                    @date_pattern_name_H_of_pattern_RE_A_idx[ pattern_name ] = @date_pattern_RE_A_S.maxindex
                     break
                 end
             end
         end
 
-        @date_pattern_RE_A_S = @date_pattern_RE_A_S.sort_by { | e_S | [ 0 - e_S.priority, 0 - e_S.length ] }
+        @date_pattern_RE_A_S = @date_pattern_RE_A_S.sort_by { | e_S | [ 0.0 - e_S.priority - ((e_S.pattern_name =~ /__double$/i) ? 0.1 : 0.0), 0 - e_S.length ] }
         # pp @date_pattern_RE_A_S; exit
     end
-    attr_reader :date_pattern_RE_H, :date_pattern_RE_A_S
+    attr_reader :date_pattern_name_H_of_pattern_RE_A_idx, :date_pattern_RE_A_S
     
-    def do_find( string_with_dates )
+    def do_find( param_string_with_dates )
         @date_found_A_S = [ ] 
-        processed_string = "" + string_with_dates
-        # Se.puts "Starting string = #{processed_string}"
+        process_string = "" + param_string_with_dates
+        # Se.puts "Starting string = #{process_string}"
         
         @date_pattern_RE_A_S.each do | date_pattern_RE_S |  
             date_pattern_RE = date_pattern_RE_S.regex
@@ -254,10 +264,10 @@ class Find_Dates_in_String
                         raise
                     end   
                         
-                    throw :next_date if ( offset > processed_string.maxindex )
+                    throw :next_date if ( offset > process_string.maxindex )
                     pattern_RE = %r{(?<begin_M>#{@begin_date_delim_RE})(?<date_M>#{date_pattern_RE})(?<end_M>#{@end_date_delim_RE})}
                     # Se.p pattern_RE.inspect.gsub(/ /,"")
-                    pattern_RE_match_O = processed_string.match( pattern_RE, offset )
+                    pattern_RE_match_O = process_string.match( pattern_RE, offset )
                     throw :next_date if ( pattern_RE_match_O == nil )
                     offset = pattern_RE_match_O.offset( :date_M )[1] - 1
                     pattern_name = pattern_RE_match_O.names[ 2 ]
@@ -267,7 +277,7 @@ class Find_Dates_in_String
                     end
 
                     # Se.puts "Doing pattern: #{pattern_name}"
-                    # Se.puts "processed_string = '#{processed_string}'"
+                    # Se.puts "process_string = '#{process_string}'"
                     # Se.pp pattern_RE_match_O.named_captures
                     pattern_RE_named_captures = pattern_RE_match_O.named_captures
                     begin_M = pattern_RE_named_captures[ 'begin_M' ]
@@ -282,7 +292,7 @@ class Find_Dates_in_String
                     # puts "begin_M_and_date_MM = '#{begin_M_and_date_MM}'"
 
                     repl_offset_start = pattern_RE_match_O.offset( :begin_M )[0]
-                    processed_string[ repl_offset_start .. repl_offset_start + begin_M_and_date_MM.maxindex ] = replace_uid 
+                    process_string[ repl_offset_start .. repl_offset_start + begin_M_and_date_MM.maxindex ] = replace_uid 
                     offset = pattern_RE_match_O.offset( :begin_M )[0] + replace_uid.length
                     # Se.puts "#{Se.lineno}: matched on #{pattern_name}, '#{pattern_RE_named_captures[ 'begin_M' ]}' '#{date_M}' '#{pattern_RE_named_captures[ 'end_M' ]}'"
                     
@@ -300,10 +310,12 @@ class Find_Dates_in_String
                                                                                                     "",
                                                                                                     K.undefined   ))
 
-                    from_thru_date_A_A = [ [ "", nil ], [ "", nil ] ]
-                    from_thru_date_A_A.each_index do | ft_idx |
-                        case ft_idx
-                        when 0
+                    s_C = Struct.new( :date, :strptime_O )
+                    date_validation_S = Struct.new( :from, :thru ).new( s_C.new( "", nil ), s_C.new( "", nil ) )
+                    
+                    date_validation_S.each_pair do | ft_sym, s |    # ft_sym = from_thru_symbol. Can't be "each" as that just passes out the value, and members doesn't seem to work.
+                        case ft_sym
+                        when :from
                             year =  pattern_RE_named_captures[ 'year_M' ]
                             month = pattern_RE_named_captures[ 'month_M' ]
                             if ( not month == nil ) then
@@ -314,8 +326,8 @@ class Find_Dates_in_String
                                 end
                             end
                             day =   pattern_RE_named_captures[ 'day_M' ] 
-                        when 1
-                            if ( pattern_name.match?( /_mmm_dd_dd_/ )) then
+                        when :thru
+                            if ( pattern_name.match?( /_mmm_dd_dd_/i )) then
                                 year =  pattern_RE_named_captures[ 'year_M' ]
                                 month = pattern_RE_named_captures[ 'month_M' ]
                                 day =   pattern_RE_named_captures[ 'thru_day_M' ] 
@@ -330,21 +342,21 @@ class Find_Dates_in_String
                                     end
                                 end
                                 day =   pattern_RE_named_captures[ 'thru_day_M' ] 
-                                break if ( pattern_name.match?( /__single/ ) and ( year == nil and month == nil and day == nil ) ) 
+                                break if ( pattern_name.match?( /__single/i ) and ( year == nil and month == nil and day == nil ) ) 
                             end
                         else
-                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_idx}: '#{begin_M_and_date_MM}' > '#{date_M}' ft_idx not 0 or 1"
+                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' > '#{date_M}' ft_sym not :from or :thru"
                             raise
                         end   
                         # p month, day, year
                         if ( year == nil or ( month == nil and day )) then
-                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_idx}: '#{begin_M_and_date_MM}' > '#{date_M}' year == nil or ( month == nil and day)!"
+                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' > '#{date_M}' year == nil or ( month == nil and day)!"
                             Se.pp pattern_RE_match_O
                             raise
                         end     
 
                         if ( year.length == 2 and month == nil and day == nil and not pattern_name.in?( ['fmt001__yy__double', 'fmt001__yyyy__double' ] ) ) then
-                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_idx}: '#{begin_M_and_date_MM}' -> '#{date_M}' isolated 2 digit number" 
+                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{date_M}' isolated 2 digit number" 
                             Se.puts stringer
                             date_found_S.morality = :bad
                             date_found_S.as_date_S.error_msg = stringer
@@ -353,7 +365,7 @@ class Find_Dates_in_String
                         end
     
                         if ( day and not day.integer? ) then
-                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_idx}: '#{begin_M_and_date_MM}' -> '#{date_M}' day not numeric: '#{day}'" 
+                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{date_M}' day not numeric: '#{day}'" 
                             Se.puts stringer
                             date_found_S.morality = :bad
                             date_found_S.as_date_S.error_msg = stringer
@@ -361,7 +373,7 @@ class Find_Dates_in_String
                             throw :next_date
                         end
                         if ( not year.integer? ) then
-                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_idx}: '#{begin_M_and_date_MM}' -> '#{date_M}' year not numeric: '#{year}'"
+                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{date_M}' year not numeric: '#{year}'"
                             Se.puts stringer
                             date_found_S.morality = :bad
                             date_found_S.as_date_S.error_msg = stringer
@@ -369,31 +381,31 @@ class Find_Dates_in_String
                             throw :next_date
                         end      
                         if ( year.length == 2 ) then
-                            case ft_idx
-                            when 0
-                                year = @param_H[ :default_century ] + year           # These are strings
-                            when 1
-                                year = from_thru_date_A_A[ 0 ][ 0 ][ 0 .. 1] + year     # Take the century from the converted from_year, it might have been YYYY
+                            case ft_sym
+                            when :from
+                                year = @param_H[ :default_century ] + year             # These are strings
+                            when :thru
+                                year = date_validation_S.from.date[ 0 .. 1] + year     # Take the century from the converted from_year, it might have been YYYY
                             end
                         end
 
                         testdate = year
-                        case ft_idx
-                        when 0 
+                        case ft_sym
+                        when :from 
                             testdate += (month) ? " #{month}" : " Jan"
                             testdate += (day)   ? " #{day}"   : " 01"
-                        when 1
+                        when :thru
                             testdate += (month) ? " #{month}" : " Dec"
                             testdate += (day)   ? " #{day}"   : " 01"       # This will be set to the end-of-month below
                         else
-                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_idx}: '#{begin_M_and_date_MM}' > '#{date_M}' ft_idx not 0 or 1"
+                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' > '#{date_M}' ft_sym not :from or :thru"
                             raise
                         end 
                         testdate.sub!( /\./, "" )           # Take the period off the months (eg Feb.)
                         begin
                             strptime_O = Date::strptime( testdate, "%Y %b %d" )
                         rescue
-                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_idx}: '#{begin_M_and_date_MM}' -> '#{date_M}' -> '#{testdate}' strptime conversion failed"
+                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{date_M}' -> '#{testdate}' strptime conversion failed"
                             Se.puts stringer
                             date_found_S.morality = :bad
                             date_found_S.as_date_S.error_msg = stringer
@@ -401,7 +413,7 @@ class Find_Dates_in_String
                             throw :next_date
                         end
                         if ( strptime_O.year < 0 ) then
-                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_idx}: '#{begin_M_and_date_MM}' -> '#{date_M}' -> '#{strptime_O}' negative year"
+                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{date_M}' -> '#{strptime_O}' negative year"
                             Se.puts stringer
                             date_found_S.morality = :bad
                             date_found_S.as_date_S.error_msg = stringer
@@ -409,22 +421,23 @@ class Find_Dates_in_String
                             throw :next_date
                         end
                         if ( day == nil and strptime_O.day != 1 ) then
-                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_idx}: '#{begin_M_and_date_MM}' -> '#{date_M}' -> '#{strptime_O} day != 1"
+                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{date_M}' -> '#{strptime_O} day != 1"
                             raise
                         end
-                        if ( day == nil and ft_idx == 1 ) then
+                        if ( day == nil and ft_sym == :thru ) then
                             strptime_O = strptime_O.last_day_of_month
                         end
-                        # Se.puts "#{Se.lineno}: good date: #{pattern_name},#{ft_idx}: '#{begin_M_and_date_MM}' -> '#{strptime_O}'"
+                        # Se.puts "#{Se.lineno}: good date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{strptime_O}'"
                         as_date_yyyy_mm_dd  = strptime_O.strftime( '%Y' )
                         as_date_yyyy_mm_dd += strptime_O.strftime( '-%m' ) if ( month )
                         as_date_yyyy_mm_dd += strptime_O.strftime( '-%d' ) if ( day )
-                        from_thru_date_A_A[ ft_idx ] = [ as_date_yyyy_mm_dd, strptime_O ]
+                        date_validation_S[ ft_sym ].date = as_date_yyyy_mm_dd
+                        date_validation_S[ ft_sym ].strptime_O = as_date_yyyy_mm_dd
                         
-                        date_found_S.as_date_S.from_date = from_thru_date_A_A[ 0 ][ 0 ]
-                        date_found_S.as_date_S.thru_date = from_thru_date_A_A[ 1 ][ 0 ]
+                        date_found_S.as_date_S.from_date = date_validation_S.from.date
+                        date_found_S.as_date_S.thru_date = date_validation_S.thru.date
     
-                        if ( ft_idx == 1 and pattern_RE_named_captures.key?( 'extra_dates_M' ) and pattern_RE_named_captures[ 'extra_dates_M' ] != "" ) then
+                        if ( ft_sym == :thru and pattern_RE_named_captures.key?( 'extra_dates_M' ) and pattern_RE_named_captures[ 'extra_dates_M' ] != "" ) then
                             stringer = "#{Se.lineno}: bad date: #{pattern_name}: '#{begin_M_and_date_MM}' -> '#{date_M}' extra thru dates found '#{pattern_RE_named_captures[ 'extra_dates_M' ]}'" 
                             Se.puts stringer
                             date_found_S.morality = :bad
@@ -433,7 +446,7 @@ class Find_Dates_in_String
                             throw :next_date
                         end
                     end
-                    if ( from_thru_date_A_A[ 1 ][ 1 ] and from_thru_date_A_A[ 0 ][ 1 ] > from_thru_date_A_A[ 1 ][ 1 ] ) then
+                    if ( date_validation_S.thru[ 1 ] and date_validation_S.from[ 1 ] > date_validation_S.thru[ 1 ] ) then
                         stringer = "#{Se.lineno}: bad date: #{r_idx}: '#{begin_M_and_date_MM}' From date > thru date"
                         Se.puts stringer
                         date_found_S.morality = :bad
@@ -448,43 +461,40 @@ class Find_Dates_in_String
                 end
             end 
         end 
-        # Se.puts "Before replace, processed_string = #{processed_string}"
+        # Se.puts "Before replace, process_string = #{process_string}"
         # Se.pp @date_found_A_S
         # exit
         
-        all_matched_dates_removed = processed_string + ""
+        process_string_with_all_dates_removed = process_string + ""
         @date_found_A_S.each do | date_found_S |
             case @param_H[ :morality_replace_option ][ date_found_S.morality ]
             when :keep
                 begin
-                    processed_string[ date_found_S.replace_uid ]          = date_found_S.as_date_S.pattern_piece_A[ 0 ] + date_found_S.as_date_S.pattern_piece_A[ 1 ]
-                    all_matched_dates_removed[ date_found_S.replace_uid ] = ""
+                    process_string[ date_found_S.replace_uid ]                        = date_found_S.as_date_S.pattern_piece_A[ 0 ] + date_found_S.as_date_S.pattern_piece_A[ 1 ]
+                    process_string_with_all_dates_removed[ date_found_S.replace_uid ] = ""
                 rescue
                     Se.puts "#{Se.lineno}: replace_uid failed"
-                    Se.puts "processed_string = #{processed_string}"
+                    Se.puts "process_string = #{process_string}"
                     Se.pp date_found_S
                     raise
                 end
             when :remove
                 begin
-                    processed_string[ date_found_S.replace_uid ]          = ""
-                    all_matched_dates_removed[ date_found_S.replace_uid ] = ""
+                    process_string[ date_found_S.replace_uid ]                        = ""
+                    process_string_with_all_dates_removed[ date_found_S.replace_uid ] = ""
                 rescue
                     Se.puts "#{Se.lineno}: replace_uid failed"
-                    Se.puts "processed_string = #{processed_string}"
+                    Se.puts "process_string = #{process_string}"
                     Se.pp date_found_S
                     raise
                 end
             else
-                Se.puts "#{Se.lineno}: unknown replace_option for morality #{date_found_S.morality} -> #{@param_H[ :morality_replace_option ][ date_found_S.morality ]}"
+                Se.puts "#{Se.lineno}: I shouldn't be here, unknown replace_option for morality '#{date_found_S.morality}' -> '#{@param_H[ :morality_replace_option ][ date_found_S.morality ]}'"
                 Se.pp pattern_found_A
                 raise
             end
         end
-        if ( all_matched_dates_removed =~ K.month_RE ) then
-            Se.puts "#{Se.lineno}: Warning possible ummatched date in '#{all_matched_dates_removed}'"
-        end
-
+        
         @good_date_A_S = [ ]
         @bad_date_A_S = [ ]
         @date_found_A_S.each do | date_found_S |
@@ -494,13 +504,29 @@ class Find_Dates_in_String
             when :bad
                 @bad_date_A_S << date_found_S.as_date_S
             else
-                Se.puts "#{Se.lineno}: I shouldn't be here: amoral date: #{morality}, #{date_pattern_found_A}"
+                Se.puts "#{Se.lineno}: I shouldn't be here: amoral date: '#{date_found_S.morality}', #{date_found_S}"
                 raise
             end
         end
-        # pp processed_string    
-        
-        return processed_string
+        # pp process_string    
+        case @param_H[ :date_string_composition ]
+        when :dates_in_text 
+            if (process_string_with_all_dates_removed =~ K.month_RE ) then
+                Se.puts "#{Se.lineno}: Warning possible ummatched date in '#{process_string_with_all_dates_removed}'"
+            end
+        when :only_dates
+            if (process_string_with_all_dates_removed != "" ) then
+                Se.puts "#{Se.lineno}: Date error  '#{param_string_with_dates}'"
+                Se.puts "#{Se.lineno}: Extra text: '#{process_string_with_all_dates_removed}'"  if ( param_string_with_dates != process_string_with_all_dates_removed )
+                if ( @good_date_A_S.length > 0 ) then
+                    Se.puts "#{Se.lineno}: #{@good_date_A_S.length} good-dates moved to bad-dates array after row #{@bad_date_A_S.length}"
+                    @bad_date_A_S += @good_date_A_S
+                    @good_date_A_S = [ ]
+                end
+                process_string = param_string_with_dates
+            end
+        end
+        return process_string
     end
     attr_reader :date_found_A_S, :good_date_A_S, :bad_date_A_S
 

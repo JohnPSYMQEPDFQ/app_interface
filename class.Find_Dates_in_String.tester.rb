@@ -74,7 +74,9 @@ end
 test_string += ""
 
 find_dates_O = Find_Dates_in_String.new( { :date_morality => { :good  => :remove },
-                                           :pattern_name_RE_A => [ %r{.} ] } )
+                                           :pattern_name_RE_A => [ %r{.} ],
+ #                                         :date_string_composition => :only_dates,
+                                         } )
     
 test_string += " mar. 18, 1903 - may 26, 1904  - Jun 25, 1920 "
 if ( true == false ) then # do a simple test
@@ -95,7 +97,7 @@ if ( find_dates_O.good_date_A_S? ) then
     puts "Good dates --------------------------------------------"
     find_dates_O.good_date_A_S.each do | good_date_A |
         pattern_name = good_date_A.pattern_name
-        date_pattern_RE_A_idx = find_dates_O.date_pattern_RE_H[ pattern_name ]
+        date_pattern_RE_A_idx = find_dates_O.date_pattern_name_H_of_pattern_RE_A_idx[ pattern_name ]
         pattern_length = find_dates_O.date_pattern_RE_A_S[ date_pattern_RE_A_idx ].length
         
         puts "#{pattern_name} (idx=#{date_pattern_RE_A_idx}, len=#{pattern_length}) '#{good_date_A.pattern_piece_A.join("")}'" + " date " + good_date_A[2] + " thru " + good_date_A[3]
@@ -114,7 +116,7 @@ if ( find_dates_O.bad_date_A_S? ) then
     puts "bad dates --------------------------------------------"
     find_dates_O.bad_date_A_S.each do | bad_date_A |
         pattern_name = bad_date_A.pattern_name
-        date_pattern_RE_A_idx = find_dates_O.date_pattern_RE_H[ pattern_name ]
+        date_pattern_RE_A_idx = find_dates_O.date_pattern_name_H_of_pattern_RE_A_idx[ pattern_name ]
         pattern_length = find_dates_O.date_pattern_RE_A_S[ date_pattern_RE_A_idx ].length
         puts "#{pattern_name} (idx=#{date_pattern_RE_A_idx}, len=#{pattern_length}) '#{bad_date_A.pattern_piece_A.join("")}'" + " date " + bad_date_A[2] + " thru " + bad_date_A[3]
         temp_A_A.each_with_index do | temp_A, idx |
