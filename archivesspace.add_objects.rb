@@ -228,6 +228,7 @@ else
     end
 end
 
+Se.puts "Finding Top_Containers (which takes some time) ..."
 tc_buf_A = get_TC_buf_A( res_buf_O, TC_Query.new( rep_O ).get_A_of_TC_nums( { 'all_ids' => 'true' } ).result )
 #Se.pp "#{Se.lineno}: tc_buf_A.length = #{tc_buf_A.length}"
 
@@ -276,7 +277,7 @@ for argv in ARGV do
         input_record_H = JSON.parse( input_record_J )
 
         if ( input_record_H.key?( K.fmtr_indent ) ) then
-            Se.puts "#{Se.lineno}: Rec:#{$.}: '#{input_record_J}'"
+            Se.puts "#{Se.lineno}: '#{input_record_J}'"
             record_level_cnt[ input_record_H[ K.fmtr_indent ][ 0 ] ] += 1
             case input_record_H[ K.fmtr_indent ][ 0 ]
             when K.fmtr_right then
@@ -297,7 +298,7 @@ for argv in ARGV do
         end
 
         if ( input_record_H.key?( K.fmtr_record ) ) then
-            Se.puts "#{Se.lineno}: Rec:#{$.}: '#{input_record_J}'"
+            Se.puts "#{Se.lineno}: '#{input_record_J}'"
             stringer = input_record_H[ K.fmtr_record ][ K.level ]
             record_level_cnt[ stringer ] += 1
             if ( stringer == K.fmtr_new_parent ) then

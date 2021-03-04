@@ -15,7 +15,7 @@ $cmdln_option_G = { :max_levels => 5,
                     :r => nil }
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [options] [file]"
-    option.on( "-l n", "--max-levels n", OptionParser::DecimalInteger, "Max number of level to group on (default 5)" ) do |opt_arg|
+    option.on( "-l n", "--max-levels n", OptionParser::DecimalInteger, "Max number of group levels on (default 5)" ) do |opt_arg|
         $cmdln_option_G[ :max_levels ] = opt_arg
     end
     option.on( "-r n", OptionParser::DecimalInteger, "Stop after N input records" ) do |opt_arg|

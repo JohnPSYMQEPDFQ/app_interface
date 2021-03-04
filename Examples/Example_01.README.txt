@@ -16,7 +16,7 @@ The manually edited version of the file is "Central_Pacific.edited.txt".
 
 The manual edits were:
     1)  Making sure the Series/SubSeries record text matches what was actually in the EAD.
-    2)  Added the ">:" and "<:" records to delineate the "Record Groups".  
+    2)  Added ">:" and "<:" records to delineate the "Record Groups".  
     3)  Fixed up some of the data.
     
 The formatter is programmed to:
