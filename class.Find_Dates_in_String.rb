@@ -264,7 +264,7 @@ class Find_Dates_in_String
                         raise
                     end   
                         
-                    throw :next_date if ( offset > process_string.maxindex )
+                    throw :next_date if ( offset > process_string.maxoffset )
                     pattern_RE = %r{(?<begin_M>#{@begin_date_delim_RE})(?<date_M>#{date_pattern_RE})(?<end_M>#{@end_date_delim_RE})}
                     # Se.p pattern_RE.inspect.gsub(/ /,"")
                     pattern_RE_match_O = process_string.match( pattern_RE, offset )
@@ -283,16 +283,16 @@ class Find_Dates_in_String
                     begin_M = pattern_RE_named_captures[ 'begin_M' ]
                     date_M = pattern_RE_named_captures[ 'date_M' ]
                     end_M = pattern_RE_named_captures[ 'end_M' ]
-                    begin_M_and_date_MM = begin_M + date_M
+                    begin_M_and_date_M = begin_M + date_M
                     replace_uid = begin_M + @uid_string + "_" + "%010d" % (@date_found_A_S.length + 1 )
                     # pp pattern_RE_match_O.offset( :begin_M )
                     # pp pattern_RE_match_O.offset( :date_M )
                     # pp pattern_RE_match_O.offset( :end_M )
                     # pp "offset = #{offset}"
-                    # puts "begin_M_and_date_MM = '#{begin_M_and_date_MM}'"
+                    # puts "begin_M_and_date_M = '#{begin_M_and_date_M}'"
 
                     repl_offset_start = pattern_RE_match_O.offset( :begin_M )[0]
-                    process_string[ repl_offset_start .. repl_offset_start + begin_M_and_date_MM.maxindex ] = replace_uid 
+                    process_string[ repl_offset_start .. repl_offset_start + begin_M_and_date_M.maxoffset ] = replace_uid 
                     offset = pattern_RE_match_O.offset( :begin_M )[0] + replace_uid.length
                     # Se.puts "#{Se.lineno}: matched on #{pattern_name}, '#{pattern_RE_named_captures[ 'begin_M' ]}' '#{date_M}' '#{pattern_RE_named_captures[ 'end_M' ]}'"
                     
@@ -345,18 +345,18 @@ class Find_Dates_in_String
                                 break if ( pattern_name.match?( /__single/i ) and ( year == nil and month == nil and day == nil ) ) 
                             end
                         else
-                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' > '#{date_M}' ft_sym not :from or :thru"
+                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_M}' > '#{date_M}' ft_sym not :from or :thru"
                             raise
                         end   
                         # p month, day, year
                         if ( year == nil or ( month == nil and day )) then
-                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' > '#{date_M}' year == nil or ( month == nil and day)!"
+                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_M}' > '#{date_M}' year == nil or ( month == nil and day)!"
                             Se.pp pattern_RE_match_O
                             raise
                         end     
 
                         if ( year.length == 2 and month == nil and day == nil and not pattern_name.in?( ['fmt001__yy__double', 'fmt001__yyyy__double' ] ) ) then
-                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{date_M}' isolated 2 digit number" 
+                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_M}' -> '#{date_M}' isolated 2 digit number" 
                             Se.puts stringer
                             date_found_S.morality = :bad
                             date_found_S.as_date_S.error_msg = stringer
@@ -365,7 +365,7 @@ class Find_Dates_in_String
                         end
     
                         if ( day and not day.integer? ) then
-                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{date_M}' day not numeric: '#{day}'" 
+                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_M}' -> '#{date_M}' day not numeric: '#{day}'" 
                             Se.puts stringer
                             date_found_S.morality = :bad
                             date_found_S.as_date_S.error_msg = stringer
@@ -373,7 +373,7 @@ class Find_Dates_in_String
                             throw :next_date
                         end
                         if ( not year.integer? ) then
-                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{date_M}' year not numeric: '#{year}'"
+                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_M}' -> '#{date_M}' year not numeric: '#{year}'"
                             Se.puts stringer
                             date_found_S.morality = :bad
                             date_found_S.as_date_S.error_msg = stringer
@@ -398,14 +398,14 @@ class Find_Dates_in_String
                             testdate += (month) ? " #{month}" : " Dec"
                             testdate += (day)   ? " #{day}"   : " 01"       # This will be set to the end-of-month below
                         else
-                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' > '#{date_M}' ft_sym not :from or :thru"
+                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_M}' > '#{date_M}' ft_sym not :from or :thru"
                             raise
                         end 
                         testdate.sub!( /\./, "" )           # Take the period off the months (eg Feb.)
                         begin
                             strptime_O = Date::strptime( testdate, "%Y %b %d" )
                         rescue
-                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{date_M}' -> '#{testdate}' strptime conversion failed"
+                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_M}' -> '#{date_M}' -> '#{testdate}' strptime conversion failed"
                             Se.puts stringer
                             date_found_S.morality = :bad
                             date_found_S.as_date_S.error_msg = stringer
@@ -413,7 +413,7 @@ class Find_Dates_in_String
                             throw :next_date
                         end
                         if ( strptime_O.year < 0 ) then
-                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{date_M}' -> '#{strptime_O}' negative year"
+                            stringer = "#{Se.lineno}: bad date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_M}' -> '#{date_M}' -> '#{strptime_O}' negative year"
                             Se.puts stringer
                             date_found_S.morality = :bad
                             date_found_S.as_date_S.error_msg = stringer
@@ -421,13 +421,13 @@ class Find_Dates_in_String
                             throw :next_date
                         end
                         if ( day == nil and strptime_O.day != 1 ) then
-                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{date_M}' -> '#{strptime_O} day != 1"
+                            Se.puts "#{Se.lineno}: I shouldn't be here: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_M}' -> '#{date_M}' -> '#{strptime_O} day != 1"
                             raise
                         end
                         if ( day == nil and ft_sym == :thru ) then
                             strptime_O = strptime_O.last_day_of_month
                         end
-                        # Se.puts "#{Se.lineno}: good date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_MM}' -> '#{strptime_O}'"
+                        # Se.puts "#{Se.lineno}: good date: #{pattern_name},#{ft_sym}: '#{begin_M_and_date_M}' -> '#{strptime_O}'"
                         as_date_yyyy_mm_dd  = strptime_O.strftime( '%Y' )
                         as_date_yyyy_mm_dd += strptime_O.strftime( '-%m' ) if ( month )
                         as_date_yyyy_mm_dd += strptime_O.strftime( '-%d' ) if ( day )
@@ -438,7 +438,7 @@ class Find_Dates_in_String
                         date_found_S.as_date_S.thru_date = date_validation_S.thru.date
     
                         if ( ft_sym == :thru and pattern_RE_named_captures.key?( 'extra_dates_M' ) and pattern_RE_named_captures[ 'extra_dates_M' ] != "" ) then
-                            stringer = "#{Se.lineno}: bad date: #{pattern_name}: '#{begin_M_and_date_MM}' -> '#{date_M}' extra thru dates found '#{pattern_RE_named_captures[ 'extra_dates_M' ]}'" 
+                            stringer = "#{Se.lineno}: bad date: #{pattern_name}: '#{begin_M_and_date_M}' -> '#{date_M}' extra thru dates found '#{pattern_RE_named_captures[ 'extra_dates_M' ]}'" 
                             Se.puts stringer
                             date_found_S.morality = :bad
                             date_found_S.as_date_S.error_msg = stringer
@@ -447,7 +447,7 @@ class Find_Dates_in_String
                         end
                     end
                     if ( date_validation_S.thru[ 1 ] and date_validation_S.from[ 1 ] > date_validation_S.thru[ 1 ] ) then
-                        stringer = "#{Se.lineno}: bad date: #{r_idx}: '#{begin_M_and_date_MM}' From date > thru date"
+                        stringer = "#{Se.lineno}: bad date: #{r_idx}: '#{begin_M_and_date_M}' From date > thru date"
                         Se.puts stringer
                         date_found_S.morality = :bad
                         date_found_S.as_date_S.error_msg = stringer

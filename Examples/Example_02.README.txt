@@ -101,10 +101,13 @@ The format of the 1st formatter's output file 'corp_collections.indent_input.uns
 {"__RECORD_INDENT_KEYS__":["Atchison, Topeka & Santa Fe","Rolling stock","Freight","Box"],"__RECORD_VALUES__":["","","","","500",[]],"level":"file","__RECORD_NUM__":"483","__RECORD_ORIGINAL__":"500;Rolling stock. Freight. Box;;;;;;Atchison, Topeka & Santa Fe;"}
 {"__RECORD_INDENT_KEYS__":["Atchison, Topeka & Santa Fe","Rolling stock","Freight","Coal"],"__RECORD_VALUES__":["Specifications","","","","501",["1887"]],"level":"file","__RECORD_NUM__":"484","__RECORD_ORIGINAL__":"501;Rolling stock. Freight. Coal;;Specifications;;1887;;Atchison, Topeka & Santa Fe;"}
 
-The '__RECORD_INDENT_KEYS__' contains an array of the fields used for grouping (columns: 7, 1, 2, 6, 3 as described above)
-    '__RECORD_VALUE__' is an array of everything that wasn't a indent_key field.
+The hash key: 
+    '__RECORD_INDENT_KEYS__' contains an array of the fields used for grouping (columns: 7, 1, 2, 6, 3 as described above)
+    '__RECORD_VALUE__' is an array of everything that wasn't an indent_key field.
     '__RECORD_NUM__' is the record number from the 1st formatter program.
     '__RECORD_ORIGINAL__ is the record as it originally looked.
+    
+There is also a 'level' hash-key which is always 'file' (in this example).  
 
   
 The following are the records created by the 2nd formatter for input to the 'add_objects' program.   The FOUR records
@@ -123,7 +126,7 @@ RECORD's, as follows:
 See Example_01 for additional information about the format of the '*.as_input.txt' files.  
 
 
-The "corp_collections.as_input.txt" is then used as input to the add_objects program, which is run as follows:
+The 'corp_collections.as_input.txt' is then used as input to the add_objects program, which is run as follows:
 
 $ ruby -w -S ArchivesSpace.add_objects.rb --res-num 126 [--update] corp_collections.as_input.txt
 
