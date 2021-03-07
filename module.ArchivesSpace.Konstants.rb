@@ -3,19 +3,19 @@ module K
         regexp=%r{(january|february|march|april|may|june|july|august|september|october|november|december
                  |jan\.|feb\.|mar\.|apr\.|may\.|jun\.|jul\.|aug\.|sep\.|oct\.|nov\.|dec\.
                  |jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec
-                 ){1}}xi.freeze
+                 )}xi.freeze
         return regexp
     end 
     def K.day_RE
-        regexp=%r{([0-9]|[012][0-9]|3[01]){1}}.freeze
+        regexp=%r{([0-9]|[012][0-9]|3[01])}.freeze
         return regexp
     end 
     def K.year4_RE
-        regexp=%r{(1[89][0-9][0-9]|20[0-9][0-9]){1}}.freeze
+        regexp=%r{(1[89][0-9][0-9]|20[0-9][0-9])}.freeze
         return regexp
     end 
     def K.year2_RE
-        regexp=%r{([0-9][0-9]){1}}.freeze
+        regexp=%r{([0-9][0-9])}.freeze
         return regexp
     end 
     def K.active_restrictions; return 'active_restrictions'.freeze; end   # top_container
