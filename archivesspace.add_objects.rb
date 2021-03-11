@@ -224,7 +224,7 @@ else
     res_Q_all_AO_O = Resource_Query.new( res_O ).get_all_AO
     cnt = 0; res_Q_all_AO_O.buf_A.each do | ao_buf_O |
         cnt += 1
-        puts "#{ao_buf_O.record_H[ K.uri ]} '#{ao_buf_O.record_H[ K.title ]}'"
+        Se.puts "#{ao_buf_O.record_H[ K.uri ]} '#{ao_buf_O.record_H[ K.title ]}'"
     end
 end
 

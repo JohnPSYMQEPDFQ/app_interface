@@ -43,7 +43,7 @@ class Find_Dates_in_String
                     Se.pp param_H
                     raise
                 end
-                @param_H[ param_H_key ].keys do | key, value |
+                @param_H[ param_H_key ].each_pair do | key, value |
                     case key
                     when :good
                         if ( not ( value.is_a?( Symbol ) and value.in?( [ :keep, :remove ] ) ) ) then
