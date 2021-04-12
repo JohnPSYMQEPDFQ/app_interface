@@ -1,0 +1,196 @@
+This is an example of loading a simple delimited file, exported from another datebase, into a Resource with the
+automatic generation of Series, Subseries, and RecordGrp records based on the data.  In the rest of the document
+I'll call these three records Group-Records.
+
+The file was exported as comma-delimited with quoted fields, like this:
+
+"308",,"Excursions. [By decade]",,,,,"Atchison, Topeka & Santa Fe",
+"309","Fairs",,"Portola Festival",,"1909.  Oct. 19-23",,"Atchison, Topeka & Santa Fe",
+"310","Fairs",,"Chicago World's Fair",,"1933",,"Atchison, Topeka & Santa Fe",
+"311","Fairs",,"California Pacific International Exposition",,"1935-1936","San Diego","Atchison, Topeka & Santa Fe",
+"312","Fairs",,"Golden Gate International Exposition",,"1939  Feb. 18-Dec. 2, 1939|1940  May 25-Sep. 29, 1940","San Francisco","Atchison, Topeka & Santa Fe",
+
+And was converted to semi-colon-delimted without quotes using notepad++, resulting in this:
+
+308;;Excursions. [By decade];;;;;Atchison, Topeka & Santa Fe;
+309;Fairs;;Portola Festival;;1909. Oct. 19-23;;Atchison, Topeka & Santa Fe;
+310;Fairs;;Chicago World's Fair;;1933;;Atchison, Topeka & Santa Fe;
+311;Fairs;;California Pacific International Exposition;;1935-1936;San Diego;Atchison, Topeka & Santa Fe;
+312;Fairs;;Golden Gate International Exposition;;1939 Feb. 18-Dec. 2, 1939 / 1940 May 25-Sep. 29, 1940;San Francisco;Atchison, Topeka & Santa Fe;
+
+The data is grouped (ie. generation of Group-Records) based on the following columns (with their ZERO relative numbers):
+
+Record ID,Subject Heading,General Heading Note,Title,Number,Date,Geographic Location,Corporate Name,Personal Name
+0         1               2                    3     4      5    6                   7              8
+
+The sort and grouping order is: 7, 1, 2, 6, 3 with the rest of the fields becoming a 'file" record withOUT the grouping fields in 
+their text (as those fields are in their parent Group-Records).
+
+
+The empty Resource is defined in the EAD file "Corporate_Collections__empty__ead.xml".  
+(This particular EAD has a dummy 'file' AO because ArchivesSpace couldn't seem to deal with a Resourse without one.)
+
+The starting data is "corp_collections_export.csv".  
+
+The manually edited version of the file is "corp_collections_export.txt".  
+
+The manual edits were:
+    1)  Removing the quotes around the text fields, and changing the file to semi-colon-delimited.
+    2)  Fixing bad dates after running the 'formatter.csv.to.indent.corp_collection.rb' program a few times.
+    3)  Fixed up some of the data.
+    
+As this data needs Group-Records generated, there are two formatter programs:
+
+The txt-to-intermediate-file formatter is: formatter.csv.to.indent.corp_collection.rb
+    This formatter is programmed to:
+        1)  Validate/Convert the free-format date field (0R-5) into one or more ArchivesSpace formated dates (yyyy[-mm[-dd]]).
+        2)  Format the intermediate-file for the "indent formatter".
+The intermediate-file-to-add-objects formatter is: formatter.indent.to.add_objects.corp_collection.rb
+    The formatter is programmed to:
+        1)  Output Group-Records based on keys provided by formatter #1.
+        2)  Output regular 'file' records for the non-key data.
+        
+        
+How to run the entire process...
+
+    Import the "Corporate_Collections__empty__ead.xml" file into ArchivesSpace.
+
+Run the 1st formatter program:
+
+    $ ruby -w -S formatter.csv.to.indent.corp_collection.rb corp_collections_export.txt > corp_collections.indent_input.unsorted.txt
+
+Which returns error messages like this:
+
+    class.Find_Dates_in_String.rb:832:in do_find $.=45: Unconverted dates in: '1937-1942]'
+    class.Find_Dates_in_String.rb:833:in do_find $.=45: Extra text:           ']'
+    class.Find_Dates_in_String.rb:840:in do_find $.=45: Good dates: '1937','1942' moved to bad-dates array after row 0
+
+    class.Find_Dates_in_String.rb:832:in do_find $.=297: Unconverted dates in: '1909. Oct. 19-23'
+    class.Find_Dates_in_String.rb:833:in do_find $.=297: Extra text:           '1909.'
+    class.Find_Dates_in_String.rb:840:in do_find $.=297: Good dates: '1919-10','1923' moved to bad-dates array after row 0
+
+    class.Find_Dates_in_String.rb:608:in do_find $.=300: Warning swapped day and year: fmt006__nn_MMM_nn, idx=0: '1939 Feb. 18-' -> '1939 Feb. 18'
+
+    class.Find_Dates_in_String.rb:608:in do_find $.=300: Warning swapped day and year: fmt006__nn_MMM_nn, idx=0: ' / 1940 May 25-' -> '1940 May 25'
+
+    class.Find_Dates_in_String.rb:832:in do_find $.=301: Unconverted dates in: '1939. Apr. 30-Oct. 31'
+    class.Find_Dates_in_String.rb:833:in do_find $.=301: Extra text:           '1939.'
+    class.Find_Dates_in_String.rb:840:in do_find $.=301: Good dates: '1930-04','1931-10' moved to bad-dates array after row 0
+
+    class.Find_Dates_in_String.rb:832:in do_find $.=306: Unconverted dates in: '1942?'
+    class.Find_Dates_in_String.rb:833:in do_find $.=306: Extra text:           '?'
+    class.Find_Dates_in_String.rb:840:in do_find $.=306: Good dates: '1942' moved to bad-dates array after row 0
+    
+    class.Find_Dates_in_String.rb:832:in do_find $.=1067: Unconverted dates in: 'Ocy. 15, 1981'
+    class.Find_Dates_in_String.rb:833:in do_find $.=1067: Extra text:           'Ocy.,'
+    class.Find_Dates_in_String.rb:840:in do_find $.=1067: Good dates: '1981' moved to bad-dates array after row 1
+
+    
+
+Note that the string that looks (in part) like: 'do_find $.=1067' is the line number 
+of the input record causing the problem (line 1067) in this example.
+
+This is record 1067 of the input file:
+
+    $ line 1067 corp_collections_export.txt
+    1090;Los Angeles Union Passenger Terminal;;Los Angeles Division. LAUPT rules;;Ocy. 15, 1981;;Southern Pacific / Los Angeles Union Passenger Terminal;
+
+The dates can be fixed (if possible) and the program run again (and again (and again)).   
+When satified...
+
+Run the 2nd formatter program:
+
+    $ sort corp_collections.indent_input.unsorted.txt | ruby -w -S formatter.indent.to.add_objects.corp_collection.rb > corp_collections.as_input.txt
+
+Which should return this:
+    "@indent_key_stack_A:"
+    [["/", 4]]
+
+NOTE: The input file must be sorted!
+
+The format of the 1st formatter's output file 'corp_collections.indent_input.unsorted.txt' is as follows (after sorting):
+
+    {"__RECORD_INDENT_KEYS__":["Atchison, Topeka & Santa Fe","Rolling stock Freight","Horse"],"__RECORD_VALUES__":["","","","","506",[]],"level":"file","__RECORD_NUM__":"489","__RECORD_ORIGINAL__":"506;Rolling stock Freight. Horse;;;;;;Atchison, Topeka & Santa Fe;"}
+    {"__RECORD_INDENT_KEYS__":["Atchison, Topeka & Santa Fe","Rolling stock","Freight and passenger"],"__RECORD_VALUES__":["Painting, cleaning, etc. Rules. [By date]","","","","492",[]],"level":"file","__RECORD_NUM__":"476","__RECORD_ORIGINAL__":"492;Rolling stock. Freight and passenger;;Painting, cleaning, etc. Rules. [By date];;;;Atchison, Topeka & Santa Fe;"}
+    {"__RECORD_INDENT_KEYS__":["Atchison, Topeka & Santa Fe","Rolling stock","Freight","Box"],"__RECORD_VALUES__":["","","","","500",[]],"level":"file","__RECORD_NUM__":"483","__RECORD_ORIGINAL__":"500;Rolling stock. Freight. Box;;;;;;Atchison, Topeka & Santa Fe;"}
+    {"__RECORD_INDENT_KEYS__":["Atchison, Topeka & Santa Fe","Rolling stock","Freight","Coal"],"__RECORD_VALUES__":["Specifications","","","","501",["1887"]],"level":"file","__RECORD_NUM__":"484","__RECORD_ORIGINAL__":"501;Rolling stock. Freight. Coal;;Specifications;;1887;;Atchison, Topeka & Santa Fe;"}
+
+The hash key: 
+    '__RECORD_INDENT_KEYS__' contains an array of the fields used for grouping (columns: 7, 1, 2, 6, 3 as described above)
+    '__RECORD_VALUE__' is an array of everything that wasn't an indent_key field.
+    '__RECORD_NUM__' is the record number from the 1st formatter program.
+    '__RECORD_ORIGINAL__ is the record as it originally looked.
+    
+There is also a 'level' hash-key which is always 'file' (in this example).  
+
+  
+The following are the records created by the 2nd formatter for input to the 'add_objects' program.   The FOUR records
+above become EIGHT records (below):  1 'subseries' and 1 'recordgrp' RECORDs, with their 2 corresponding INDENT's, and 4 'file' 
+RECORD's, as follows:
+
+    {"__RECORD__":{"level":"file","title":"Atchison, Topeka & Santa Fe. Rolling stock Freight. Horse","notes":[],"dates":[]}}
+    {"__RECORD__":{"level":"subseries","component_id":"2.9","title":"Subseries 2.9: Atchison, Topeka & Santa Fe. Rolling stock"}}
+    {"__INDENT__":["__RIGHT__","GROUP 2.9: Atchison, Topeka & Santa Fe. Rolling stock"]}
+    {"__RECORD__":{"level":"file","title":"Atchison, Topeka & Santa Fe. Rolling stock. Freight and passenger. Painting, cleaning, etc. Rules. [By date]","notes":[],"dates":[]}}
+    {"__RECORD__":{"level":"recordgrp","title":"Atchison, Topeka & Santa Fe. Rolling stock. Freight"}}
+    {"__INDENT__":["__RIGHT__","GROUP 2.9.1: Atchison, Topeka & Santa Fe. Rolling stock. Freight"]}
+    {"__RECORD__":{"level":"file","title":"Atchison, Topeka & Santa Fe. Rolling stock. Freight. Box","notes":[],"dates":[]}}
+    {"__RECORD__":{"level":"file","title":"Atchison, Topeka & Santa Fe. Rolling stock. Freight. Coal. Specifications","notes":[{"jsonmodel_type":"note_multipart","label":"","type":"processinfo","subnotes":[{"jsonmodel_type":"note_text","content":"Dates converted."}]},{"jsonmodel_type":"note_multipart","label":"","type":"processinfo","subnotes":[{"jsonmodel_type":"note_text","content":"Original record num: 484, Original record text: '501;Rolling stock. Freight. Coal;;Specifications;;1887;;Atchison, Topeka & Santa Fe;'"}]}],"dates":[{"label":"existence","date_type":"single","begin":"1887"}]}}
+
+See Example_01 for additional information about the format of the '*.as_input.txt' files.  
+
+
+The 'corp_collections.as_input.txt' is then used as input to the add_objects program, which is run as follows:
+
+    $ ruby -w -S ArchivesSpace.add_objects.rb --res-num 126 [--update] corp_collections.as_input.txt
+
+                                              --res-num 126 is the resource number (126 in the example).
+
+
+The output will be similar to that described in Example_01.
+
+
+Both formatter programs have options which affect how the Group-Records are created and how dates are converted:
+
+    The 'formatter.csv.to.indent.corp_collection.rb' program (the 1st formatter) has 4 option:
+
+        $ rr formatter.csv.to.indent.corp_collection.rb --help
+        Usage: formatter.csv.to.indent.corp_collection.rb [options] [file]
+            -l, --max-levels n               Max number of group levels (default 5)
+            -r n                             Stop after N input records
+                --find_dates_option_H x      Option Hash passed to the Find_Dates_in_String class.
+            -h, --help
+
+        "Find_Dates_in_String default options:"
+        {
+               :date_clump_separators => "[|/]",
+             :date_string_composition => :dates_in_text,
+                       :debug_options => [],
+                     :default_century => "19",
+             :morality_replace_option => {
+                 :bad => :keep,
+                :good => :remove
+            },
+            :nn_mmm_nn_day_year_order => :dd_mm_yy,
+                 :nn_nn_nn_date_order => :mm_dd_yy,
+                    :pattern_name_RES => ".",
+                                :sort => true,
+                :thru_date_separators => "[-]",
+                      :yyyy_max_value => "2100",
+                      :yyyy_min_value => "1800"
+        }
+
+        Note that:  The --file_dates_option_H numeric values have to be quoted (no integers), eg.
+                    formatter.csv.to.indent.corp_collection.rb -find_date_option_H '{ :default_century => "20" }' file
+
+        
+
+    The 'formatter.indent.to.add_objects.corp_collection.rb' program (the 2nd formatter) has 4 options: 
+
+        $ ruby -w -S formatter.indent.to.add_objects.corp_collection.rb --help
+        Usage: formatter.indent.to.add_objects.corp_collection.rb [options] [file]
+            -g, --min-group-size n           Min records in a Series/Subseries/Record-group (default = 5)
+            -s, --max-series n               Max number of Series/Subseries (default = 2)
+            -l, --max-levels n               Max number of N.N.N things to show (default --max-series)
+            -h, --help
+
