@@ -195,7 +195,7 @@ class AO_Query
     #       Note:  The ref's are the strings that look like this:  75f47d3454c79e8d2f9a180ae35779a6
     #              It's NOT the AO number.
             raise
-        end		
+        end        
         @result = http_response_body
         return self
     end

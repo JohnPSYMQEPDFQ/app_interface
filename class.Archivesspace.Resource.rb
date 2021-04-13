@@ -210,7 +210,7 @@ class Resource_Query
             SE.puts "uri = #{uri}"
             SE.pp "http_response_body", http_response_body
             raise
-        end		
+        end        
 #       SE.pp http_response_body
         @buf_A = load_children( http_response_body[ K.children], [] )
     end

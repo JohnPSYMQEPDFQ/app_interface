@@ -144,7 +144,7 @@ class Record_Format < Buffer_Base
                 K.jsonmodel_type => K.note_multipart, 
                 K.label => '', 
                 K.type => K.undefined, #(processinfo)
-                K.subnotes =>  [  ]			
+                K.subnotes =>  [  ]            
             }
         @record_H.merge!( h )
         return h

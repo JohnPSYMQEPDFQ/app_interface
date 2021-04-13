@@ -127,7 +127,7 @@ class Location_Record_Buf < Record_Buf
         
         http_response_body_H = super
         return http_response_body_H
-    end	
+    end    
 end
 
 

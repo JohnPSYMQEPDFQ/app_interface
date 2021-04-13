@@ -121,8 +121,8 @@ ARGV.each do | element |
         puts tc_buf_O.record_H.ai
     when 'loc'
         puts "Location: #{element}:"
-        ao_buf_O = Location.new( aspace_O, element ).new_buffer.read( record_filter_B )
-        puts ao_buf_O.record_H.ai
+        loc_buf_O = Location.new( aspace_O, element ).new_buffer.read( record_filter_B )
+        puts loc_buf_O.record_H.ai
     else
         puts "Unknown record_type: #{current_record_type}"
     end 

@@ -32,20 +32,20 @@ class ASpace
     attr_reader :api_uri_base, :session, :http_calls_O
     attr_writer :api_uri_base
         
-	def login( p1_userid , p2_password )
-		if ( @api_uri_base == nil ) then
-			SE.puts "#{SE.lineno}: =============================================="
-			SE.puts "Set it with the ASpace#api_uri_base= method"
-			raise 
-		end
+    def login( p1_userid , p2_password )
+        if ( @api_uri_base == nil ) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "Set it with the ASpace#api_uri_base= method"
+            raise 
+        end
         @http_calls_O = Http_Calls.new( self )
-		@session = nil
-		@uri = "/users/#{p1_userid}/login"
-		http_response_body_H = @http_calls_O.post_with_params( @uri, { K.password => p2_password } )
-		@session = http_response_body_H[ K.session ]
-	#   SE.puts "session = #{@session}"
-		return http_response_body_H
-	end
+        @session = nil
+        @uri = "/users/#{p1_userid}/login"
+        http_response_body_H = @http_calls_O.post_with_params( @uri, { K.password => p2_password } )
+        @session = http_response_body_H[ K.session ]
+    #   SE.puts "session = #{@session}"
+        return http_response_body_H
+    end
 end
 
 
