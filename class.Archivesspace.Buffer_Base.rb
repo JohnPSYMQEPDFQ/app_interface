@@ -36,7 +36,7 @@ class Buffer_Base
                 return { k => v } if ( ! h_after.has_key? (k))
                 return { k => v } if ( ! v.class == h_after[ k ].class )
             end
-            if ( v.is_a? ( Hash )) then
+            if ( v.is_a?( Hash )) then
                 return { k => v } if ( ! hash_comp_key_type( h_before[ k ], h_after[ k ]) == { } )
             end
         end
