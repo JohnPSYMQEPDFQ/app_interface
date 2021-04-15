@@ -82,7 +82,7 @@ ARGF.each_line do |input_record|
     from_thru_date_A_A = [ ]
     if ( ! ( a1[ 5 ].downcase.in?( [ 'not dated', "" ] ) ) ) then
         find_dates_O.do_find( a1[ 5 ] )
-        find_dates_O.good_date_clump_S_A.each do | date_clump_S |
+        find_dates_O.good__date_clump_S__A.each do | date_clump_S |
             from_thru_date_A = [ ]
             from_thru_date_A << date_clump_S.from_date
             from_thru_date_A << date_clump_S.thru_date if ( date_clump_S.thru_date != "")

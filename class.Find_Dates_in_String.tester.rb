@@ -62,7 +62,7 @@ output_string = find_dates_O.do_find( input_string )
 
 SE.puts "output_string = #{output_string.ai}"
 
-SE.q { 'find_dates_O.good_date_clump_S_A' }
-SE.q { 'find_dates_O.bad_date_clump_S_A' }
+SE.q { 'find_dates_O.good__date_clump_S__A' }
+SE.q { 'find_dates_O.bad__date_clump_S__A' }
 
 

@@ -206,93 +206,93 @@ class Find_Dates_in_String
                                                                             # for ease of reading. To match a space, use \\s instead.
                                                                             # And, it HAS to be \\ because it's a double quoted string.
 
-        initial_date_pattern_RES_S_A = []
+        initial__date_pattern_RES_S__A = []
 
                                         #   fmt002__ = possible year 
 
-        initial_date_pattern_RES_S_A << date_pattern_RES_S.new( nil,
+        initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                  "(?<fmt002__yyyy>          (?<year_M>#{nn_nnnn_RES}))" )
 
 
                                         #   fmt003__ = Dates in 'mmm dd, yyyy' format with spaces between 'mmm' 'dd'
 
-        initial_date_pattern_RES_S_A << date_pattern_RES_S.new( nil,
+        initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt003__MMM_dd_yyyy>    (?<month_M>#{month_RES})#{space_RES}     (?<day_M>#{n_nn_RES})#{comma_RES}     (?<year_M>#{nn_nnnn_RES}))" )
 
 
                                         #   fmt004__ = Dates in 'mmm yyyy' or 'mmm-yyyy' format
                                         
-        initial_date_pattern_RES_S_A << date_pattern_RES_S.new( nil,
+        initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt004__MMM_yyyy>       (?<month_M>#{month_RES})#{space_dash_RES}     (?<year_M>#{nn_nnnn_RES}))" )
 
          
                                         #   fmt005__ = Dates in 'yyyy mmm' or 'yyyy-mmm' format
                                         
-        initial_date_pattern_RES_S_A << date_pattern_RES_S.new( nil,
+        initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt005__yyyy_MMM>       (?<year_M>#{nn_nnnn_RES})#{space_dash_RES}    (?<month_M>#{month_RES}))" )
 
 
                                         #   fmt006__ = Dates in 'dd [-/] mmm [-/] yyyy' or ' yyyy [-/] mmm [-/] dd' format
 
-        initial_date_pattern_RES_S_A << date_pattern_RES_S.new( nil,
+        initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt006__nn_MMM_nn>      (?<nn_1st_M>#{n_nnnn_RES})#{space_dash_slash_RES}  (?<month_M>#{month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{n_nnnn_RES}))" )
 
 
                                          #   fmt008__ = Dates in 'mmm dd - dd, yyyy format (hybid double)
 
-        initial_date_pattern_RES_S_A << date_pattern_RES_S.new( nil,
+        initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt008__MMM_dd_dd_yyyy>     (?<month_M>#{month_RES})#{space_RES}    (?<day_M>#{n_nn_RES})"+
                                                       "#{@thru_date_separator_RES} (?<thru_day_M>#{n_nn_RES})#{space_comma_RES}  (?<year_M>#{nn_nnnn_RES}))" )
 
 
                                          #   fmt008__ = Dates in 'mmm dd - mmm dd, yyyy format (hybid double)
                                          
-         initial_date_pattern_RES_S_A << date_pattern_RES_S.new( nil,
+         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt009__MMM_dd_MMM_dd_yyyy> (?<month_M>#{month_RES})#{space_RES}             (?<day_M>#{n_nn_RES})"+
               "#{@thru_date_separator_RES} (?<thru_month_M>#{month_RES})#{space_comma_RES}  (?<thru_day_M>#{n_nn_RES})#{comma_RES}(?<year_M>#{nn_nnnn_RES}))" )
 
                                         #   fmt010__ = Dates in 'mmm-mmm yy[yy] format (hybid double) Note there's NO COMMA after the month
 
-        initial_date_pattern_RES_S_A << date_pattern_RES_S.new( nil,
+        initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt010__MMM_MMM_yyyy>       (?<month_M>#{month_RES})#{space_RES}"+
               "#{@thru_date_separator_RES} (?<thru_month_M>#{month_RES})#{space_RES}                                              (?<year_M>#{nn_nnnn_RES}))" )
 
 
                                         #   fmt013__ = All numeric dates 'nn [-/] nn [-/] nn ' format,  the 1st and 3rd positions could be 1 or 4 digets (days or years)
                                         
-         initial_date_pattern_RES_S_A << date_pattern_RES_S.new( nil,
+         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt013__nn_nn_nn>   (?<nn_1st_M>#{n_nnnn_RES})#{dash_slash_RES}  (?<nn_2nd_M>#{n_nn_RES})#{dash_slash_RES}   (?<nn_3rd_M>#{n_nnnn_RES}))" )
 
 
 #       Set the pattern_name and length
-        initial_date_pattern_RES_S_A.each_index do | date_pattern_I |
-            stringer = initial_date_pattern_RES_S_A[ date_pattern_I ].pattern_RES.gsub( / /,'' )
+        initial__date_pattern_RES_S__A.each_index do | idx |
+            stringer = initial__date_pattern_RES_S__A[ idx ].pattern_RES.gsub( / /,'' )
             pattern_name = stringer[ stringer.index( '<' ) + 1 .. stringer.index( '>' ) - 1 ]
             if ( not pattern_name.match?( /^fmt[0-9]{3}__/ ) ) then
                 SE.puts "#{SE.lineno}: I shouldn't be here: pattern_name doesn't start with /fmtNNN__'#{pattern_name}'"
                 raise
             end
-            initial_date_pattern_RES_S_A[ date_pattern_I ].pattern_RES  = stringer          # get rid of the literal spaces.
-            initial_date_pattern_RES_S_A[ date_pattern_I ].pattern_name = pattern_name
+            initial__date_pattern_RES_S__A[ idx ].pattern_RES  = stringer          # get rid of the literal spaces.
+            initial__date_pattern_RES_S__A[ idx ].pattern_name = pattern_name
         end
 
 #       Load date patterns to use
-        @date_pattern_RES_S_A = [ ]
-        initial_date_pattern_RES_S_A.each_index do | date_pattern_I |
-            pattern_name = initial_date_pattern_RES_S_A[ date_pattern_I ].pattern_name
+        @date_pattern_RES_S__A = [ ]
+        initial__date_pattern_RES_S__A.each_index do | idx |
+            pattern_name = initial__date_pattern_RES_S__A[ idx ].pattern_name
             if ( pattern_name.match?( /#{@option_H[ :pattern_name_RES ]}/ )) then
-                @date_pattern_RES_S_A.push( initial_date_pattern_RES_S_A[ date_pattern_I ] )
+                @date_pattern_RES_S__A.push( initial__date_pattern_RES_S__A[ idx ] )
             end
         end
-        if ( @date_pattern_RES_S_A.length == 0 ) then
+        if ( @date_pattern_RES_S__A.length == 0 ) then
             SE.puts "#{SE.lineno}: No patterns selected based on RE: #{@option_H[ :pattern_name_RES ]}"
             raise
         end
 
 #       Check for duplicate pattern names
         @pattern_cnt_H = {}
-        @date_pattern_RES_S_A.each_index do | date_pattern_I |
-            pattern_name = date_pattern_RES_S_A[ date_pattern_I ].pattern_name
+        @date_pattern_RES_S__A.each_index do | idx |
+            pattern_name = date_pattern_RES_S__A[ idx ].pattern_name
             if ( @pattern_cnt_H.key?( pattern_name ) ) then
                 SE.puts "#{SE.lineno}: I shouldn't be here: duplicate pattern_name '#{pattern_name}'"
                 raise
@@ -308,7 +308,7 @@ class Find_Dates_in_String
         @date_clump_C = Struct.new( :full_match_string,
                                     :replace_uid,                       
                                     :beginning_offset,   
-                                    :date_match_S_A,
+                                    :date_match_S__A,
                                     :morality,
                                     :error_msg,
                                     keyword_init: true
@@ -334,10 +334,10 @@ class Find_Dates_in_String
                                                 return
                                             end
                                             def from
-                                                return date_match_S_A[ 0 ]
+                                                return date_match_S__A[ 0 ]
                                             end
                                             def thru
-                                                return date_match_S_A[ 1 ]
+                                                return date_match_S__A[ 1 ]
                                             end      
                                             def from_date
                                                 date_match_S = from
@@ -391,16 +391,16 @@ class Find_Dates_in_String
         return                            
         
     end
-    attr_reader :option_H, :date_pattern_RES_S_A, :pattern_cnt_H
+    attr_reader :option_H, :date_pattern_RES_S__A, :pattern_cnt_H
     
-    def get_tree_of_possible_date_S_A_A( input_string, initial_offset, looking_for_a_thru_date = false, level = 0 )
-        tree_of_possible_date_S_A_A = [ ]
+    def get_tree_of__possible_date_S__A_A( input_string, initial_offset, looking_for_a_thru_date = false, level = 0 )
+        tree_of__possible_date_S__A_A = [ ]
         if ( level > 10 ) then
             SE.puts "In to deep"
-            SE.q { 'tree_of_possible_date_S_A_A' }
+            SE.q { 'tree_of__possible_date_S__A_A' }
             raise
         end
-        @date_pattern_RES_S_A.each do | date_pattern_RES_S |
+        @date_pattern_RES_S__A.each do | date_pattern_RES_S |
             if ( looking_for_a_thru_date ) then
                 pattern_RES = %r{(?<begin_M>#{@thru_date_begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?<end_M>#{@end_delim_RES})}xi
             else
@@ -414,67 +414,67 @@ class Find_Dates_in_String
             match_offset = match_O.offset( :begin_M )[0]
             match_length = match_string.length
             if ( match_O.named_captures[ 'end_M' ] =~ /#{@thru_date_separator_RES}/ix ) then
-                result = get_tree_of_possible_date_S_A_A( input_string[ match_offset + match_length .. -1 ], 0, true, level + 1 )
-                tree_of_possible_date_S_A_A << [ @possible_date_C.new( date_pattern_RES_S.pattern_name, match_O ), result ]
+                result = get_tree_of__possible_date_S__A_A( input_string[ match_offset + match_length .. -1 ], 0, true, level + 1 )
+                tree_of__possible_date_S__A_A << [ @possible_date_C.new( date_pattern_RES_S.pattern_name, match_O ), result ]
             else
-                tree_of_possible_date_S_A_A << [ @possible_date_C.new( date_pattern_RES_S.pattern_name, match_O ), [ ] ]
+                tree_of__possible_date_S__A_A << [ @possible_date_C.new( date_pattern_RES_S.pattern_name, match_O ), [ ] ]
             end
         end
-        return tree_of_possible_date_S_A_A
+        return tree_of__possible_date_S__A_A
     end
     
-    def get_combinations_of_possible_date_S_A_A( tree_of_possible_date_S_A_A, combinations_of_possible_date_S_A_A = [], predecessors_A = [] )
-        tree_of_possible_date_S_A_A.each do | tree_of_possible_date_S_A |
+    def get_combinations_of__possible_date_S__A_A( tree_of__possible_date_S__A_A, combinations_of__possible_date_S__A_A = [], predecessors_A = [] )
+        tree_of__possible_date_S__A_A.each do | tree_of__possible_date_S__A |
             new_predecessors_A = []
             new_predecessors_A.concat( predecessors_A )
-            new_predecessors_A.append( tree_of_possible_date_S_A[0] )
-            if ( tree_of_possible_date_S_A[1].length > 0 ) then
-                get_combinations_of_possible_date_S_A_A( tree_of_possible_date_S_A[1], combinations_of_possible_date_S_A_A, new_predecessors_A)
+            new_predecessors_A.append( tree_of__possible_date_S__A[0] )
+            if ( tree_of__possible_date_S__A[1].length > 0 ) then
+                get_combinations_of__possible_date_S__A_A( tree_of__possible_date_S__A[1], combinations_of__possible_date_S__A_A, new_predecessors_A)
             else
-                combinations_of_possible_date_S_A_A << new_predecessors_A
+                combinations_of__possible_date_S__A_A << new_predecessors_A
             end
         end
-        return combinations_of_possible_date_S_A_A
+        return combinations_of__possible_date_S__A_A
     end
 
-    def get_date_match_S_A( input_string,initial_offset )
-        tree_of_possible_date_S_A_A = get_tree_of_possible_date_S_A_A( input_string, initial_offset )
+    def get__date_match_S__A( input_string,initial_offset )
+        tree_of__possible_date_S__A_A = get_tree_of__possible_date_S__A_A( input_string, initial_offset )
         if ( @option_H[ :debug_options ].include?( :print_date_tree )) then
             SE.puts ""
             SE.puts ""
-            SE.q { 'tree_of_possible_date_S_A_A' }
+            SE.q { 'tree_of__possible_date_S__A_A' }
         end        
-        return [ ] if ( tree_of_possible_date_S_A_A.empty? )
-        combinations_of_possible_date_S_A_A = get_combinations_of_possible_date_S_A_A( tree_of_possible_date_S_A_A )
+        return [ ] if ( tree_of__possible_date_S__A_A.empty? )
+        combinations_of__possible_date_S__A_A = get_combinations_of__possible_date_S__A_A( tree_of__possible_date_S__A_A )
         if ( @option_H[ :debug_options ].include?( :print_unsorted_combinations )) then
             SE.puts ""
-            SE.q { 'combinations_of_possible_date_S_A_A' }
+            SE.q { 'combinations_of__possible_date_S__A_A' }
         end
-        sorted_combinations_of_possible_date_S_A_A = combinations_of_possible_date_S_A_A.sort_by do | combinations_of_possible_date_S_A | 
+        sorted_combinations_of__possible_date_S__A_A = combinations_of__possible_date_S__A_A.sort_by do | combinations_of__possible_date_S__A | 
                             [   
-                                0 - combinations_of_possible_date_S_A.sum { | possible_date_S | possible_date_S.match_O[0].gsub( /\s/,"" ).length },
-                                0 + combinations_of_possible_date_S_A.length,                                                
-                                0 + combinations_of_possible_date_S_A[ 0 ].match_O.offset( :begin_M )[0],
+                                0 - combinations_of__possible_date_S__A.sum { | possible_date_S | possible_date_S.match_O[0].gsub( /\s/,"" ).length },
+                                0 + combinations_of__possible_date_S__A.length,                                                
+                                0 + combinations_of__possible_date_S__A[ 0 ].match_O.offset( :begin_M )[0],
                             ]
                             end
         if ( @option_H[ :debug_options ].include?( :print_sorted_combinations )) then
             SE.puts ""
-            SE.q { 'sorted_combinations_of_possible_date_S_A_A' }
+            SE.q { 'sorted_combinations_of__possible_date_S__A_A' }
         end
-        date_match_S_A = [ ]
-        sorted_combinations_of_possible_date_S_A_A[ 0 ].each do | possible_date_S |             
+        date_match_S__A = [ ]
+        sorted_combinations_of__possible_date_S__A_A[ 0 ].each do | possible_date_S |             
             date_match_S = @date_match_C.new(   possible_date_S.match_O,
                                                 possible_date_S.pattern_name,
                                              )
-            date_match_S_A << date_match_S
+            date_match_S__A << date_match_S
         end
-        return date_match_S_A
+        return date_match_S__A
         
     end
     
 
     def do_find( param_input_string )
-        date_clump_S_A = [ ]
+        date_clump_S__A = [ ]
         process_input_string = "" + param_input_string
         process_input_string_offset = 0
         loop_detector = 0
@@ -490,22 +490,22 @@ class Find_Dates_in_String
                 SE.q { 'process_input_string' }
             end        
             
-            date_match_S_A = get_date_match_S_A( process_input_string, process_input_string_offset )
-            break if ( date_match_S_A.empty? )
+            date_match_S__A = get__date_match_S__A( process_input_string, process_input_string_offset )
+            break if ( date_match_S__A.empty? )
             
             date_clump_S = @date_clump_C.new( full_match_string: "", 
-                                              date_match_S_A: date_match_S_A,
+                                              date_match_S__A: date_match_S__A,
                                             )
-            date_clump_S_A << date_clump_S
+            date_clump_S__A << date_clump_S
             
-            date_clump_S.date_match_S_A.each_with_index do | date_match_S, date_match_I|
+            date_clump_S.date_match_S__A.each_with_index do | date_match_S, date_match_I|
 
                 if ( date_match_I == 0 ) then
-                    date_clump_S.replace_uid        = "<" +  @uid_string + "%010d" % (date_clump_S_A.length) + ">"
+                    date_clump_S.replace_uid        = "<" +  @uid_string + "%010d" % (date_clump_S__A.length) + ">"
                     date_clump_S.beginning_offset   = date_match_S.match_O.offset( :begin_M )[0]   
                     process_input_string_offset     = date_clump_S.beginning_offset
                 end    
-                if ( date_match_I == date_clump_S.date_match_S_A.maxindex ) then    # If we're on the last one...   
+                if ( date_match_I == date_clump_S.date_match_S__A.maxindex ) then    # If we're on the last one...   
                     stringer                        = date_match_S.piece( 0..1 )    # Drop the very last piece from the match
                 else
                     stringer                        = date_match_S.all_pieces
@@ -572,7 +572,7 @@ class Find_Dates_in_String
                     else
                         generated_thru_date_match_S.ymd_S.day = date_match_S.match_O.named_captures[ 'day_M' ]
                     end
-                    date_clump_S.date_match_S_A << generated_thru_date_match_S
+                    date_clump_S.date_match_S__A << generated_thru_date_match_S
                 else
                     date_match_S.ymd_S.year  =  date_match_S.match_O.named_captures[ 'year_M' ]
                     date_match_S.ymd_S.month =  date_match_S.match_O.named_captures[ 'month_M' ]
@@ -581,7 +581,7 @@ class Find_Dates_in_String
                 
                 break if (date_match_S.piece( 2 ) !~ /#{@thru_date_separator_RES}/ix ) 
             end                                                           
-            break if ( date_clump_S.date_match_S_A.length == 0) 
+            break if ( date_clump_S.date_match_S__A.length == 0) 
 
             # process_input_string[ date_clump_S.beginning_offset .. date_clump_S.beginning_offset + date_clump_S.full_match_string.maxoffset ] = date_clump_S.replace_uid
             process_input_string[ date_clump_S.beginning_offset, date_clump_S.full_match_string.length ] = date_clump_S.replace_uid
@@ -591,9 +591,9 @@ class Find_Dates_in_String
         end
 
 
-        date_clump_S_A.each do | date_clump_S |
+        date_clump_S__A.each do | date_clump_S |
 
-            date_clump_S.date_match_S_A.each_with_index do | date_match_S, date_match_I |
+            date_clump_S.date_match_S__A.each_with_index do | date_match_S, date_match_I |
 
                 year   = date_match_S.ymd_S.year
                 month  = date_match_S.ymd_S.month
@@ -731,15 +731,15 @@ class Find_Dates_in_String
             end
             next if ( date_clump_S.morality == :bad )
             
-            if ( date_clump_S.date_match_S_A.length > 2 ) then                 
-                stringer = "#{SE.lineno}: #{date_clump_S.date_match_S_A.length} run-on thru dates: "
-                date_clump_S.date_match_S_A.each do | date_match_S |
+            if ( date_clump_S.date_match_S__A.length > 2 ) then                 
+                stringer = "#{SE.lineno}: #{date_clump_S.date_match_S__A.length} run-on thru dates: "
+                date_clump_S.date_match_S__A.each do | date_match_S |
                     stringer += "'#{date_match_S.all_pieces}' "
                 end
                 date_clump_S.judge_date( :bad, stringer )
                 next
             end      
-            if ( date_clump_S.date_match_S_A.length == 1 and date_clump_S.from.ymd_S.year.length == 2 and date_clump_S.from.ymd_S.month == nil and date_clump_S.from.ymd_S.day == nil ) then
+            if ( date_clump_S.date_match_S__A.length == 1 and date_clump_S.from.ymd_S.year.length == 2 and date_clump_S.from.ymd_S.month == nil and date_clump_S.from.ymd_S.day == nil ) then
                 stringer = "#{SE.lineno}: probable bad date: #{date_clump_S.from.pattern_name}: "+
                                         "'#{date_clump_S.from.all_pieces}' -> "+
                                         "'#{date_clump_S.from.piece( 1 )}' isolated 2 digit number."
@@ -747,7 +747,7 @@ class Find_Dates_in_String
                 next
             end
             
-            if ( date_clump_S.date_match_S_A.length == 2 and date_clump_S.from.strptime_O and date_clump_S.thru.strptime_O ) then
+            if ( date_clump_S.date_match_S__A.length == 2 and date_clump_S.from.strptime_O and date_clump_S.thru.strptime_O ) then
                 if (date_clump_S.from.strptime_O > date_clump_S.thru.strptime_O ) then
                     stringer = "#{SE.lineno}: From date '#{date_clump_S.from_date}' > Thru date '#{date_clump_S.thru_date}'"
                     date_clump_S.judge_date( :bad, stringer )
@@ -765,7 +765,7 @@ class Find_Dates_in_String
         end
 
         process_input_string_with_all_dates_removed = process_input_string + ""
-        date_clump_S_A.each do | date_clump_S |
+        date_clump_S__A.each do | date_clump_S |
             replace_option = @option_H[ :morality_replace_option ][ date_clump_S.morality ]
             case replace_option
             when :keep
@@ -796,23 +796,23 @@ class Find_Dates_in_String
             end
         end
 
-        @good_date_clump_S_A = [ ]
-        @bad_date_clump_S_A = [ ]
-        date_clump_S_A.each do | date_clump_S |
+        @good__date_clump_S__A = [ ]
+        @bad__date_clump_S__A = [ ]
+        date_clump_S__A.each do | date_clump_S |
             case date_clump_S.morality
             when :good
-                @good_date_clump_S_A << date_clump_S
+                @good__date_clump_S__A << date_clump_S
             when :bad
-                @bad_date_clump_S_A << date_clump_S
+                @bad__date_clump_S__A << date_clump_S
             else
                 SE.puts "#{SE.lineno}: I shouldn't be here: amoral date: '#{date_clump_S.morality}', #{date_clump_S}"
                 raise
             end
         end
         if ( @option_H[ :sort ] ) then
-            @good_date_clump_S_A = @good_date_clump_S_A.sort_by { | date_clump_S | [ date_clump_S.from_date ] }
+            @good__date_clump_S__A = @good__date_clump_S__A.sort_by { | date_clump_S | [ date_clump_S.from_date ] }
             prev_date=''
-            @good_date_clump_S_A.each_with_index do | date_clump_S, idx |
+            @good__date_clump_S__A.each_with_index do | date_clump_S, idx |
                 if ( date_clump_S.from_date < prev_date ) then
                     SE.puts "#{SE.lineno}: Warning: Dates overlap! good from-date '#{date_clump_S.from_date} at element #{idx} "+
                             "< previous date #{prev_date}, there may be others."
@@ -833,15 +833,15 @@ class Find_Dates_in_String
             if (process_input_string_with_all_dates_removed !~ /^\s*$/ ) then
                 SE.puts "#{SE.lineno}: Unconverted dates in: '#{param_input_string}'"
                 SE.puts "#{SE.lineno}: Extra text:           '#{process_input_string_with_all_dates_removed}'"  if ( param_input_string != process_input_string_with_all_dates_removed )
-                if ( @good_date_clump_S_A.length > 0 ) then
-                    stringer = @good_date_clump_S_A.map do | date_clump_S |
-                        date_clump_S.date_match_S_A.map do | date_match_S |
+                if ( @good__date_clump_S__A.length > 0 ) then
+                    stringer = @good__date_clump_S__A.map do | date_clump_S |
+                        date_clump_S.date_match_S__A.map do | date_match_S |
                             date_match_S.as_date
                         end
                     end.join( "','")
-                    SE.puts "#{SE.lineno}: Good dates: '#{stringer}' moved to bad-dates array after row #{@bad_date_clump_S_A.length}"
-                    @bad_date_clump_S_A += @good_date_clump_S_A
-                    @good_date_clump_S_A = [ ]
+                    SE.puts "#{SE.lineno}: Good dates: '#{stringer}' moved to bad-dates array after row #{@bad__date_clump_S__A.length}"
+                    @bad__date_clump_S__A += @good__date_clump_S__A
+                    @good__date_clump_S__A = [ ]
                 end
                 SE.puts ""
                 process_input_string = param_input_string
@@ -851,7 +851,7 @@ class Find_Dates_in_String
         return process_input_string
 
     end
-    attr_reader :good_date_clump_S_A, :bad_date_clump_S_A
+    attr_reader :good__date_clump_S__A, :bad__date_clump_S__A
     
 end
 
