@@ -41,7 +41,7 @@ cmdln_option = { :repository_num => 2  ,
                  :resource_num => nil  ,
                  :filter => false }
 OptionParser.new do |option|
-    option.banner = "Usage: #{myself_name} --res-num n [res] [(ao|tc) n,n,...]..."
+    option.banner = "Usage: #{myself_name} --res-num n [res] [(ao|tc|loc) n,n,...]..."
     option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
         cmdln_option[ :repository_num ] = opt_arg
     end

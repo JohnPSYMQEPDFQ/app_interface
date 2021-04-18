@@ -65,7 +65,7 @@ The input FILE has the following three formats( JSONized ):
 
 =end
 
-require "json"
+require 'json'
 require 'pp'
 require 'optparse'
 
@@ -88,29 +88,33 @@ def get_TC_buf_A( p1_res_buf_O, p2_TC_num_A )
     return tc_buf_A
 end
 
-def get_TC_buf_A__for_all_unused_AND_for_this_resource( p1_res_buf_O, p2_tc_buf_A )
-    tc_buf_A__unused_and_this_resource=[ ]
-    p2_tc_buf_A.each { |tc_buf_O|
+def get_tc_S_A( p1_res_buf_O, p2_tc_buf_A )
+
+    tc_C = Struct.new( :tc_buf_O,
+                       :owner,
+                     )
+    tc_S_A=[ ]
+    p2_tc_buf_A.each { | tc_buf_O |
         record_H = tc_buf_O.record_H
-        if ( record_H.key?( K.collection ) && record_H[ K.collection ].count > 0 ) then
-            record_H[ K.collection ].each { |ref_A|
-                if ( ref_A.key?( K.ref ) ) then
-                    if ( ref_A[ K.ref ] == p1_res_buf_O.uri ) then
-                        tc_buf_A__unused_and_this_resource << [ tc_buf_O, '' ]
+        if ( record_H.key?( K.collection ) && record_H[ K.collection ].count > 0 ) then     
+            record_H[ K.collection ].each { | collection |
+                if ( collection.key?( K.ref ) ) then
+                    if ( collection[ K.ref ] == p1_res_buf_O.uri ) then
+                        tc_S_A << tc_C.new( tc_buf_O, :mine )
                     end
                 end
             }
         else
-            tc_buf_A__unused_and_this_resource << [ tc_buf_O, K.undefined ]
+            tc_S_A << tc_C.new( tc_buf_O, :unused )
         end
     }
-    return tc_buf_A__unused_and_this_resource
+    return tc_S_A
 end
 
 def get_A_of_AO_ref( p1_H_of_AO_ref_A )
     array_of_AO_ref= [ ]
     p1_H_of_AO_ref_A[ K.archival_objects ].each do |current_A_element| 
-        array_of_AO_ref<< current_A_element[ K.ref ]
+        array_of_AO_ref << current_A_element[ K.ref ]
     end
 #   SE.pp "#{SE.lineno}: array_of_AO_ref:", array_of_AO_ref
     return array_of_AO_ref
@@ -120,6 +124,7 @@ end
 BEGIN {}
 END {}
 
+binding.pry if ( respond_to? :pry )
 myself_name = File.basename( $0 )
 api_uri_base = "http://localhost:8089"
 
@@ -228,20 +233,25 @@ else
     end
 end
 
-SE.puts "Finding Top_Containers (which takes some time) ..."
-tc_buf_A = get_TC_buf_A( res_buf_O, TC_Query.new( rep_O ).get_A_of_TC_nums( { 'all_ids' => 'true' } ).result )
-#SE.pp "#{SE.lineno}: tc_buf_A.length = #{tc_buf_A.length}"
 
-tc_buf_A__all_unused_AND_for_this_resource = get_TC_buf_A__for_all_unused_AND_for_this_resource( res_buf_O, tc_buf_A )
-#SE.pp "#{SE.lineno}: tc_buf_A__all_unused_AND_for_this_resource = ", tc_buf_A__all_unused_AND_for_this_resource
+SE.puts "Finding Top_Containers (which takes some time) ..."
+time_begin = Time.now
+tc_buf_A = get_TC_buf_A( res_buf_O, TC_Query.new( rep_O ).get_A_of_TC_nums( { 'all_ids' => 'true' } ).result )
+elapsed_seconds = Time.now - time_begin
+SE.puts "Elapsed seconds = #{elapsed_seconds}"
+
+tc_S_A = get_tc_S_A( res_buf_O, tc_buf_A )
+
+
+#SE.pp "#{SE.lineno}: tc_S_A = ", tc_S_A
 
 tc_uri_H__by_type_and_indicator = {}
-tc_buf_A__all_unused_AND_for_this_resource.each do |element|
-    record_H = element[ 0 ].record_H
+tc_S_A.each do |tc_S|
+    record_H = tc_S.tc_buf_O.record_H
 #   SE.pp record_H
-    if ( element[ 1 ] == K.undefined ) then
+    if ( tc_S.owner == :unused ) then
         SE.puts "#{SE.lineno}: Delete top_container: #{record_H[ K.uri ]}"
-        element[ 0 ].delete
+        tc_S.tc_buf_O.delete
     else
         if ( record_H.key?( K.type ) and record_H.key?( K.indicator )) then
             stringer=record_H[ K.type ] + record_H[ K.indicator ]
@@ -388,5 +398,5 @@ for argv in ARGV do
 end
 #SE.pp "tc_uri_H__by_type_and_indicator:", tc_uri_H__by_type_and_indicator 
 SE.puts "#{SE.lineno}: net indent count = #{net_indent_cnt}"
-SE.pp "record counts:", record_level_cnt
+SE.puts "record counts:", record_level_cnt.ai
 
