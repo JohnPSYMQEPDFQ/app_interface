@@ -110,14 +110,24 @@ end
 
 class Resource_Query   
 
-    def initialize( res_O )
+    def initialize( res_O, param_get_full_ao_buf = false )
+=begin    
+        Param2, if true, causes the query to read each AO record.  This is about 30 times slower
+        than using the data from the AO indexes, which is a subset of the AO.
+=end
         if ( res_O.class.name.downcase != K.resource ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 is not a Resource class object, it's a #{res_O.class}"
+            SE.puts "Param 1 is not a Resource class object, it's a '#{res_O.class}'"
+            raise
+        end 
+        if ( not (param_get_full_ao_buf == true or param_get_full_ao_buf == false )) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "Param 2 should be true or false, not '#{param_get_full_ao_buf}'"
             raise
         end 
         @res_O = res_O
         @buf_A = nil
+        @get_full_ao_buf = param_get_full_ao_buf    
     end
     attr_reader :buf_A, :res_O
 
@@ -178,7 +188,11 @@ class Resource_Query
                     raise
                 end
                 child_H[ K.resource ] = { K.ref => @res_O.uri }
-                @buf_A << Archival_Object.new( @res_O, child_H[ K.uri ] ).new_buffer.load( child_H )
+                if ( @get_full_ao_buf ) then
+                    @buf_A << Archival_Object.new( @res_O, child_H[ K.uri ] ).new_buffer.read
+                else
+                    @buf_A << Archival_Object.new( @res_O, child_H[ K.uri ] ).new_buffer.load( child_H )
+                end
                 if ( child_H[ K.child_count ] > 0 ) then
                     process_each_node( child_H[ K.uri ] )
                 end
