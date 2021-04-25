@@ -35,8 +35,8 @@ module SE
     #
         if block
             stringer = Array(block[]).collect do |expression|
-            value = eval(expression.to_s, block.binding)
-            "#{expression} = #{value.ai}"
+                value = eval(expression.to_s, block.binding)
+                "#{expression} = #{value.ai}"
             end.join(', ')
             $stderr.puts SE.lineno(1) + ":" + stringer
         else
