@@ -68,8 +68,6 @@ uri = a1[ 0 ]
 if ( a1.maxindex < 1 ) then
     params = {}
 else
-#   params = [ a1[ 1 ].split( '&' ).map.split( '=' ).map( &:to_s ).map( &:strip ) ].to_h
-
     params = a1[ 1 ].split( '&' ).map { | e | e.split( '=' ).map( &:to_s ).map( &:strip ) }.to_h
     params.each_pair { | k, v | params[k] = v.to_i if (v.integer?) }
 end
