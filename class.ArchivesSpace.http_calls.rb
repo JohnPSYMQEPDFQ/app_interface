@@ -14,18 +14,17 @@ Abbreviations,  AO = archival object(Everything's an AO, but there's also uri "a
 =end
 
 
-
-require "net/http"
+require 'net/http'
 require 'uri'
-require "json"
+require 'json'
 require 'class.ArchivesSpace.Record_Buf.rb'
 
 class Http_Calls
 
     def initialize( p1_aspace_O )
-        if ( p1_aspace_O.class != ASpace ) then
+        if ( not p1_aspace_O.is_a?( ASpace ) ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 is not a ASpace class object"
+            SE.puts "Param 1 is not a ASpace class object, it's a '${p1_aspace_O.class}'"
             raise
         end    
         @aspace_O = p1_aspace_O

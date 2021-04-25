@@ -21,9 +21,9 @@ class Resource
           resource_buffer_Obj = Resource.new(repository_Obj, resource-num|uri).new_buffer[.read|create]
 =end
     def initialize( p1_rep_O, p2_res_identifier )
-        if ( p1_rep_O.class != Repository ) then
+        if ( not p1_rep_O.is_a?( Repository ) ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 is not a Repository class object, it's #{p1_rep_O.class}"
+            SE.puts "Param 1 is not a Repository class object, it's a '#{p1_rep_O.class}'"
             raise
         end    
         @rep_O = p1_rep_O
@@ -68,9 +68,9 @@ class Resource_Record_Buf < Record_Buf
       Note that: The 'create' just initializes the buffer, and the Update is called 'store' (so it's IRSD)
 =end
     def initialize( res_O )
-        if ( res_O.class.name.downcase != K.resource ) then
+        if ( not res_O.is_a?( Resource )) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 is not a Resource class object, it's a #{res_O.class}"
+            SE.puts "Param 1 is not a Resource class object, it's a '#{res_O.class}'"
             raise
         end 
         @rec_jsonmodel_type =  K.resource
@@ -115,7 +115,7 @@ class Resource_Query
         Param2, if true, causes the query to read each AO record.  This is about 30 times slower
         than using the data from the AO indexes, which is a subset of the AO.
 =end
-        if ( res_O.class.name.downcase != K.resource ) then
+        if ( not res_O.is_a?( Resource )) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Param 1 is not a Resource class object, it's a '#{res_O.class}'"
             raise

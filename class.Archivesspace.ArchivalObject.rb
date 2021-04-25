@@ -21,10 +21,10 @@ class Archival_Object
           ao_buffer_Obj = Archival_Object.new(resource_Obj, ao-num|uri).new_buffer[.read|create]
 =end
     def initialize( p1_O, p2_AO_identifier = nil )
-        if ( p1_O.class == Resource_Record_Buf ) then
+        if ( p1_O.is_a?( Resource_Record_Buf ) ) then
             @res_O = p1_O.res_O
         else
-            if ( p1_O.class != Resource ) then
+            if ( not p1_O.is_a?( Resource ) ) then
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.puts "Param 1 is not a Resource or Resource_Record_Buf class object, it's: '#{p1_O.class}'"
                 raise
@@ -71,9 +71,9 @@ class AO_Record_Buf < Record_Buf
       There's also a 'load' method which allows external data to be loaded into the buffer.
 =end
     def initialize( ao_O )
-        if ( ao_O.class.name.downcase != K.archival_object ) then
+        if ( not ao_O.is_a?( Archival_Object )) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 is not an Archival_Class object, it's: '#{ao_O.class.name.downcase}'"
+            SE.puts "Param 1 is not an Archival_Class object, it's: '#{ao_O.class}'"
             raise
         end    
         @rec_jsonmodel_type =  K.archival_object

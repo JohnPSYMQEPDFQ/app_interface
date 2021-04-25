@@ -15,9 +15,9 @@ Abbreviations,  AO = archival object(Everything's an AO, but there's also uri "a
 
 class Repository
     def initialize( p1_aspace_O, p2_rep_num )
-        if ( p1_aspace_O.class != ASpace ) then
+        if ( not p1_aspace_O.is_a?( ASpace ) ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 is not a ASpace class object"
+            SE.puts "Param 1 is not a ASpace class object, it's a '#{p1_aspace_O.class}'"
             raise
         end    
         if ( ! p1_aspace_O.session or p1_aspace_O.session == K.undefined ) then

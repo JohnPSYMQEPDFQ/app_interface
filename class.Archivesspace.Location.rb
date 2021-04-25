@@ -20,9 +20,9 @@ class Location
           location_buffer_O = location.new(aspace_O, location-num|uri).new_buffer[.read|create]
 =end
     def initialize( p1_aspace_O, p2_location_identifier = nil )
-        if ( p1_aspace_O.class != ASpace ) then
+        if ( not p1_aspace_O.is_a?( ASpace ) ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 is not a Resource or Resource_Record_Buf class object, it's: '#{p1_aspace_O.class}'"
+            SE.puts "Param 1 is not a ASpace class object, it's a '#{p1_aspace_O.class}'"
             raise
         end    
         @aspace_O = p1_aspace_O
@@ -54,9 +54,9 @@ class Location_Record_Buf < Record_Buf
       Note that: The 'create' just initializes the buffer, and the Update is called 'store' (so it's IRSD)
 =end
     def initialize( location_O )
-        if ( location_O.class.name.downcase != K.location ) then
+        if ( not location_O.is_a?( Location )) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 is not an location object, it's: '#{location_O.class}'"
+            SE.puts "Param 1 is not an Location object, it's a '#{location_O.class}'"
             raise
         end    
         @rec_jsonmodel_type = K.location

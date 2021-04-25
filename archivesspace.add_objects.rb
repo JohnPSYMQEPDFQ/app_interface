@@ -19,10 +19,8 @@ Usage:  this_program.rb --res-num n [other options] FILE
 
 To attach the records in FILE to the "Resource Record", only the --res-num option is needed.
 To attach the records to a specific AO, enter the --res-num option along with:
-    1)  the --ao-ref of the child AO. The --ao-ref is the long unique-id of the AO record that looks like this:
-            aspace_dd30f87692b9fcc97b9a1e3fe14f8b40  (sometimes it won't have the 'aspace_' prefix)
-    2)  the --ao-num of the child AO. The --ao-num is the number at the end of the AO's uri.
-    3)  OR used the 'new_parent' record-type in the input FILE.
+    1)  the --ao-num of the child AO. The --ao-num is the number at the end of the AO's uri.
+    2)  OR used the 'new_parent' record-type in the input FILE.
 
 
 The input FILE has the following three formats( JSONized ):
@@ -80,46 +78,7 @@ require 'class.Archivesspace.Repository.rb'
 require 'class.Archivesspace.TopContainer.rb'
 require 'class.Archivesspace.Resource.rb'
 
-def get_TC_buf_A( p1_res_buf_O, p2_TC_num_A )
-    tc_buf_A = [ ]
-    p2_TC_num_A.each { |current_TC_num|
-        tc_buf_A << Top_Container.new( p1_res_buf_O, current_TC_num ).new_buffer.read
-    }
-    return tc_buf_A
-end
 
-def get_tc_S_A( p1_res_buf_O, p2_tc_buf_A )
-
-    tc_C = Struct.new( :tc_buf_O,
-                       :owner,
-                     )
-    tc_S_A=[ ]
-    p2_tc_buf_A.each { | tc_buf_O |
-        record_H = tc_buf_O.record_H
-        if ( record_H.key?( K.collection ) && record_H[ K.collection ].count > 0 ) then     
-            record_H[ K.collection ].each { | collection |
-                if ( collection.key?( K.ref ) ) then
-                    if ( collection[ K.ref ] == p1_res_buf_O.uri ) then
-                        tc_S_A << tc_C.new( tc_buf_O, :mine )
-                    end
-                end
-            }
-        else
-            tc_S_A << tc_C.new( tc_buf_O, :unused )
-        end
-    }
-    return tc_S_A
-end
-
-def get_A_of_AO_ref( p1_H_of_AO_ref_A )
-    array_of_AO_ref= [ ]
-    p1_H_of_AO_ref_A[ K.archival_objects ].each do |current_A_element| 
-        array_of_AO_ref << current_A_element[ K.ref ]
-    end
-#   SE.pp "#{SE.lineno}: array_of_AO_ref:", array_of_AO_ref
-    return array_of_AO_ref
-end
-    
 
 BEGIN {}
 END {}
@@ -130,7 +89,6 @@ api_uri_base = "http://localhost:8089"
 
 cmdln_option = { :repository_num => 2  ,
                  :resource_num => nil  ,
-                 :ao_ref => nil  ,
                  :ao_num => nil  ,
                  :delete_TC_only => false ,
                  :update => false ,
@@ -142,9 +100,6 @@ OptionParser.new do |option|
     end
     option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
         cmdln_option[ :resource_num ] = opt_arg
-    end
-    option.on( "--ao-ref x", "Archival Object ReferenceID ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
-        cmdln_option[ :ao_ref ] = opt_arg
     end
     option.on( "--ao-num n", OptionParser::DecimalInteger, "Archival Object URI number ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
         cmdln_option[ :ao_num ] = opt_arg
@@ -177,19 +132,10 @@ else
     SE.puts "The --res-num option is required."
     raise
 end
-if ( cmdln_option[ :ao_ref ] ) then
-    cmdln_AO_ref = cmdln_option[ :ao_ref ]      
-else
-    cmdln_AO_ref = nil
-end
 if ( cmdln_option[ :ao_num ] ) then
     cmdln_AO_num = cmdln_option[ :ao_num ]      
 else
     cmdln_AO_num = nil
-end
-if ( cmdln_AO_ref and cmdln_AO_num ) then
-    SE.puts "The --ao-ref and --ao-num options are mutually exclusive."
-    raise
 end
 
 if ( cmdln_option[ :last_record_num ] ) then
@@ -214,11 +160,7 @@ res_buf_O = res_O.new_buffer.read
 #SE.pov(res_buf_O)
 
 res_Q_all_AO_O = nil
-if ( cmdln_AO_ref ) then
-    initial_parent_AO_uri = get_A_of_AO_ref( AO_Query.new( rep_O ).get_H_of_A_of_AO_ref__find_by_ref( [ cmdln_AO_ref ] ).result ) [ 0 ]
-    SE.puts "#{SE.lineno}: initial_parent_AO_uri = #{initial_parent_AO_uri}"
-    initial_parent_AO_H = Archival_Object.new( res_buf_O, initial_parent_AO_uri).new_buffer.read.record_H
-elsif ( cmdln_AO_num ) then
+if ( cmdln_AO_num ) then
     initial_parent_AO_H = Archival_Object.new( res_buf_O, cmdln_AO_num ).new_buffer.read.record_H
     initial_parent_AO_uri = initial_parent_AO_H[ K.uri ]
     SE.puts "#{SE.lineno}: initial_parent_AO_uri = #{initial_parent_AO_uri}"
@@ -227,42 +169,38 @@ else
     initial_parent_AO_uri = initial_parent_AO_H[ K.uri ]
     SE.puts "#{SE.lineno}: initial_parent_AO_uri = #{initial_parent_AO_uri}"
     res_Q_all_AO_O = Resource_Query.new( res_O ).get_all_AO
-    cnt = 0; res_Q_all_AO_O.buf_A.each do | ao_buf_O |
-        cnt += 1
-        SE.puts "#{ao_buf_O.record_H[ K.uri ]} '#{ao_buf_O.record_H[ K.title ]}'"
+    res_Q_all_AO_O.buf_A.each do | ao_buf_O |
+        if ( ao_buf_O.record_H[ K.level ] != K.file ) then
+            SE.puts "#{ao_buf_O.num} " + "%-11s" % ao_buf_O.record_H[ K.level ] + " '#{ao_buf_O.record_H[ K.title ]}'"
+        end
     end
 end
 
 
 SE.puts "Finding Top_Containers (which takes some time) ..."
 time_begin = Time.now
-tc_buf_A = get_TC_buf_A( res_buf_O, TC_Query.new( rep_O ).get_A_of_TC_nums( { 'all_ids' => 'true' } ).result )
+all_TC_S = TC_Query.new( rep_O ).get_all_TC_S
 elapsed_seconds = Time.now - time_begin
 SE.puts "Elapsed seconds = #{elapsed_seconds}"
 
-tc_S_A = get_tc_S_A( res_buf_O, tc_buf_A )
-
-
-#SE.pp "#{SE.lineno}: tc_S_A = ", tc_S_A
-
 tc_uri_H__by_type_and_indicator = {}
-tc_S_A.each do |tc_S|
-    record_H = tc_S.tc_buf_O.record_H
-#   SE.pp record_H
-    if ( tc_S.owner == :unused ) then
-        SE.puts "#{SE.lineno}: Delete top_container: #{record_H[ K.uri ]}"
-        tc_S.tc_buf_O.delete
-    else
-        if ( record_H.key?( K.type ) and record_H.key?( K.indicator )) then
-            stringer=record_H[ K.type ] + record_H[ K.indicator ]
-            if ( tc_uri_H__by_type_and_indicator.key?( stringer ) ) then
-                SE.puts "#{SE.lineno}: Duplicate record_H 'type+indicator' #{stringer}, K.uri=#{record_H[ K.uri ]}"
-                next
-            end
-            tc_uri_H__by_type_and_indicator[ stringer ] = record_H[ K.uri ]
-        end   
-    end 
+all_TC_S.for_R( res_O ).each do | record_H |
+    if ( record_H.key?( K.type ) and record_H.key?( K.indicator )) then
+        stringer=record_H[ K.type ] + record_H[ K.indicator ]
+        SE.puts "Reusing TC: #{record_H[ K.uri ].sub( /^.*\//, '' )}, type=#{record_H[ K.type ]}, indicator='#{record_H[ K.indicator ]}'"
+        if ( tc_uri_H__by_type_and_indicator.key?( stringer ) ) then
+            SE.puts "#{SE.lineno}: Duplicate record_H 'type+indicator' #{stringer}, K.uri=#{record_H[ K.uri ]}"
+            next
+        end
+        tc_uri_H__by_type_and_indicator[ stringer ] = record_H[ K.uri ]
+    end
 end
+all_TC_S.unused.each do | record_H |
+    SE.puts "#{SE.lineno}: Delete top_container: #{record_H[ K.uri ]}"
+    Top_Container.new( res_O, record_H[ K.uri ] ).new_buffer.delete 
+end
+
+
 if (delete_TC_records_only or ARGV.maxindex < 0 ) then
     exit
 end
@@ -312,9 +250,9 @@ for argv in ARGV do
             stringer = input_record_H[ K.fmtr_record ][ K.level ]
             record_level_cnt[ stringer ] += 1
             if ( stringer == K.fmtr_new_parent ) then
-                if ( cmdln_AO_ref or cmdln_AO_num ) then
+                if ( cmdln_AO_num ) then
                     SE.puts "#{SE.lineno}: Hit 'new_parent' record, but"
-                    SE.puts "the --ao-ref and --ao-num options aren't allowed for this record type."
+                    SE.puts "the --ao-num option isn't allowed for this record type."
                     raise
                 end
                 if ( parent_ref_stack_A.maxindex != 0 ) then
