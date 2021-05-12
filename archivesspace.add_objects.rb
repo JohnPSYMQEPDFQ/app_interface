@@ -247,9 +247,9 @@ for argv in ARGV do
 
         if ( input_record_H.key?( K.fmtr_record ) ) then
             SE.puts "#{SE.lineno}: '#{input_record_J}'"
-            stringer = input_record_H[ K.fmtr_record ][ K.level ]
-            record_level_cnt[ stringer ] += 1
-            if ( stringer == K.fmtr_new_parent ) then
+            record_level = input_record_H[ K.fmtr_record ][ K.level ]
+            record_level_cnt[ record_level ] += 1
+            if ( record_level == K.fmtr_new_parent ) then
                 if ( cmdln_AO_num ) then
                     SE.puts "#{SE.lineno}: Hit 'new_parent' record, but"
                     SE.puts "the --ao-num option isn't allowed for this record type."
@@ -282,7 +282,7 @@ for argv in ARGV do
                 next
             end
 
-            ao_buf_O = Archival_Object.new( res_buf_O ).new_buffer.create( stringer )
+            ao_buf_O = Archival_Object.new( res_buf_O ).new_buffer.create( record_level )
 #           SE.pp ao_buf_O.record_H
             if ( ao_buf_O.record_H[ K.resource ][ K.ref ] == parent_ref_stack_A[ parent_ref_stack_A.maxindex ] ) then
                 ao_buf_O.record_H = { K.parent => '' }
