@@ -209,51 +209,5 @@ class Resource_Query
     end
     private :process_each_node
 
-    def get_all_AO__DEPRECATED
-=begin
-        Get all the AO's for the resource
-        returning an array of AO_Record_Buf's
-        Run: rr archivesspace.do_http_call.rb get /repositories/:repo_id/resources/:res_id/tree
-            for the format
-=end
-        uri = "#{@res_O.uri}/tree"
-        http_response_body = @res_O.rep_O.aspace_O.http_calls_O.get( uri, { } )
-        if ( not ( http_response_body.has_key?( K.id ) and http_response_body[ K.id ] == @res_O.num )) then
-            SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Unable to find Resource Tree for res_num = #{@res_O.num}"
-            SE.puts "uri = #{uri}"
-            SE.pp "http_response_body", http_response_body
-            raise
-        end        
-#       SE.pp http_response_body
-        @buf_A = load_children( http_response_body[ K.children], [] )
-    end
-    
-    def load_children( child_A, result )
-        if ( not (child_A.is_a?( Array ))) then
-            SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Was expecting an Array here..."
-            raise
-        end
-        child_A.each do | e |
-            if ( e.is_a?( Hash )) then
-                if ( not (e.has_key?( K.node_type ) and e[ K.node_type ] == K.archival_object )) then
-                    SE.puts "#{SE.lineno}: =============================================="
-                    SE.puts "Was expecting an archival_object here, not k = #{k} and v = #{v}"
-                    raise
-                end
-                result << Archival_Object.new( @res_O, e[ K.record_uri ]).new_buffer.read
-                if ( e.has_key?( K.children ) and e[ K.children] != [] ) then
-                    load_children( e[ K.children ], result )
-                end
-            else
-                SE.puts "#{SE.lineno}: =============================================="
-                SE.puts "Was expecting a Hash here..."
-                raise
-            end
-        end
-        return result
-    end
-    private :load_children
 end
  
