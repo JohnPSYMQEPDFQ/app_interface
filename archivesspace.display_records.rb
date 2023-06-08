@@ -37,16 +37,16 @@ END {}
 myself_name = File.basename( $0 )
 api_uri_base = "http://localhost:8089"
 
-cmdln_option = { :repository_num => 2  ,
-                 :resource_num => nil  ,
+cmdln_option = { :rep_num => 2  ,
+                 :res_num => nil  ,
                  :filter => false }
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} --res-num n [res] [(ao|tc|loc) n,n,...]..."
     option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
-        cmdln_option[ :repository_num ] = opt_arg
+        cmdln_option[ :rep_num ] = opt_arg
     end
     option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
-        cmdln_option[ :resource_num ] = opt_arg
+        cmdln_option[ :res_num ] = opt_arg
     end
     option.on( "--filter", "apply-read-filter" ) do |opt_arg|
         cmdln_option[ :filter ] = true
@@ -66,16 +66,16 @@ aspace_O.login( "admin", "admin" )
 #SE.pov(aspace_O)
  
 record_filter_B = cmdln_option[ :filter ] 
-if ( cmdln_option[ :repository_num ] ) then
-    repository_num = cmdln_option[ :repository_num ]
-    rep_O = Repository.new( aspace_O, repository_num )
+if ( cmdln_option[ :rep_num ] ) then
+    rep_num = cmdln_option[ :rep_num ]
+    rep_O = Repository.new( aspace_O, rep_num )
 else
     SE.puts "The --rep-num option is required."
     raise
 end
-if ( cmdln_option[ :resource_num ] ) then
-    resource_num = cmdln_option[ :resource_num ]
-    res_buf_O = Resource.new( rep_O, resource_num ).new_buffer.read ( record_filter_B )
+if ( cmdln_option[ :res_num ] ) then
+    res_num = cmdln_option[ :res_num ]
+    res_buf_O = Resource.new( rep_O, res_num ).new_buffer.read( record_filter_B )
 end
 
 #SE.pom(rep_O)
@@ -109,7 +109,7 @@ ARGV.each do | element |
     end
     case current_record_type
     when 'res' 
-        puts "Resource: #{resource_num}:"
+        puts "Resource: #{res_num}:"
         puts res_buf_O.record_H.ai
     when 'ao'
         puts "Archival_Object: #{element}:"

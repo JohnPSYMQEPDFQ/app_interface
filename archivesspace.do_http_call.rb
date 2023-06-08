@@ -43,7 +43,7 @@ OptionParser.new do |option|
     end
 end.parse!  # Bang because ARGV is altered
 if ( cmdln_option[ 'repository-num' ] ) then
-    repository_num = cmdln_option[ 'repository-num' ]
+    rep_num = cmdln_option[ 'repository-num' ]
 end
 
 if ( ARGV.length < 2 ) then
@@ -72,7 +72,7 @@ else
     params.each_pair { | k, v | params[k] = v.to_i if (v.integer?) }
 end
 
-uri.sub!( ':repo_id', repository_num.to_s )
+uri.sub!( ':repo_id', rep_num.to_s )
 #p a1
 puts "uri=#{uri}, params=#{params}"
 stringer = http_O.method( method ).call( uri, params ) 

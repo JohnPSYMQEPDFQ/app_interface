@@ -36,16 +36,16 @@ END {}
 myself_name = File.basename( $0 )
 api_uri_base = "http://localhost:8089"
 
-cmdln_option = { :repository_num => 2  ,
-                 :resource_num => nil  ,
+cmdln_option = { :rep_num => 2  ,
+                 :res_num => nil  ,
                 }
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [ options ]"
     option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
-        cmdln_option[ :repository_num ] = opt_arg
+        cmdln_option[ :rep_num ] = opt_arg
     end
     option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
-        cmdln_option[ :resource_num ] = opt_arg
+        cmdln_option[ :res_num ] = opt_arg
     end
     option.on( "-h","--help" ) do
         SE.puts option
@@ -54,14 +54,14 @@ OptionParser.new do |option|
 end.parse!  # Bang because ARGV is altered
 #p cmdln_option
 #p ARGV
-if ( cmdln_option[ :repository_num ] ) then
-    repository_num = cmdln_option[ :repository_num ]
+if ( cmdln_option[ :rep_num ] ) then
+    rep_num = cmdln_option[ :rep_num ]
 else
     SE.puts "The --rep-num option is required."
     raise
 end
-if ( cmdln_option[ :resource_num ] ) then
-    resource_num = cmdln_option[ :resource_num ]
+if ( cmdln_option[ :res_num ] ) then
+    res_num = cmdln_option[ :res_num ]
 else
     SE.puts "The --res-num option is required."
     raise
@@ -72,11 +72,11 @@ aspace_O.api_uri_base = api_uri_base
 aspace_O.login( "admin", "admin" )
 #SE.pom(aspace_O)
 #SE.pov(aspace_O)
-rep_O = Repository.new( aspace_O, repository_num )
+rep_O = Repository.new( aspace_O, rep_num )
 #SE.pom(rep_O)
 #SE.pov(rep_O)
 
-res_O = Resource.new( rep_O, resource_num )
+res_O = Resource.new( rep_O, res_num )
 cnt = 0; Resource_Query.new( res_O ).get_all_AO.buf_A.each do | ao_buf_O |
     cnt += 1
     puts "#{cnt} #{ao_buf_O.record_H[ K.uri ]} #{ao_buf_O.record_H[ K.position ]} #{ao_buf_O.record_H[ K.title ]}"

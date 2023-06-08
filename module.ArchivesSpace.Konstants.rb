@@ -59,13 +59,17 @@ module K
     def K.created_by; return 'created_by'.freeze; end
     def K.created_for_collection; return 'created_for_collection'.freeze; end
     def K.create_time; return 'create_time'.freeze; end
+    def K.creation; return 'creation'.freeze; end    #date
     def K.date; return 'date'.freeze; end   # revision_statements                       <<<< Danger Singular
+    def K.date_certainty; return 'date_certainty'.freeze; end   # spreadsheet column header for K.certainty'
     def K.dates; return 'dates'.freeze; end   # archival_object, resource, formatter    <<<< Danger Plural
+    def K.dates_label; return 'dates_label'.freeze; end   # spreadsheet column header for K.label'
     def K.date_type; return 'date_type'.freeze; end   # dates
     def K.deaccessions; return 'deaccessions'.freeze; end   # resource
     def K.description; return 'description'.freeze; end   # revision_statements
     def K.dimensions; return 'dimensions'.freeze; end   # extents
     def K.display_string; return 'display_string'.freeze; end
+    def K.ead; return 'ead'.freeze; end   # spreadsheet column header for K.ead_id
     def K.ead_id; return 'ead_id'.freeze; end   # resource
     def K.ead_location; return 'ead_location'.freeze; end   # resource
     def K.end; return 'end'.freeze; end   # dates
@@ -106,6 +110,7 @@ module K
     def K.fmtr_tc_type; return '__TC_TYPE__'.freeze; end   # formatter
     def K.folder; return 'Folder'.freeze; end
     def K.has_unpublished_ancestor; return 'has_unpublished_ancestor'.freeze; end
+    def K.hierarchy; return 'hierarchy'.freeze; end   # spreadsheet
     def K.id; return 'id'.freeze; end   # tree
     def K.id_0; return 'id_0'.freeze; end   # resource
     def K.ils_holding_id; return 'ils_holding_id'.freeze; end   # top_container
@@ -132,6 +137,8 @@ module K
     def K.location; return 'location'.freeze; end  # location
     def K.lock_version; return 'lock_version'.freeze; end
     def K.mixed_materials; return 'mixed_materials'.freeze; end
+    def K.n_physdesc; return 'n_physdesc'.freeze; end  # Spreadsheet: physical description note text
+    def K.no; return 'no'.freeze; end   
     def K.node_type; return 'node_type'.freeze; end   # tree
     def K.node_uri; return 'node_uri'.freeze; end   # tree
     def K.notes; return 'notes'.freeze; end   # archival_object, lang_materials, resource, formatter
@@ -141,12 +148,14 @@ module K
     def K.number; return 'number'.freeze; end   # extents
     def K.object; return 'object'.freeze; end   # top_container
     def K.offset; return 'offset'.freeze; end   # tree
+    def K.p_physdesc; return 'p_physdesc'.freeze; end  # Spreadsheet: physical description note publish
     def K.parent; return 'parent'.freeze; end
     def K.parent_id; return 'parent_id'.freeze; end  # tree
     def K.parent_node; return 'parent_node'.freeze; end  # tree
     def K.password; return 'password'.freeze; end
     def K.persistent_id; return 'persistent_id'.freeze; end
     def K.physical_details; return 'physical_details'.freeze; end   # extents
+    def K.physdisc; return 'physdisc'.freeze; end   # note_singlepart (physical discription)
     def K.physloc; return 'physloc'.freeze; end   # note_singlepart (physical location)
     def K.portion; return 'portion'.freeze; end   # extents
     def K.position; return 'position'.freeze; end
@@ -176,6 +185,8 @@ module K
     def K.subseries; return 'subseries'.freeze; end
     def K.sub_container; return 'sub_container'.freeze; end   # instances
     def K.suppressed; return 'suppressed'.freeze; end
+    def K.spreadsheet_true; return '1'.freeze; end
+    def K.spreadsheet_false; return '0'.freeze; end
     def K.system_mtime; return 'system_mtime'.freeze; end
     def K.title; return 'title'.freeze; end   # archival_object, resource
     def K.top_container; return 'top_container'.freeze; end   # sub_container
@@ -188,4 +199,5 @@ module K
     def K.user_mtime; return 'user_mtime'.freeze; end
     def K.waypoints; return 'waypoints'.freeze; end  # trees
     def K.waypoint_size; return 'waypoint_size'.freeze; end  # trees
+    def K.yes; return 'yes'.freeze; end
 end

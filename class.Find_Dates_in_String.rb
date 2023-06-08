@@ -518,24 +518,30 @@ class Find_Dates_in_String
  
                 date_match_S.ymd_S = @ymd_C.new( ) 
                 if ( date_match_S.pattern_name.match?( /__nn_nn_nn/ ) ) then
-                    case @option_H[ :nn_nn_nn_date_order ]
-                    when :mm_dd_yy
-                        date_match_S.ymd_S.month = date_match_S.match_O.named_captures[ 'nn_1st_M' ]
-                        date_match_S.ymd_S.day   = date_match_S.match_O.named_captures[ 'nn_2nd_M' ]
-                        date_match_S.ymd_S.year  = date_match_S.match_O.named_captures[ 'nn_3rd_M' ]
-                    when :dd_mm_yy
-                        date_match_S.ymd_S.day   = date_match_S.match_O.named_captures[ 'nn_1st_M' ]
-                        date_match_S.ymd_S.month = date_match_S.match_O.named_captures[ 'nn_2nd_M' ]
-                        date_match_S.ymd_S.year  = date_match_S.match_O.named_captures[ 'nn_3rd_M' ]
-                    when :yy_mm_dd
+                    if ( date_match_S.match_O.named_captures[ 'nn_1st_M' ].length == 4 ) then
                         date_match_S.ymd_S.year  = date_match_S.match_O.named_captures[ 'nn_1st_M' ]
                         date_match_S.ymd_S.month = date_match_S.match_O.named_captures[ 'nn_2nd_M' ]
                         date_match_S.ymd_S.day   = date_match_S.match_O.named_captures[ 'nn_3rd_M' ]
                     else
-                        SE.puts "#{SE.lineno}: I shouldn't be here: #{date_match_S.pattern_name}: "+
-                                             "'#{date_match_S.all_pieces}' > "+
-                                             "invalid :nn_nn_nn_date_order value '#{@option_H[ :nn_nn_nn_date_order ]}'"
-                        raise
+                        case @option_H[ :nn_nn_nn_date_order ]
+                        when :mm_dd_yy
+                            date_match_S.ymd_S.month = date_match_S.match_O.named_captures[ 'nn_1st_M' ]
+                            date_match_S.ymd_S.day   = date_match_S.match_O.named_captures[ 'nn_2nd_M' ]
+                            date_match_S.ymd_S.year  = date_match_S.match_O.named_captures[ 'nn_3rd_M' ]
+                        when :dd_mm_yy
+                            date_match_S.ymd_S.day   = date_match_S.match_O.named_captures[ 'nn_1st_M' ]
+                            date_match_S.ymd_S.month = date_match_S.match_O.named_captures[ 'nn_2nd_M' ]
+                            date_match_S.ymd_S.year  = date_match_S.match_O.named_captures[ 'nn_3rd_M' ]
+                        when :yy_mm_dd
+                            date_match_S.ymd_S.year  = date_match_S.match_O.named_captures[ 'nn_1st_M' ]
+                            date_match_S.ymd_S.month = date_match_S.match_O.named_captures[ 'nn_2nd_M' ]
+                            date_match_S.ymd_S.day   = date_match_S.match_O.named_captures[ 'nn_3rd_M' ]
+                        else
+                            SE.puts "#{SE.lineno}: I shouldn't be here: #{date_match_S.pattern_name}: "+
+                                                 "'#{date_match_S.all_pieces}' > "+
+                                                 "invalid :nn_nn_nn_date_order value '#{@option_H[ :nn_nn_nn_date_order ]}'"
+                            raise
+                        end
                     end
                 elsif ( date_match_S.pattern_name.match?( /__nn_MMM_nn/ ) ) then
                     case @option_H[ :nn_mmm_nn_day_year_order ]
@@ -826,7 +832,7 @@ class Find_Dates_in_String
         case @option_H[ :date_string_composition ]
         when :dates_in_text
             if (process_input_string_with_all_dates_removed =~ K.month_RE ) then
-                SE.puts "#{SE.lineno}: Warning possible ummatched date in '#{process_input_string_with_all_dates_removed}'"
+                SE.puts "#{SE.lineno}: Warning possible ummatched date '#{$~}' in '#{process_input_string_with_all_dates_removed}'"
                 SE.puts ""
             end
         when :only_dates

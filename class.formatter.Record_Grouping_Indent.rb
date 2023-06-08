@@ -53,15 +53,15 @@ class Record_Grouping_Indent
             break if (@record_stack_A.maxindex < 0)
             self.add_record( {} )
         end
-        SE.pp "@indent_key_stack_A:", @indent_key_stack_A if ( ! @indent_key_stack_A.empty? )
+        SE.ap "@indent_key_stack_A:", @indent_key_stack_A if ( ! @indent_key_stack_A.empty? )
     end
 
 
     def add_record( p1_new_record_H )
         @record_stack_A.push( p1_new_record_H ) if (! p1_new_record_H.empty?)
-        SE.pp "@record_stack_A:", @record_stack_A if ( $DEBUG )
-        SE.pp "@record_stack_A.maxindex:", @record_stack_A.maxindex if ( $DEBUG )
-        SE.pp "@indent_key_stack_A:", @indent_key_stack_A if ( $DEBUG )
+        SE.ap "@record_stack_A:", @record_stack_A if ( $DEBUG )
+        SE.ap "@record_stack_A.maxindex:", @record_stack_A.maxindex if ( $DEBUG )
+        SE.ap "@indent_key_stack_A:", @indent_key_stack_A if ( $DEBUG )
         return {} if ( @record_stack_A.maxindex < @record_stack_size_0R ) 
     
         first_record_H = @record_stack_A.shift( 1 )[ 0 ]
@@ -139,7 +139,7 @@ class Record_Grouping_Indent
                             end
                             @indent_print_method.call( group_numbers_A, group_text_A )
                             output_record_H={}
-                            output_record_H[ K.fmtr_indent ] = [ K.fmtr_right,  "GROUP #{group_numbers_A.join( "." )}: #{group_text_A.join( ". " )}" ]
+                            output_record_H[ K.fmtr_indent ] = [ K.fmtr_right,  "GROUPING #{group_numbers_A.join( "." )}: #{group_text_A.join( ". " )}" ]
                             puts output_record_H.to_json
                         end
                     end

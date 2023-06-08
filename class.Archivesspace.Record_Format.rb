@@ -72,6 +72,16 @@ class Record_Format < Buffer_Base
         @record_H.merge!( h )
         return h
     end
+
+    def single_date           
+        h = {
+              K.label => K.undefined, 
+              K.date_type => K.single, 
+              K.begin => K.undefined 
+            }
+        @record_H.merge!( h )
+        return h
+    end
    
     def inclusive_dates  
         h =  {
@@ -184,16 +194,6 @@ class Record_Format < Buffer_Base
                 K.external_ids => [],
                 K.subjects => [{ K.ref => K.undefined }],
                 K.linked_events=>[],
-            }
-        @record_H.merge!( h )
-        return h
-    end
-
-    def single_date           
-        h = {
-              K.label => K.undefined, 
-              K.date_type => K.single, 
-              K.begin => K.undefined 
             }
         @record_H.merge!( h )
         return h

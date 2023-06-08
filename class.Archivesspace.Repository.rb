@@ -13,6 +13,8 @@ Abbreviations,  AO = archival object(Everything's an AO, but there's also uri "a
 
 =end
 
+require 'class.Archivesspace.Resource.rb'
+
 class Repository
     def initialize( p1_aspace_O, p2_rep_num )
         if ( not p1_aspace_O.is_a?( ASpace ) ) then
@@ -34,4 +36,27 @@ class Repository
        
 end
 
+class Repository_Query   
 
+    def initialize( rep_O )
+        if ( not rep_O.is_a?( Repository )) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "Param 1 is not a Repository class object, it's a '#{rep_O.class}'"
+            raise
+        end 
+        @rep_O = rep_O
+        @buf_A = nil
+ 
+    end
+    attr_reader :buf_A, :rep_O
+
+    def get_all_Resource( )
+        res_num_A = @rep_O.aspace_O.http_calls_O.get( "#{@rep_O.uri}/resources", { 'all_ids' => 'true' } )
+        @buf_A = []
+        res_num_A.each do | res_num |
+            @buf_A << Resource.new( rep_O, res_num ).new_buffer.read( )
+        end
+        return self
+    end
+
+end
