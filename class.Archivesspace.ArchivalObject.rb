@@ -100,7 +100,7 @@ class AO_Record_Buf < Record_Buf
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Archival_object doesn't belong to current Resource."
             SE.puts "@record_H[K.resource][K.ref] != @ao_O.res_O.uri"
-            SE.pp "@record_H:", @record_H
+            SE.ap "@record_H:", @record_H
             raise
         end
         @cant_change_A << K.level 
@@ -116,7 +116,7 @@ class AO_Record_Buf < Record_Buf
             raise
         end
         @record_H = super( filter_record_B )
-#       SE.pp "#{SE.lineno}: @record_H:", @record_H
+#       SE.ap "#{SE.lineno}: @record_H:", @record_H
         if ( @record_H[K.resource][K.ref] != @ao_O.res_O.uri ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Archival_object doesn't belong to current Resource."
@@ -128,21 +128,21 @@ class AO_Record_Buf < Record_Buf
     end
      
     def store( )
-#       SE.pp "@record_H:", @record_H            
+#       SE.ap "@record_H:", @record_H            
         if (!(   @record_H[K.resource][K.ref] and @record_H[K.resource][K.ref] != '')) then 
             SE.puts "#{SE.lineno}: =========================================="
             SE.puts "I was expecting an @record_H[K.resource][K.ref] value";
-            SE.pp "@record_H:", @record_H
+            SE.ap "@record_H:", @record_H
             raise
         end
         if ( @record_H.has_key?(K.parent)) then
             if ( @record_H[K.parent].respond_to?(:to_H) and @record_H[K.parent].has_key?(K.ref)) then
                 if ( !(  @record_H[K.parent][K.ref] =~ %r"^#{@ao_O.res_O.rep_O.uri}/(archival_objects|resources)" \
-                       or(  @record_H[K.parent][K.ref] == "NO UPDATE MODE" and ! $global_update)))
+                      or (  @record_H[K.parent][K.ref] == "NO UPDATE MODE" and ! @ao_O.res_O.rep_O.aspace_O.allow_updates )))
                     SE.puts "#{SE.lineno}: =========================================="
                     SE.puts "@record_H[K.parent][K.ref] =~ |#{@ao_O.res_O.rep_O.uri}/(archival_objects|resources)|"
                     SE.puts "@record_H[K.parent][K.ref] = #{@record_H[K.parent][K.ref]}"
-                    SE.pp "@record_H:", @record_H
+                    SE.ap "@record_H:", @record_H
                     raise
                 end
             end
@@ -150,7 +150,7 @@ class AO_Record_Buf < Record_Buf
         if (!(  @record_H[K.title] and @record_H[K.title] != K.undefined )) then 
             SE.puts "#{SE.lineno}: =========================================="
             SE.puts "I was expecting a @record_H[K.title] value";
-            SE.pp "@record_H:", @record_H
+            SE.ap "@record_H:", @record_H
             raise
         end
         if ( @record_H[K.resource][K.ref] != @ao_O.res_O.uri ) then
@@ -166,8 +166,8 @@ class AO_Record_Buf < Record_Buf
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Created ArchivalObject, uri = #{http_response_body_H[ K.uri ]}";
         else
-            SE.puts "#{SE.lineno}: I shouldn't be updating an ArchivalObject"
-            raise
+#           SE.puts "#{SE.lineno}: I shouldn't be updating an ArchivalObject"
+#           raise
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Updated ArchivalObject, uri = #{http_response_body_H[ K.uri ]}";
         end
@@ -191,7 +191,7 @@ class AO_Query
         if ( http_response_body[K.archival_objects].length < 1 ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Unable to find Archival_Object with ref='#{p1_AO_ref_A}'"
-            SE.pp "http_response_body", http_response_body
+            SE.ap "http_response_body", http_response_body
     #       Note:  The ref's are the strings that look like this:  75f47d3454c79e8d2f9a180ae35779a6
     #              It's NOT the AO number.
             raise

@@ -14,16 +14,8 @@ Abbreviations,  AO = archival object (Everything's an AO, but there's also uri "
 
 =end
 
-require 'json'
-require 'pp'
 require 'optparse'
-
-require 'class.Array.extend.rb'
-require 'class.String.extend.rb'
-require 'class.Hash.extend.rb'
-require 'module.SE.rb'
 require 'class.Archivesspace.rb'
-require 'class.ArchivesSpace.http_calls.rb'
 require 'class.Archivesspace.ArchivalObject.rb'
 require 'class.Archivesspace.Repository.rb'
 require 'class.Archivesspace.TopContainer.rb'
@@ -48,7 +40,7 @@ OptionParser.new do |option|
     option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
         cmdln_option[ :res_num ] = opt_arg
     end
-    option.on( "--filter", "apply-read-filter" ) do |opt_arg|
+    option.on( "--filter", "Apply read filter" ) do |opt_arg|
         cmdln_option[ :filter ] = true
     end
     option.on( "-h","--help" ) do

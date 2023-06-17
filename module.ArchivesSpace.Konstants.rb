@@ -102,6 +102,7 @@ module K
     def K.fmtr_record_indent_keys; return '__RECORD_INDENT_KEYS__'.freeze; end  # formatter
     def K.fmtr_record_num; return '__RECORD_NUM__'.freeze; end  # formatter
     def K.fmtr_record_original; return '__RECORD_ORIGINAL__'.freeze; end  # formatter
+    def K.fmtr_record_sort_keys; return '__RECORD_SORT_KEYS__'.freeze; end  # formatter
     def K.fmtr_record_values; return '__RECORD_VALUES__'.freeze; end  # formatter
     def K.fmtr_right; return '__RIGHT__'.freeze; end  # formatter
     def K.fmtr_sc_indicator; return '__SC_INDICATOR__'.freeze; end   # formatter
@@ -155,7 +156,7 @@ module K
     def K.password; return 'password'.freeze; end
     def K.persistent_id; return 'persistent_id'.freeze; end
     def K.physical_details; return 'physical_details'.freeze; end   # extents
-    def K.physdisc; return 'physdisc'.freeze; end   # note_singlepart (physical discription)
+    def K.physdesc; return 'physdesc'.freeze; end   # note_singlepart (physical description)
     def K.physloc; return 'physloc'.freeze; end   # note_singlepart (physical location)
     def K.portion; return 'portion'.freeze; end   # extents
     def K.position; return 'position'.freeze; end

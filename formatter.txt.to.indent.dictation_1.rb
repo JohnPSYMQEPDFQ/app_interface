@@ -58,6 +58,7 @@ find_dates_O = Find_Dates_in_String.new( {  :morality_replace_option => { :good 
 
 min_date = ""
 max_date = ""
+note_cnt = 0
 output_record_H = {}
 
 #   Record ID;Subject Heading;General Heading Note;Title;Number;Date;Geographic Location;-Corporate Name;Personal Name
@@ -78,7 +79,8 @@ ARGF.each_line do |input_record|
     note_A = [ ]
     a1 = input_record.split( /\s+(NOTE|note|NOTES|notes):\s*/ ).map( &:to_s ).map( &:strip )
     if ( a1.maxindex > 0) then
-        input_record = a1.shift( 1 )[ 0 ]
+        note_cnt += 1
+        input_record = a1.shift( 1 )[ 0 ]   # input_record with the NOTE removed.
         a1.shift( 1 )   # When using () in the pattern, what's between the () is returned too.
         a1.each do | note |
             note_A << note
@@ -108,44 +110,31 @@ ARGF.each_line do |input_record|
         from_thru_date_A_A << from_thru_date_A
     end
 
-    a1 = input_record.split( '.' ).map( &:to_s ).map( &:strip )
-    
-    record_values = [ ]
-    got_record=false
+    a1 = input_record.split( '.' ).map( &:to_s ).map( &:strip ).reject(&:empty?).map{ | e | e.sub( /./,&:upcase )}
+
+#       What's left of the input record (now in a1) is used as the sort keys at the front
+#       of the record (and the dates) so the 'sort' command doesn't get confused!   
+    output_record_H[ K.fmtr_record_sort_keys ] = a1.join( " " ) + " " + from_thru_date_A_A.join( " " )
+   
+    record_values_A = [ ]
     loop do
         break if ( a1.maxindex < 1 )
-        dot_delimited_word=a1.pop( 1 )[ 0 ]
-        got_record = ( got_record or dot_delimited_word != "" )  
-        record_values.unshift( dot_delimited_word )
-        break if ( got_record and a1.maxindex < cmdln_option_H[ :max_levels ] ) 
+        dot_delimited_word = a1.pop( 1 )[ 0 ]   # pop returns an array, [0] says return the 1st element
+        record_values_A.unshift( dot_delimited_word )
+        break if ( a1.maxindex < cmdln_option_H[ :max_levels ] ) 
     end
-    record_values.push( from_thru_date_A_A )
-    record_values.push( note_A )
-
-    indent_keys = [ ] 
+    record_values_A.push( from_thru_date_A_A )
+    record_values_A.push( note_A )
+    
+    indent_keys_A = [ ] 
     loop do
         break if ( a1.maxindex < 0 )
-        dot_delimited_word=a1.pop( 1 )[ 0 ]
-        if ( dot_delimited_word.match?( /\./ ) ) then
-            a3 = dot_delimited_word.split( /\./ ).map( &:to_s ).map( &:strip )
-            loop do
-                break if ( a3.maxindex < 0 )
-                dot_delimited_word=a3.shift( 1 )[ 0 ]
-                if ( dot_delimited_word.length <= 3 and a3.maxindex >= 0 ) then
-                    a3[ 0 ] = "#{dot_delimited_word} #{a3[ 0 ]}"
-                    next
-                end
-                a1.push( dot_delimited_word )
-            end
-            dot_delimited_word=a1.pop( 1 )[ 0 ]
-        end
-        if ( dot_delimited_word != "" ) then
-           indent_keys.unshift( dot_delimited_word )
-        end
+        dot_delimited_word = a1.pop( 1 )[ 0 ]
+        indent_keys_A.unshift( dot_delimited_word )
     end
     
-    output_record_H[ K.fmtr_record_indent_keys ] = indent_keys
-    output_record_H[ K.fmtr_record_values ]      = record_values
+    output_record_H[ K.fmtr_record_indent_keys ] = indent_keys_A
+    output_record_H[ K.fmtr_record_values ]      = record_values_A
     output_record_H[ K.level ]                   = K.file
     output_record_H[ K.fmtr_record_num ]         = "#{$.}"
     output_record_H[ K.fmtr_record_original ]    = saved_input_record
@@ -153,10 +142,11 @@ ARGF.each_line do |input_record|
 end
 SE.puts "Minimum date:  '#{min_date}'"
 SE.puts "Maxmimum date: '#{max_date}'"
+SE.puts "Notes created: '#{note_cnt}'"
 SE.puts "Count of date patterns found:"
 SE.puts find_dates_O.pattern_cnt_H.ai
 SE.puts ""
 SE.puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-SE.puts "The output from #{myself_name} SHOULD BE SORTED for the indenter program!"
+SE.puts "The output from #{myself_name} SHOULD BE SORTED (sort -f) for the indenter program!"
 SE.puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 #p stack_of_recs

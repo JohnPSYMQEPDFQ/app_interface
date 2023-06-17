@@ -11,7 +11,7 @@ class Spreadsheet_CSV
             K.ead_id => K.ead ,
             K.label => K.dates_label ,
             K.certainty => K.date_certainty ,
-            K.physdisc => [ K.n_physdesc, K.p_physdesc ] ,  #  Text and Publish-flag columns
+            K.physdesc => [ K.n_physdesc, K.p_physdesc ] ,  #  Text and Publish-flag columns
         }
         @row_H = initialize_row_H()        
         puts '"' + @row_H.keys.join('","') + '"'
@@ -40,9 +40,9 @@ class Spreadsheet_CSV
                 K.date_type => "" ,
                 K.expression => "" ,
                 K.date_certainty => ""  ,  
-            # Notes: physical discription
-                translate_column( K.physdisc )[ 0 ] => "" , #  Text of note
-                translate_column( K.physdisc )[ 1 ] => "" , #  Publish-flag of note
+            # Notes: physical description
+                translate_column( K.physdesc )[ 0 ] => "" , #  Text of note
+                translate_column( K.physdesc )[ 1 ] => "" , #  Publish-flag of note
             }
         return h
     end
@@ -82,13 +82,13 @@ class Spreadsheet_CSV
                 SE.ap "#{$.}: p1_note_A[ #{idx} ]:", p1_note_A[ idx ]
                 raise
             end
-            if ( translate_column( p1_note_A[ idx ][K.type ] ) == nil ) then
-                SE.puts "#{SE.lineno}: No translation column programmed for note-type '#{p1_note_A[ idx ][K.type ]}'"
+            if ( translate_column( p1_note_A[ idx ][ K.type ] ) == nil ) then
+                SE.puts "#{SE.lineno}: No translation column programmed for note-type '#{p1_note_A[ idx ][ K.type ]}'"
                 SE.ap "#{$.}: p1_note_A[ #{idx} ]:", p1_note_A[ idx ]
                 raise
             end
-            @row_H[ translate_column( p1_note_A[ idx ][K.type ] )[0] ] = p1_note_A[ idx ][K.content ].join( "\n" ) 
-            @row_H[ translate_column( p1_note_A[ idx ][K.type ] )[1] ] = K.spreadsheet_true
+            @row_H[ translate_column( p1_note_A[ idx ][ K.type ] )[0] ] = p1_note_A[ idx ][ K.content ].join( "\n" ) 
+            @row_H[ translate_column( p1_note_A[ idx ][ K.type ] )[1] ] = K.spreadsheet_true
         end
     end
     
@@ -111,6 +111,6 @@ class Spreadsheet_CSV
             end
         end
         puts '"' + a1.join('","') + '"'
-        @row_H = initialize_row_H()
+        @row_H = h
     end
 end

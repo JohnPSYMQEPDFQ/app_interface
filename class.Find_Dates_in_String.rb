@@ -615,7 +615,7 @@ class Find_Dates_in_String
                 end
                 
                 if ( day and day.integer? and day.length == 4 and year.length.between?( 1, 2 ) ) then       
-                    stringer = "#{SE.lineno}: Warning swapped day and year: #{date_match_S.pattern_name}, idx=#{date_match_I}: "+                                            
+                    stringer = "#{SE.lineno}: Swapped day and year: #{date_match_S.pattern_name}, idx=#{date_match_I}: "+                                            
                                             "'#{date_match_S.piece( 1 )}' -> "+
                                             "#{year+' '+month+' '+day}"
                     date_clump_S.judge_date( nil, stringer )

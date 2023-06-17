@@ -143,10 +143,10 @@ if ( cmdln_option[ :last_record_num ] ) then
 else
     last_record_num = nil
 end
-$global_update=cmdln_option[ :update ] 
 delete_TC_records_only=cmdln_option[ :delete_TC_only ] 
 
 aspace_O = ASpace.new
+aspace_O.allow_updates=cmdln_option[ :update ] 
 aspace_O.api_uri_base = api_uri_base
 aspace_O.login( "admin", "admin" )
 #SE.pom(aspace_O)

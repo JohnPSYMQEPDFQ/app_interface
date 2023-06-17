@@ -69,8 +69,10 @@ end
 
 def put_record( stack_record_H )
 
+
     stack_record__indent_keys_A = stack_record_H[ K.fmtr_record_indent_keys ]
     stack_record__values_A = stack_record_H[ K.fmtr_record_values ]
+    
     note_A = stack_record__values_A.pop(1)[ 0 ]
     date_A_A = stack_record__values_A.pop(1)[ 0 ]
 
@@ -89,13 +91,13 @@ def put_record( stack_record_H )
         date_A_A.each do | date_A |
             if ( date_A.maxindex == 0 ) then
                 single_date_O = Record_Format.new( :single_date )
-                single_date_O.record_H = { K.label => K.creation }
+                single_date_O.record_H = { K.label => K.existence }
                 single_date_O.record_H = { K.begin => date_A[ 0 ] }
                 output_record_H[ K.fmtr_record ][ K.dates ].push( single_date_O.record_H )
             end
             if ( date_A.maxindex == 1 ) then
                 inclusive_dates_O = Record_Format.new( :inclusive_dates )
-                inclusive_dates_O.record_H[ K.label ] = K.creation 
+                inclusive_dates_O.record_H[ K.label ] = K.existence 
                 inclusive_dates_O.record_H[ K.begin ] = date_A[ 0 ]
                 inclusive_dates_O.record_H[ K.end ] = date_A[ 1 ]
                 output_record_H[ K.fmtr_record ][ K.dates ].push( inclusive_dates_O.record_H )
@@ -111,7 +113,7 @@ def put_record( stack_record_H )
     if ( note_A.maxindex >= 0 ) then
         note_A.each do | note |
             note_singlepart_O = Record_Format.new( :note_singlepart )
-            note_singlepart_O.record_H = { K.type  => K.physdisc }
+            note_singlepart_O.record_H = { K.type  => K.physdesc }
             note_singlepart_O.record_H = { K.content => [ "#{note}" ] }
             output_record_H[ K.fmtr_record ][ K.notes ].push( note_singlepart_O.record_H )
         end

@@ -128,6 +128,11 @@ class Resource_Query
         @res_O = res_O
         @buf_A = nil
         @get_full_ao_buf = param_get_full_ao_buf    
+        if ( @get_full_ao_buf ) then
+            SE.puts "'Resource_Query' returning full buffer data."
+        else
+            SE.puts "'Resource_Query' returning index buffer data ONLY!"
+        end
     end
     attr_reader :buf_A, :res_O
 
