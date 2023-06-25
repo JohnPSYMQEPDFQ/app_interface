@@ -81,7 +81,7 @@ require 'class.Archivesspace.Resource.rb'
 class Res_Q
     def initialize( res_O )
         @record_H_A = [ ]
-        Resource_Query.new( res_O ).record_H_A.each_with_index do | record_H |
+        Resource_Query.new( res_O ).record_H_A.each do | record_H |
             if ( record_H[ K.level ] != K.file ) then
                 SE.puts "%-11s" % record_H[ K.level ] + " #{record_H[ K.uri ]} '#{record_H[ K.title ]}'"
                 @record_H_A << record_H
@@ -165,8 +165,6 @@ if ( ! cmdln_option[ :res_num ] ) then
     raise
 end
 
-delete_TC_records_only=cmdln_option[ :delete_TC_only ] 
-
 aspace_O = ASpace.new
 aspace_O.allow_updates=cmdln_option[ :update ] 
 aspace_O.api_uri_base = api_uri_base
@@ -181,20 +179,21 @@ res_buf_O = res_O.new_buffer.read
 #SE.pom(res_buf_O)
 #SE.pov(res_buf_O)
 
+parent_ref_stack_A = [ ]
 if ( cmdln_option[ :ao_num ] ) then
     if ( cmdln_option[ :initial_parent_title ] ) then
         SE.puts "#{SE.lineno}: The '--ao-num' and 'initial-parent-title' options are mutually exclusive"
         raise
     end
-    initial_parent_AO_uri = Archival_Object.new( res_buf_O,cmdln_option[ :ao_num ] ).new_buffer.read.record_H[ K.uri ]
+    parent_ref_stack_A << Archival_Object.new( res_buf_O,cmdln_option[ :ao_num ] ).new_buffer.read.record_H[ K.uri ]
     SE.puts "#{SE.lineno}: initial parent uri = #{initial_parent_AO_uri}"
 else
     res_Q_O = Res_Q.new( res_O )
     if ( cmdln_option[ :initial_parent_title ] ) then
-        initial_parent_AO_uri = res_Q_O.uri_of( cmdln_option[ :initial_parent_title ] )
+        parent_ref_stack_A << res_Q_O.uri_of( cmdln_option[ :initial_parent_title ] )
         SE.puts "#{SE.lineno}: initial parent AO uri = #{initial_parent_AO_uri} (From the cmd_line)"
     else
-        initial_parent_AO_uri = res_buf_O.record_H[ K.uri ]
+        parent_ref_stack_A << res_buf_O.record_H[ K.uri ]
         SE.puts "#{SE.lineno}: initial parent AO_uri = #{initial_parent_AO_uri} (The Resource)"
     end
 end
@@ -222,7 +221,7 @@ all_TC_S.unused.each do | record_H |
     Top_Container.new( res_O, record_H[ K.uri ] ).new_buffer.delete 
 end
 
-if ( delete_TC_records_only ) then
+if ( cmdln_option[ :delete_TC_only ] ) then
     exit
 end
 if ( ARGV.maxindex < 0 ) then
@@ -233,9 +232,8 @@ end
 #SE.pp "tc_uri_H__by_type_and_indicator:", tc_uri_H__by_type_and_indicator
 
 net_indent_cnt = 0
-record_level_cnt = Hash.new(0)  # h.default works too...
+record_level_cnt = Hash.new( 0 )  # h.default works too...
 last_AO_uri_created = ""
-parent_ref_stack_A = [ initial_parent_AO_uri ]
 
 for argv in ARGV do
     File.foreach( argv ) do |input_record_J|
