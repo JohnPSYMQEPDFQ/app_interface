@@ -8,9 +8,9 @@ Abbreviations,  AO = archival object (Everything's an AO, but there's also uri "
                 _H = Hash
                 _J = Json string
                 _A = Array
-                _I = Index(of Array)
                 _O = Object
                 _Q = Query
+                _S = Structure
                _0R = Zero Relative
 
 
@@ -65,7 +65,6 @@ The input FILE has the following three formats( JSONized ):
 =end
 
 require 'json'
-require 'pp'
 require 'optparse'
 
 require 'class.Array.extend.rb'
