@@ -67,29 +67,24 @@ else
 end
 if ( cmdln_option[ :res_num ] ) then
     res_num = cmdln_option[ :res_num ]
-    res_buf_O = Resource.new( rep_O, res_num ).new_buffer.read( record_filter_B )
+    res_O = Resource.new( rep_O, res_num )
+    res_buf_O = res_O.new_buffer.read( record_filter_B )
 end
 
 #SE.pom(rep_O)
 #SE.pov(rep_O)
 
+res_query_O = nil
 current_record_type = K.undefined
 ARGV.push('res') if (ARGV.empty?)
 ARGV.each do | element | 
-    if ( element.in? [ 'ao', 'tc' ]) then
+    if ( element.in? [ 'res', 'ao', 'tc', 'index' ]) then
         if ( not res_buf_O ) then
             SE.puts "The --res-num option is required."
             raise
         end
         current_record_type = element
-        next
-    end
-    if ( element == 'res' ) then
-        if ( not res_buf_O ) then
-            SE.puts "The --res-num option is required."
-            raise
-        end
-        current_record_type = element
+        next if ( element != 'res' )
     end
     if ( element == 'loc' ) then
         current_record_type = element
@@ -107,6 +102,12 @@ ARGV.each do | element |
         puts "Archival_Object: #{element}:"
         ao_buf_O = Archival_Object.new( res_buf_O, element ).new_buffer.read( record_filter_B )
         puts ao_buf_O.record_H.ai
+    when 'index'
+        puts "Index for: #{element}:"
+        if ( res_query_O.nil? ) then
+            res_query_O = Resource_Query.new( res_O )
+        end
+        puts res_query_O.get_record_H_of_uri_num( element ).ai
     when 'tc'
         puts "Top_Container: #{element}:"
         tc_buf_O = Top_Container.new( res_buf_O, element ).new_buffer.read( record_filter_B )

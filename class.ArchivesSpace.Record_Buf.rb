@@ -42,6 +42,7 @@ class Record_Buf < Buffer_Base
               K.ref_id => '',
               K.tree => '',
               K.uri => '',  
+              K.lock_version => "",     # Needed to update a record.
             }
         jsonmodel_H.merge!( h )
         return jsonmodel_H
@@ -52,7 +53,8 @@ class Record_Buf < Buffer_Base
                 K.last_modified_by => '',
                 K.create_time => '',
                 K.system_mtime => '',
-                K.user_mtime => '' }
+                K.user_mtime => '',
+            }
         return h
     end
     

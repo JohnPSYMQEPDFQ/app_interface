@@ -83,17 +83,17 @@ rep_O = Repository.new( aspace_O, rep_num )
 #SE.pov(rep_O)
 
 res_O = Resource.new( rep_O, res_num )
-cnt = 0; Resource_Query.new( res_O, cmdln_option[ :get_full_buffer ] ).get_all_AO.buf_A.each do | ao_buf_O |
+cnt = 0; Resource_Query.new( res_O, cmdln_option[ :get_full_buffer ] ).record_H_A.each do | record_H |
     cnt += 1
     if ( cmdln_option[ :print_title_only ] ) then
-        puts "#{ao_buf_O.record_H[ K.title ]}"
+        puts "#{record_H[ K.title ]}"
     else
         print "#{cnt} "
-        print "#{ao_buf_O.record_H[ K.uri ]} " if ( cmdln_option[ :print_uri ] )
-        print "#{ao_buf_O.record_H[ K.position ]} "
-        print "#{ao_buf_O.record_H[ K.level ]} "
-        print "#{ao_buf_O.record_H[ K.publish ]} " if ( cmdln_option[ :get_full_buffer ] )
-        print "#{ao_buf_O.record_H[ K.title ]} "
+        print "#{record_H[ K.uri ]} " if ( cmdln_option[ :print_uri ] )
+        print "#{record_H[ K.position ]} "
+        print "#{record_H[ K.level ]} "
+        print "#{record_H[ K.publish ]} " if ( cmdln_option[ :get_full_buffer ] )
+        print "#{record_H[ K.title ]} "
         print "\n"
     end
 end

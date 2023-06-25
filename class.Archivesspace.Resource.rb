@@ -108,44 +108,57 @@ class Resource_Record_Buf < Record_Buf
     end
 end   
 
-class Resource_Query   
+class Resource_Query
 
-    def initialize( res_O, param_get_full_ao_buf = false )
-=begin    
-        Param2, if true, causes the query to read each AO record.  This is about 30 times slower
-        than using the data from the AO indexes, which is a subset of the AO.
-=end
+    def initialize( res_O, param_get_full_ao_buf = false ) 
         if ( not res_O.is_a?( Resource )) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Param 1 is not a Resource class object, it's a '#{res_O.class}'"
             raise
         end 
+=begin    
+        Param2, if true, causes the query to read each AO record.  This is about 30 times slower
+        than using the data from the AO indexes, which is a subset of the AO.
+=end
         if ( not (param_get_full_ao_buf == true or param_get_full_ao_buf == false )) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 2 should be true or false, not '#{param_get_full_ao_buf}'"
+            SE.puts "Param 1 should be true or false, not '#{param_get_full_ao_buf}'"
             raise
         end 
         @res_O = res_O
-        @buf_A = nil
         @get_full_ao_buf = param_get_full_ao_buf    
         if ( @get_full_ao_buf ) then
             SE.puts "'Resource_Query' returning full buffer data."
         else
             SE.puts "'Resource_Query' returning index buffer data ONLY!"
         end
-    end
-    attr_reader :buf_A, :res_O
-
-    def get_all_AO( starting_uri = '' )
 =begin
-        Get all the AO's for the resource building an array of AO_Record_Buf's
+        Get all the AO's for the resource, building an array of record_H,
         loaded with the subset of AO data contained in the 'tree' records.
-        The parameter allows one to start from anyplace on the resource's tree.
+        The parameter allows one to start from anyplace on the resource's tree,
+        but I've never need it.
 =end
-        @buf_A = []
-        process_each_node( starting_uri )
-        return self
-    end
+        @record_H_A = []
+        @uri_num_H = {}     # Hash of uri_num's with associated record_H_A index number
+        process_each_node( '' )
+    end   
+    attr_reader :record_H_A
+
+
+    def get_record_H_of_uri_num( uri_num )
+        if ( ! uri_num.integer? ) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "Was expecting param 1 to be an integer"
+            raise
+        end
+        if ( @uri_num_H == {} ) then
+            record_H_A.each_with_index do | record_H, idx |
+                @uri_num_H[ record_H[ K.uri ].sub( /.*\//, '' ) ] = idx
+            end
+        end
+        return @record_H_A[ @uri_num_H[ uri_num ] ]
+    end   
+  
 
     def process_each_node( node_uri )
         if ( node_uri == '' ) then
@@ -194,9 +207,9 @@ class Resource_Query
                 end
                 child_H[ K.resource ] = { K.ref => @res_O.uri }
                 if ( @get_full_ao_buf ) then
-                    @buf_A << Archival_Object.new( @res_O, child_H[ K.uri ] ).new_buffer.read
+                    @record_H_A << Archival_Object.new( @res_O, child_H[ K.uri ] ).new_buffer.read.record_H
                 else
-                    @buf_A << Archival_Object.new( @res_O, child_H[ K.uri ] ).new_buffer.load( child_H )
+                    @record_H_A << child_H
                 end
                 if ( child_H[ K.child_count ] > 0 ) then
                     process_each_node( child_H[ K.uri ] )

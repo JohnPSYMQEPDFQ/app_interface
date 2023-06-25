@@ -104,6 +104,9 @@ module K
     def K.fmtr_record_original; return '__RECORD_ORIGINAL__'.freeze; end  # formatter
     def K.fmtr_record_sort_keys; return '__RECORD_SORT_KEYS__'.freeze; end  # formatter
     def K.fmtr_record_values; return '__RECORD_VALUES__'.freeze; end  # formatter
+    def K.fmtr_record_values__text_idx; return 0.freeze; end  # formatter
+    def K.fmtr_record_values__dates_idx; return 1.freeze; end  # formatter
+    def K.fmtr_record_values__notes_idx; return 2.freeze; end  # formatter
     def K.fmtr_right; return '__RIGHT__'.freeze; end  # formatter
     def K.fmtr_sc_indicator; return '__SC_INDICATOR__'.freeze; end   # formatter
     def K.fmtr_sc_type; return '__SC_TYPE__'.freeze; end   # formatter
@@ -136,9 +139,10 @@ module K
     def K.linked_agents; return 'linked_agents'.freeze; end   # archival_object, resource
     def K.linked_events; return 'linked_events'.freeze; end   # archival_object, resourcr
     def K.location; return 'location'.freeze; end  # location
-    def K.lock_version; return 'lock_version'.freeze; end
+    def K.lock_version; return 'lock_version'.freeze; end  # archival_object (incremented with eash update_
+    def K.materialspec; return 'materialspec'.freeze; end  # note_singlepart (material specific)
     def K.mixed_materials; return 'mixed_materials'.freeze; end
-    def K.n_physdesc; return 'n_physdesc'.freeze; end  # Spreadsheet: physical description note text
+    def K.n_physdesc; return 'n_physdesc'.freeze; end  # Spreadsheet only: physical description note text
     def K.no; return 'no'.freeze; end   
     def K.node_type; return 'node_type'.freeze; end   # tree
     def K.node_uri; return 'node_uri'.freeze; end   # tree
@@ -149,7 +153,7 @@ module K
     def K.number; return 'number'.freeze; end   # extents
     def K.object; return 'object'.freeze; end   # top_container
     def K.offset; return 'offset'.freeze; end   # tree
-    def K.p_physdesc; return 'p_physdesc'.freeze; end  # Spreadsheet: physical description note publish
+    def K.p_physdesc; return 'p_physdesc'.freeze; end  # Spreadsheet only: physical description note publish
     def K.parent; return 'parent'.freeze; end
     def K.parent_id; return 'parent_id'.freeze; end  # tree
     def K.parent_node; return 'parent_node'.freeze; end  # tree
@@ -161,7 +165,7 @@ module K
     def K.portion; return 'portion'.freeze; end   # extents
     def K.position; return 'position'.freeze; end
     def K.precomputed_waypoints; return 'precomputed_waypoints'.freeze; end  # tree
-    def K.processinfo; return 'processinfo'.freeze; end
+    def K.processinfo; return 'processinfo'.freeze; end   # note_singlepart (process information)
     def K.publish; return 'publish'.freeze; end
     def K.recordgrp; return 'recordgrp'.freeze; end  #archival_object
     def K.record_uri; return 'record_uri'.freeze; end

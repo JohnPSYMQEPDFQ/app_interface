@@ -76,25 +76,25 @@ rep_O = Repository.new( aspace_O, rep_num )
 
 res_O = Resource.new( rep_O, res_num )
 series_uri_A = []
-cnt = 0; Resource_Query.new( res_O ).get_all_AO.buf_A.each do | ao_buf_O |
-    if ( ! ao_buf_O.record_H[ K.level ].in?( [ K.series, K.subseries ] ) ) then
+cnt = 0; Resource_Query.new( res_O ).record_H_A.each do | record_H |
+    if ( ! record_H[ K.level ].in?( [ K.series, K.subseries ] ) ) then
         next
     end
-    series_uri_A << ao_buf_O.record_H[ K.uri ]
+    series_uri_A << record_H[ K.uri ]
     cnt += 1
     print "#{cnt} "
-    print "#{ao_buf_O.record_H[ K.uri ]} "
-    print "#{ao_buf_O.record_H[ K.position ]} "
-    print "#{ao_buf_O.record_H[ K.level ]} "
-    print "#{ao_buf_O.record_H[ K.title ]} "
+    print "#{record_H[ K.uri ]} "
+    print "#{record_H[ K.position ]} "
+    print "#{record_H[ K.level ]} "
+    print "#{record_H[ K.title ]} "
     print "\n"
 end
 
 sequence_A = [ 0 ]
 series_uri_A.each do | uri |
     puts ""
-    ao_buf_O = Archival_Object.new(res_O, uri).new_buffer.read( false ) # 'false' means don't filter the record.
-                                                                        # The lock_version field is needed to update a record.
+    ao_buf_O = Archival_Object.new(res_O, uri).new_buffer.read( )
+    
     a1 = ao_buf_O.record_H[ K.title ].split( /^((Series|Subseries) \d+(\.\d+)* *: *)/i )
     if ( a1.maxindex == 0 ) then
         puts "Unable to find 'series' text in '#{ao_buf_O.record_H[ K.title]}'"
@@ -102,14 +102,14 @@ series_uri_A.each do | uri |
     ancestors_maxindex = ao_buf_O.record_H[ K.ancestors ].maxindex
     until ( ancestors_maxindex == sequence_A.maxindex ) 
         if ( ancestors_maxindex > sequence_A.maxindex) then
-            sequence_A.push( 0 )
+            sequence_A << 0
         else
             sequence_A.pop( 1 )
         end
     end
     sequence_A[ ancestors_maxindex ] += 1
     
-    old_title=ao_buf_O.record_H[ K.title ]
+    old_title = ao_buf_O.record_H[ K.title ]
 
     stringer = ""
     case ao_buf_O.record_H[ K.level ] 
@@ -119,7 +119,7 @@ series_uri_A.each do | uri |
         stringer = "Subseries"
     else
         SE.puts "#{SE.lineno}: I shouldn't be here..."
-        SE.q { 'ao_buf_O.record_H[ K.level ]' }
+        SE.pp ao_buf_O.record_H[ K.level ]
         raise
     end
     new_title = stringer + " " + sequence_A.join( '.' ) + ": " + a1[ a1.maxindex ] 

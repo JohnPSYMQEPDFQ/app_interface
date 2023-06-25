@@ -19,7 +19,6 @@ Usage:  this_program.rb --ead TITLE [other options] FILE
 
 
 
-
 The input FILE has the following three formats( JSONized ):
 
         1 = {
@@ -29,14 +28,6 @@ The input FILE has the following three formats( JSONized ):
                   K.title => '',            # the AO title field.
 -optional-        K.dates => [ ],           # An array of AO date hashes, single or inclusive.
 -optional-        K.notes => [ ],           # An array of AO note hashes, singlepart or miltipart.
--optional-        K.fmtr_container =>       # References to TC of "type => indicator", creates the TC if needed.
-                    {
-                      K.fmtr_tc_type      => 'VALUE'     # eg. 'box'
-                      K.fmtr_tc_indicator => 'n'         # Box number (must be a number)
-                      K.fmtr_sc_type      => 'VALUE'     # eg. 'folder'
-                      K.fmtr_sc_indicator => 'STRING'    # Anything identifing the folder
-                    }
-                }
             }
   
         2 = {
@@ -48,9 +39,8 @@ The input FILE has the following three formats( JSONized ):
             }
 
     Record format 1 is the data record.  As-of 3/18/2020 only the "series", "subseries", "recordgrp", and "file" AO-level types
-    were tested.  If the record-type is 'K.fmtr_new_parent' this causes the program to find an existing AO record equal to
-    the 'Title' value.  This AO then becomes the parent record for all subsequent records in FILE.
-
+    were tested.  
+    
     Record format 2 causes all the records following the "indent => right" record to be attached to the record PRIOR to 
     the "indent => right" record.
 

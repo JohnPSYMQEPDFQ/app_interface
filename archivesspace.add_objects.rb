@@ -20,7 +20,7 @@ Usage:  this_program.rb --res-num n [other options] FILE
 To attach the records in FILE to the "Resource Record", only the --res-num option is needed.
 To attach the records to a specific AO, enter the --res-num option along with:
     1)  the --ao-num of the child AO. The --ao-num is the number at the end of the AO's uri.
-    2)  OR used the 'new_parent' record-type in the input FILE.
+    2)  OR use the 'new_parent' record level along with desired title in the input FILE (see below)
 
 
 The input FILE has the following three formats( JSONized ):
@@ -28,7 +28,8 @@ The input FILE has the following three formats( JSONized ):
         1 = {
               K.fmtr_record =>
                 {
-                  K.level => ''             # the AO level (eg. 'file', 'series', 'recordgrp', ...) -OR- a value of K.fmtr_new_parent.
+                  K.level => ''             # the AO level (eg. 'file', 'series', 'recordgrp', ...) 
+                                            # -OR- a value of K.fmtr_new_parent (see below).
                   K.title => '',            # the AO title field.
 -optional-        K.dates => [ ],           # An array of AO date hashes, single or inclusive.
 -optional-        K.notes => [ ],           # An array of AO note hashes, singlepart or miltipart.
@@ -51,8 +52,8 @@ The input FILE has the following three formats( JSONized ):
             }
 
     Record format 1 is the data record.  As-of 3/18/2020 only the "series", "subseries", "recordgrp", and "file" AO-level types
-    were tested.  If the record-type is 'K.fmtr_new_parent' this causes the program to find an existing AO record equal to
-    the 'Title' value.  This AO then becomes the parent record for all subsequent records in FILE.
+    were tested.  If the record level (K.level) is equal to 'K.fmtr_new_parent' this causes the program to find an existing AO record 
+    equal to the 'Title' value.  This AO then becomes the parent record for all subsequent records in FILE.
 
     Record format 2 causes all the records following the "indent => right" record to be attached to the record PRIOR to 
     the "indent => right" record.
@@ -78,7 +79,38 @@ require 'class.Archivesspace.Repository.rb'
 require 'class.Archivesspace.TopContainer.rb'
 require 'class.Archivesspace.Resource.rb'
 
-
+class Res_Q
+    def initialize( res_O )
+        @record_H_A = [ ]
+        Resource_Query.new( res_O ).record_H_A.each_with_index do | record_H |
+            if ( record_H[ K.level ] != K.file ) then
+                SE.puts "%-11s" % record_H[ K.level ] + " #{record_H[ K.uri ]} '#{record_H[ K.title ]}'"
+                @record_H_A << record_H
+            end
+        end
+        return self
+    end
+    
+    def uri_of( title )  # Find the URI with the matching title
+        a1 = [ ]
+        @record_H_A.each do | record_H |
+            if ( title.downcase == record_H[ K.title ].downcase ) then
+                a1 << record_H[ K.uri ]
+#               SE.puts "New parent: #{record_H[ K.uri ]} '#{record_H[ K.title ]}'"
+            end
+        end
+        if ( a1.maxindex < 0 ) then
+            SE.puts "#{SE.lineno}: Couldn't find a non-file AO with a title of '#{title}'"
+            raise
+        end
+        if ( a1.maxindex > 1 ) then
+            SE.puts "#{SE.lineno}: Found more than 1 AO with a title of '#{title}'.",
+                    "Use the uri number and the '--ao-num' option."
+            raise
+        end
+        return a1[ 0 ]
+    end
+end
 
 BEGIN {}
 END {}
@@ -90,9 +122,11 @@ api_uri_base = "http://localhost:8089"
 cmdln_option = { :rep_num => 2  ,
                  :res_num => nil  ,
                  :ao_num => nil  ,
+                 :initial_parent_title => nil ,
                  :delete_TC_only => false ,
                  :update => false ,
-                 :last_record_num => nil}
+                 :last_record_num => nil ,
+                 }
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [options] FILE"
     option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
@@ -101,8 +135,11 @@ OptionParser.new do |option|
     option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
         cmdln_option[ :res_num ] = opt_arg
     end
-    option.on( "--ao-num n", OptionParser::DecimalInteger, "Archival Object URI number ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
+    option.on( "--ao-num n", OptionParser::DecimalInteger, "Initial parent AO URI number ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
         cmdln_option[ :ao_num ] = opt_arg
+    end
+    option.on( "--initial-parent-title x", "Initial parent AO Title  ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
+        cmdln_option[ :initial_parent_title ] = opt_arg
     end
     option.on( "--delete-tc-only", "Delete TC records, then stop" ) do |opt_arg|
         cmdln_option[ :delete_TC_only ] = true
@@ -120,29 +157,15 @@ OptionParser.new do |option|
 end.parse!  # Bang because ARGV is altered
 #p cmdln_option
 #p ARGV
-if ( cmdln_option[ :rep_num ] ) then
-    rep_num = cmdln_option[ :rep_num ]
-else
+if ( ! cmdln_option[ :rep_num ] ) then
     SE.puts "The --rep-num option is required."
     raise
 end
-if ( cmdln_option[ :res_num ] ) then
-    res_num = cmdln_option[ :res_num ]
-else
+if ( ! cmdln_option[ :res_num ] ) then
     SE.puts "The --res-num option is required."
     raise
 end
-if ( cmdln_option[ :ao_num ] ) then
-    cmdln_AO_num = cmdln_option[ :ao_num ]      
-else
-    cmdln_AO_num = nil
-end
 
-if ( cmdln_option[ :last_record_num ] ) then
-    last_record_num = cmdln_option[ :last_record_num ]      
-else
-    last_record_num = nil
-end
 delete_TC_records_only=cmdln_option[ :delete_TC_only ] 
 
 aspace_O = ASpace.new
@@ -151,31 +174,31 @@ aspace_O.api_uri_base = api_uri_base
 aspace_O.login( "admin", "admin" )
 #SE.pom(aspace_O)
 #SE.pov(aspace_O)
-rep_O = Repository.new( aspace_O, rep_num )
+rep_O = Repository.new( aspace_O, cmdln_option[ :rep_num ] )
 #SE.pom(rep_O)
 #SE.pov(rep_O)
-res_O = Resource.new( rep_O, res_num )
+res_O = Resource.new( rep_O, cmdln_option[ :res_num ] )
 res_buf_O = res_O.new_buffer.read
 #SE.pom(res_buf_O)
 #SE.pov(res_buf_O)
 
-res_Q_all_AO_O = nil
-if ( cmdln_AO_num ) then
-    initial_parent_AO_H = Archival_Object.new( res_buf_O, cmdln_AO_num ).new_buffer.read.record_H
-    initial_parent_AO_uri = initial_parent_AO_H[ K.uri ]
-    SE.puts "#{SE.lineno}: initial_parent_AO_uri = #{initial_parent_AO_uri}"
+if ( cmdln_option[ :ao_num ] ) then
+    if ( cmdln_option[ :initial_parent_title ] ) then
+        SE.puts "#{SE.lineno}: The '--ao-num' and 'initial-parent-title' options are mutually exclusive"
+        raise
+    end
+    initial_parent_AO_uri = Archival_Object.new( res_buf_O,cmdln_option[ :ao_num ] ).new_buffer.read.record_H[ K.uri ]
+    SE.puts "#{SE.lineno}: initial parent uri = #{initial_parent_AO_uri}"
 else
-    initial_parent_AO_H = res_buf_O.record_H
-    initial_parent_AO_uri = initial_parent_AO_H[ K.uri ]
-    SE.puts "#{SE.lineno}: initial_parent_AO_uri = #{initial_parent_AO_uri}"
-    res_Q_all_AO_O = Resource_Query.new( res_O ).get_all_AO
-    res_Q_all_AO_O.buf_A.each do | ao_buf_O |
-        if ( ao_buf_O.record_H[ K.level ] != K.file ) then
-            SE.puts "#{ao_buf_O.num} " + "%-11s" % ao_buf_O.record_H[ K.level ] + " '#{ao_buf_O.record_H[ K.title ]}'"
-        end
+    res_Q_O = Res_Q.new( res_O )
+    if ( cmdln_option[ :initial_parent_title ] ) then
+        initial_parent_AO_uri = res_Q_O.uri_of( cmdln_option[ :initial_parent_title ] )
+        SE.puts "#{SE.lineno}: initial parent AO uri = #{initial_parent_AO_uri} (From the cmd_line)"
+    else
+        initial_parent_AO_uri = res_buf_O.record_H[ K.uri ]
+        SE.puts "#{SE.lineno}: initial parent AO_uri = #{initial_parent_AO_uri} (The Resource)"
     end
 end
-
 
 SE.puts "Finding Top_Containers (which takes some time) ..."
 time_begin = Time.now
@@ -200,8 +223,11 @@ all_TC_S.unused.each do | record_H |
     Top_Container.new( res_O, record_H[ K.uri ] ).new_buffer.delete 
 end
 
-
-if (delete_TC_records_only or ARGV.maxindex < 0 ) then
+if ( delete_TC_records_only ) then
+    exit
+end
+if ( ARGV.maxindex < 0 ) then
+    SE.puts "No input file provided."
     exit
 end
 
@@ -211,11 +237,10 @@ net_indent_cnt = 0
 record_level_cnt = Hash.new(0)  # h.default works too...
 last_AO_uri_created = ""
 parent_ref_stack_A = [ initial_parent_AO_uri ]
-initial_parent_AO_H = nil
 
 for argv in ARGV do
     File.foreach( argv ) do |input_record_J|
-        if ( last_record_num != nil and $. > last_record_num ) then 
+        if (cmdln_option[ :last_record_num ] != nil and $. >cmdln_option[ :last_record_num ] ) then 
             break
         end
         input_record_J.chomp!
@@ -231,13 +256,13 @@ for argv in ARGV do
             when K.fmtr_right then
                 net_indent_cnt += 1
                 parent_ref_stack_A.push( last_AO_uri_created )
-                SE.puts "New parent: #{last_AO_uri_created}"
+                SE.puts "#{SE.lineno}: New parent: #{last_AO_uri_created}"
                 next
             when K.fmtr_left then
-                net_indent_cnt += -1
+                net_indent_cnt -= 1
                 parent_ref_stack_A.pop( 1 )
                 last_AO_uri_created = parent_ref_stack_A[ parent_ref_stack_A.maxindex ]
-                SE.puts "New parent: #{last_AO_uri_created}"
+                SE.puts "#{SE.lineno}: New parent: #{last_AO_uri_created}"
                 next
             else
                 SE.puts "#{SE.lineno}: Invalid indent direction '#{input_record_H[ K.fmtr_indent ][ 0 ]}'"
@@ -250,9 +275,9 @@ for argv in ARGV do
             record_level = input_record_H[ K.fmtr_record ][ K.level ]
             record_level_cnt[ record_level ] += 1
             if ( record_level == K.fmtr_new_parent ) then
-                if ( cmdln_AO_num ) then
+                if (cmdln_option[ :ao_num ] or cmdln_option[ :initial_parent_title ] ) then
                     SE.puts "#{SE.lineno}: Hit 'new_parent' record, but"
-                    SE.puts "the --ao-num option isn't allowed for this record type."
+                    SE.puts "the --ao-num and --initial-parent-title options aren't allowed for this record type."
                     raise
                 end
                 if ( parent_ref_stack_A.maxindex != 0 ) then
@@ -261,24 +286,9 @@ for argv in ARGV do
                     SE.pp "parent_ref_stack_A:", parent_ref_stack_A
                     SE.pp "#{$.}: input_record_H:", input_record_H
                     raise
-                end
-                cnt = 0; res_Q_all_AO_O.buf_A.each do | ao_buf_O |
-                    if ( input_record_H[ K.fmtr_record ][ K.title ].downcase == ao_buf_O.record_H[ K.title ].downcase ) then
-                        parent_ref_stack_A[ 0 ] = ao_buf_O.record_H[ K.uri ]
-                        SE.puts "New parent: #{ao_buf_O.record_H[ K.uri ]} '#{ao_buf_O.record_H[ K.title ]}'"
-                        cnt += 1
-                    end
-                end
-                if ( cnt == 0 ) then
-                    SE.puts "#{SE.lineno}: Hit '#{K.fmtr_new_parent}' record, ",
-                            "but couldn't find an AO with a Title of '#{input_record_H[ K.fmtr_record ][ K.title ]}'"
-                    raise
-                end
-                if ( cnt > 1 ) then
-                    SE.puts "#{SE.lineno}: Hit '#{K.fmtr_new_parent}' record, ",
-                            "but found more than 1 AO with a Title of '#{input_record_H[ K.fmtr_record ][ K.title ]}'"
-                    raise
-                end
+                end                
+                parent_ref_stack_A[ 0 ] = res_Q_O.uri_of( input_record_H[ K.fmtr_record ][ K.title ] )
+                SE.puts "#{SE.lineno}: New parent: #{parent_ref_stack_A[ 0 ]}"
                 next
             end
 
@@ -315,13 +325,13 @@ for argv in ARGV do
  #                  SE.pp "#{SE.lineno}: tc_uri_H__by_type_and_indicator:", tc_uri_H__by_type_and_indicator
                 end
 
-                mm_frag_O = Record_Format.new( :instance_type )
-                mm_frag_O.record_H = { K.instance_type => K.mixed_materials}
-                mm_frag_O.record_H = { K.sub_container => { K.top_container => { K.ref => tc_uri_H__by_type_and_indicator[ unique_TC_key ] }}}
-                mm_frag_O.record_H = { K.sub_container => { K.type_2 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.fmtr_sc_type ] }}
-                mm_frag_O.record_H = { K.sub_container => { K.indicator_2 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.fmtr_sc_indicator ] }}
+                it_frag_O = Record_Format.new( :instance_type )
+                it_frag_O.record_H = { K.instance_type => K.mixed_materials}
+                it_frag_O.record_H = { K.sub_container => { K.top_container => { K.ref => tc_uri_H__by_type_and_indicator[ unique_TC_key ] }}}
+                it_frag_O.record_H = { K.sub_container => { K.type_2 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.fmtr_sc_type ] }}
+                it_frag_O.record_H = { K.sub_container => { K.indicator_2 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.fmtr_sc_indicator ] }}
 
-                ao_buf_O.record_H = { K.instances => [ mm_frag_O.record_H ] }
+                ao_buf_O.record_H = { K.instances => [ it_frag_O.record_H ] }
             end
 
 #           SE.pp ao_buf_O.record_H
@@ -337,4 +347,6 @@ end
 #SE.pp "tc_uri_H__by_type_and_indicator:", tc_uri_H__by_type_and_indicator 
 SE.puts "#{SE.lineno}: net indent count = #{net_indent_cnt}"
 SE.puts "record counts:", record_level_cnt.ai
+
+
 

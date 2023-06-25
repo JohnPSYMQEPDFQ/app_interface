@@ -31,7 +31,7 @@ class Record_Grouping_Indent
             raise
         end
         @record_stack_size_0R = stack_size_0R
-        @record_stack_A = []
+        @record_H__stack_A = []
         if (! indent_keys_prefixes_A.empty?) then
             if (! indent_keys_prefixes_A[0].is_a?(Array)) then
                 SE.puts "#{SE.lineno}: param4, must be an array of arrays" +
@@ -43,31 +43,69 @@ class Record_Grouping_Indent
         if ( @indent_key_stack_A.empty? or @indent_key_stack_A[0][0] != '/' ) then
             @indent_key_stack_A.unshift( [ '/', 0 ])
         end
+        @combine_like_records = false
         @indent_key_prefixes_A = @indent_key_stack_A.transpose[0]
+        @indent_left_rec_cnt = 0
+        @indent_right_rec_cnt = 0
+        @group_rec_cnt = 0
+        @file_rec_cnt = 0
     end
     private_class_method :new
+    attr_reader :combine_like_records
+    
+    def combine_like_records=( p1 )
+        if ( p1 == true or p1 == false ) then
+            @combine_like_records = p1
+        else
+            SE.puts "#{SE.lineno}: Expected param1 to be true of false, not '#{p1}'"
+            raise
+        end
+    end
 
     def flush
         @record_stack_size_0R = 0
         loop do
-            break if (@record_stack_A.maxindex < 0)
+            break if (@record_H__stack_A.maxindex < 0)
             self.add_record( {} )
         end
-        SE.ap "@indent_key_stack_A:", @indent_key_stack_A if ( ! @indent_key_stack_A.empty? )
+        SE.puts "Left record count:  #{@indent_left_rec_cnt}"
+        SE.puts "Right record count: #{@indent_right_rec_cnt}"
+        SE.puts "Group record count: #{@group_rec_cnt}"
+        SE.puts "File record count:  #{@file_rec_cnt}"
+        SE.ap "@indent_key_stack_A:", @indent_key_stack_A if ( @indent_key_stack_A.maxindex > 0 )
+#       SE.pp_stack
     end
 
-
     def add_record( p1_new_record_H )
-        @record_stack_A.push( p1_new_record_H ) if (! p1_new_record_H.empty?)
-        SE.ap "@record_stack_A:", @record_stack_A if ( $DEBUG )
-        SE.ap "@record_stack_A.maxindex:", @record_stack_A.maxindex if ( $DEBUG )
+        if (! p1_new_record_H.empty?) then
+            if ( @combine_like_records and ! @record_H__stack_A.empty? ) then
+                previous_record_H = @record_H__stack_A[ -1 ]
+                if (    p1_new_record_H[ K.fmtr_record_indent_keys ] == previous_record_H[ K.fmtr_record_indent_keys ] and
+                        p1_new_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__text_idx ] == previous_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__text_idx ] 
+                ) then
+                    date_A = p1_new_record_H[ K.fmtr_record_values ][K.fmtr_record_values__dates_idx]
+                    if ( ! date_A.empty? ) then
+                        @record_H__stack_A[ -1 ][ K.fmtr_record_values ][K.fmtr_record_values__dates_idx].concat( date_A )
+                    end
+                    note_A = p1_new_record_H[ K.fmtr_record_values ][K.fmtr_record_values__notes_idx]
+                    if ( ! note_A.empty? ) then
+                        @record_H__stack_A[ -1 ][ K.fmtr_record_values ][K.fmtr_record_values__notes_idx].concat( note_A )
+                    end          
+                    return
+                end
+            end
+            @record_H__stack_A.push( p1_new_record_H ) 
+        end
+
+        SE.ap "@record_H__stack_A:", @record_H__stack_A if ( $DEBUG )
+        SE.ap "@record_H__stack_A.maxindex:", @record_H__stack_A.maxindex if ( $DEBUG )
         SE.ap "@indent_key_stack_A:", @indent_key_stack_A if ( $DEBUG )
-        return {} if ( @record_stack_A.maxindex < @record_stack_size_0R ) 
-    
-        first_record_H = @record_stack_A.shift( 1 )[ 0 ]
+        return if ( @record_H__stack_A.maxindex < @record_stack_size_0R ) 
+        
+        first_record_H = @record_H__stack_A.shift( 1 )[ 0 ]
         first_record_indent_keys_A = @indent_key_prefixes_A + first_record_H[ K.fmtr_record_indent_keys ]
         highest_matched_indent_key_idx_A = [ ] 
-        @record_stack_A.each_with_index do |other_record_H, record_stack_I|
+        @record_H__stack_A.each_with_index do |other_record_H, record_stack_I|
             other_record_indent_keys_A = @indent_key_prefixes_A + other_record_H[ K.fmtr_record_indent_keys ] 
             indent_key_I = 0; loop do
                 SE.p "indent_key_I=#{indent_key_I}, " +
@@ -97,6 +135,7 @@ class Record_Grouping_Indent
                 output_record_H = {}
                 output_record_H[ K.fmtr_indent ] = [ K.fmtr_left, a1[ 0 ] ]
                 puts output_record_H.to_json 
+                @indent_left_rec_cnt += 1
             else
                 SE.p "first_record_indent_keys_A[ indent_key_I ].downcase=" +
                      "#{first_record_indent_keys_A[ indent_key_I ].downcase}" if ( $DEBUG )
@@ -138,15 +177,18 @@ class Record_Grouping_Indent
                                 group_text_A << @indent_key_stack_A[ idx ][ 0 ]
                             end
                             @indent_print_method.call( group_numbers_A, group_text_A )
+                            @group_rec_cnt += 1
                             output_record_H={}
                             output_record_H[ K.fmtr_indent ] = [ K.fmtr_right,  "GROUPING #{group_numbers_A.join( "." )}: #{group_text_A.join( ". " )}" ]
                             puts output_record_H.to_json
+                            @indent_right_rec_cnt += 1
                         end
                     end
                 end 
             end
         end
         @record_print_method.call( first_record_H )
+        @file_rec_cnt += 1
     end
 end
 

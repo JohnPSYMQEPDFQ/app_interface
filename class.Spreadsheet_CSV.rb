@@ -11,7 +11,9 @@ class Spreadsheet_CSV
             K.ead_id => K.ead ,
             K.label => K.dates_label ,
             K.certainty => K.date_certainty ,
-            K.physdesc => [ K.n_physdesc, K.p_physdesc ] ,  #  Text and Publish-flag columns
+            K.physdesc => [ K.n_physdesc, K.p_physdesc ] ,  #  [ Text, Publish-flag] columns
+            K.materialspec => [ K.n_physdesc, K.p_physdesc ] , # The spreadsheet doesn't handle material specific note types
+                                                                # so we'll just change them to physical description types.
         }
         @row_H = initialize_row_H()        
         puts '"' + @row_H.keys.join('","') + '"'
@@ -51,9 +53,9 @@ class Spreadsheet_CSV
     def load_dates( p1_date_A )
         p1_date_A.each_index do | idx |
             if ( idx > 0 ) then
-                SE.puts "#{SE.lineno}: Not programmed for more than one date"
-                SE.ap "#{$.}: idx=#{idx}" 
-                SE.ap "#{$.}: p1_date_A:", p1_date_A
+                SE.puts "#{SE.lineno},#{$.}: Not programmed for more than one date"
+                SE.puts "idx=#{idx}" 
+                SE.ap "p1_date_A:", p1_date_A
                 raise
             end
             p1_date_A[idx].keys.each do | k |
@@ -67,28 +69,37 @@ class Spreadsheet_CSV
 
         p1_note_A.each_index do | idx |
             if ( idx > 0 ) then
-                SE.puts "#{SE.lineno}: Not programmed for more than one note"
-                SE.ap "#{$.}: idx=#{idx}"
-                SE.ap "#{$.}: p1_note_A:", p1_note_A
+                SE.puts "#{SE.lineno},#{$.}: Not programmed for more than one note"
+                SE.puts "idx=#{idx}"
+                SE.ap "p1_note_A:", p1_note_A
                 raise
             end 
             if ( ! p1_note_A[ idx ].has_key?( K.type ) ) then
-                SE.puts "#{SE.lineno}: Was expecting a key of 'K.type' in p1_note_A[ %{idx} ]"
-                SE.ap "#{$.}: p1_note_A[ #{idx} ]:", p1_note_A[ idx ]
+                SE.puts "#{SE.lineno},#{$.}: Was expecting a key of 'K.type' in p1_note_A[ %{idx} ]"
+                SE.ap "p1_note_A[ #{idx} ]:", p1_note_A[ idx ]
                 raise
             end
             if ( ! p1_note_A[ idx ].has_key?( K.content ) ) then
-                SE.puts "#{SE.lineno}: Was expecting a key of 'K.content' in p1_note_A[ %{idx} ]"
-                SE.ap "#{$.}: p1_note_A[ #{idx} ]:", p1_note_A[ idx ]
+                SE.puts "#{SE.lineno},#{$.}: Was expecting a key of 'K.content' in p1_note_A[ %{idx} ]"
+                SE.ap "p1_note_A[ #{idx} ]:", p1_note_A[ idx ]
                 raise
             end
-            if ( translate_column( p1_note_A[ idx ][ K.type ] ) == nil ) then
-                SE.puts "#{SE.lineno}: No translation column programmed for note-type '#{p1_note_A[ idx ][ K.type ]}'"
-                SE.ap "#{$.}: p1_note_A[ #{idx} ]:", p1_note_A[ idx ]
+            
+            translated_date_type_A = translate_column( p1_note_A[ idx ][ K.type ] )
+            if ( ! translated_date_type_A.is_a?( Array ) ) then
+                SE.puts "#{SE.lineno},#{$.}: No translation column programmed for note-type '#{p1_note_A[ idx ][ K.type ]}'"
+                SE.ap "translated_date_type_A=", translated_date_type_A
+                SE.ap "p1_note_A[ #{idx} ]:", p1_note_A[ idx ]
                 raise
             end
-            @row_H[ translate_column( p1_note_A[ idx ][ K.type ] )[0] ] = p1_note_A[ idx ][ K.content ].join( "\n" ) 
-            @row_H[ translate_column( p1_note_A[ idx ][ K.type ] )[1] ] = K.spreadsheet_true
+            if ( ! translated_date_type_A.maxindex.between?(0, 1) ) then
+                SE.puts "#{SE.lineno},#{$.}: Was expecting a 2 element array, got:"
+                SE.ap "translated_date_type_A=", translated_date_type_A
+                SE.ap "p1_note_A[ #{idx} ]:", p1_note_A[ idx ]
+                raise
+            end
+            @row_H[ translated_date_type_A[0] ] = p1_note_A[ idx ][ K.content ].join( "\n" ) 
+            @row_H[ translated_date_type_A[1] ] = K.spreadsheet_true
         end
     end
     
@@ -96,7 +107,7 @@ class Spreadsheet_CSV
         h = initialize_row_H( )
         @row_H.keys.each do | k | 
             if (! h.has_key?( k )) then
-                SE.puts "#{SE.lineno}: =============================================="
+                SE.puts "#{SE.lineno},#{$.}: =============================================="
                 SE.puts "Unexpected key: '#{k}' in row_H"
                 SE.ap @row_H
                 raise

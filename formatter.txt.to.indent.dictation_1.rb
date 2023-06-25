@@ -110,21 +110,24 @@ ARGF.each_line do |input_record|
         from_thru_date_A_A << from_thru_date_A
     end
 
-    a1 = input_record.split( '.' ).map( &:to_s ).map( &:strip ).reject(&:empty?).map{ | e | e.sub( /./,&:upcase )}
+    a1 = input_record.split( '.' ).map( &:to_s ).map( &:strip ).map{ | e | e.gsub(/^,$/, '') }.reject(&:empty?).map{ | e | e.sub( /./,&:upcase )}
 
 #       What's left of the input record (now in a1) is used as the sort keys at the front
 #       of the record (and the dates) so the 'sort' command doesn't get confused!   
     output_record_H[ K.fmtr_record_sort_keys ] = a1.join( " " ) + " " + from_thru_date_A_A.join( " " )
-   
-    record_values_A = [ ]
+
+    a2 = [ ]
     loop do
         break if ( a1.maxindex < 1 )
         dot_delimited_word = a1.pop( 1 )[ 0 ]   # pop returns an array, [0] says return the 1st element
-        record_values_A.unshift( dot_delimited_word )
+        a2.unshift( dot_delimited_word )
         break if ( a1.maxindex < cmdln_option_H[ :max_levels ] ) 
     end
-    record_values_A.push( from_thru_date_A_A )
-    record_values_A.push( note_A )
+    
+    record_values_A = [ ]   
+    record_values_A[ K.fmtr_record_values__text_idx ] = a2.join(' ')
+    record_values_A[ K.fmtr_record_values__dates_idx ] = from_thru_date_A_A 
+    record_values_A[ K.fmtr_record_values__notes_idx ] = note_A
     
     indent_keys_A = [ ] 
     loop do
@@ -147,6 +150,6 @@ SE.puts "Count of date patterns found:"
 SE.puts find_dates_O.pattern_cnt_H.ai
 SE.puts ""
 SE.puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-SE.puts "The output from #{myself_name} SHOULD BE SORTED (sort -f) for the indenter program!"
+SE.puts "The output from '#{myself_name}' SHOULD BE SORTED (sort -f) for the indenter program!"
 SE.puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 #p stack_of_recs
