@@ -186,15 +186,15 @@ if ( cmdln_option[ :ao_num ] ) then
         raise
     end
     parent_ref_stack_A << Archival_Object.new( res_buf_O,cmdln_option[ :ao_num ] ).new_buffer.read.record_H[ K.uri ]
-    SE.puts "#{SE.lineno}: initial parent uri = #{initial_parent_AO_uri}"
+    SE.puts "#{SE.lineno}: initial parent uri = #{parent_ref_stack_A[ 0 ]} (From the cmd_line)"
 else
     res_Q_O = Res_Q.new( res_O )
     if ( cmdln_option[ :initial_parent_title ] ) then
         parent_ref_stack_A << res_Q_O.uri_of( cmdln_option[ :initial_parent_title ] )
-        SE.puts "#{SE.lineno}: initial parent AO uri = #{initial_parent_AO_uri} (From the cmd_line)"
+        SE.puts "#{SE.lineno}: initial parent AO uri = #{parent_ref_stack_A[ 0 ]} (From the cmd_line)"
     else
         parent_ref_stack_A << res_buf_O.record_H[ K.uri ]
-        SE.puts "#{SE.lineno}: initial parent AO_uri = #{initial_parent_AO_uri} (The Resource)"
+        SE.puts "#{SE.lineno}: initial parent AO_uri = #{parent_ref_stack_A[ 0 ]} (The Resource)"
     end
 end
 
@@ -234,6 +234,11 @@ end
 net_indent_cnt = 0
 record_level_cnt = Hash.new( 0 )  # h.default works too...
 last_AO_uri_created = ""
+if ( parent_ref_stack_A.maxindex != 0 ) then
+    SE.puts "#{SE.lineno}: Was expecting parent_ref_stack_A.maxindex to be 0"
+    SE.pp "parent_ref_stack_A=", parent_ref_stack_A
+    raise
+end
 
 for argv in ARGV do
     File.foreach( argv ) do |input_record_J|
