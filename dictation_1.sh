@@ -70,8 +70,8 @@ rm ${myself_name}.*.err ${myself_name}.*.txt
                                                        "${file_name}" \
                 2>"${myself_name}.formatter.err" >"${myself_name}.${file_name%.*}.indent.txt"
     sort -f "${myself_name}.${file_name%.*}.indent.txt" | \
-    run_ruby.sh formatter.indent.to.add_objects.generic.rb ${combine_like_records:+--combine-like-record} \
-                                                           ${max_series_records:+--max-series=}${max_series_records} \
+    run_ruby.sh formatter.indent.to.add_objects.generic.rb ${combine_like_records:+--combine_like_records} \
+                                                           ${max_series_records:+--max_series=}${max_series_records:+"${max_series_records}"} \
                                                            ${parent_title:+--parent_title=}${parent_title:+"${parent_title}"} \
                2>"${myself_name}.indent.err" >"${myself_name}.${file_name%.*}.add_objects.txt"
     if [[ -n "${ead_id}" ]] 
