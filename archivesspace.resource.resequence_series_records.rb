@@ -1,16 +1,6 @@
 =begin
 
-Abbreviations,  AO = archival object (Everything's an AO, but there's also uri "archive_objects". It's confusing...)
-                AS = ArchivesSpace
-                IT = instance type
-                TC = top container
-                SC = Sub-container
-                _H = Hash
-                _A = Array
-                _I = Index(of Array)
-                _O = Object
-               _0R = Zero Relative
-
+Reset the Series record sequence numbers.  
 
 =end
 

@@ -80,13 +80,17 @@ find_dates_O = Find_Dates_in_String.new( {  :morality_replace_option => { :good 
                                          }.merge( cmdln_option_H[ :find_dates_option_H ] ) )
                                    
 output_string = find_dates_O.do_find( input_string )
+
 SE.puts "----------------------------------"
 SE.puts "output_string = #{output_string.ai}"
-
+SE.puts "----------------------------------"
 SE.q { 'find_dates_O.good__date_clump_S__A' }
+SE.puts "----------------------------------"
 SE.q { 'find_dates_O.bad__date_clump_S__A' }
-
+SE.puts "----------------------------------"
 SE.puts "input_string  = #{input_string.ai}"
 SE.puts "----------------------------------"
 SE.puts "output_string = #{output_string.ai}"
+SE.puts "----------------------------------"
+SE.q { 'find_dates_O.pattern_cnt_H' }
 

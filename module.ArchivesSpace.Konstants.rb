@@ -184,6 +184,7 @@ module K
     def K.series; return 'series'.freeze; end   # archival_object
     def K.session; return 'session'.freeze; end
     def K.single; return 'single'.freeze; end
+    def K.slugged_url; return 'slugged_url'.freeze; end   # archival_object
     def K.status; return 'status'.freeze; end   # http
     def K.subjects; return 'subjects'.freeze; end   # archival_object, resource
     def K.subnotes; return 'subnotes'.freeze; end

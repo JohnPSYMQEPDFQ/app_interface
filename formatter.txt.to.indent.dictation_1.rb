@@ -61,8 +61,6 @@ max_date = ""
 note_cnt = 0
 output_record_H = {}
 
-#   Record ID;Subject Heading;General Heading Note;Title;Number;Date;Geographic Location;-Corporate Name;Personal Name
-#   0         1               2                    3     4      5    6                   7               8
 ARGF.each_line do |input_record|
 
     if ( cmdln_option_H[ :r ] and $. > cmdln_option_H[ :r ] ) then 
@@ -77,7 +75,7 @@ ARGF.each_line do |input_record|
     saved_input_record = input_record + ""      # + "" <<< gotta change it or it's just a reference.
     
     note_A = [ ]
-    a1 = input_record.split( /\s+(NOTE|note|NOTES|notes):\s*/ ).map( &:to_s ).map( &:strip )
+    a1 = input_record.split( /\s+(note|notes):\s*/i ).map( &:to_s ).map( &:strip )
     if ( a1.maxindex > 0) then
         note_cnt += 1
         input_record = a1.shift( 1 )[ 0 ]   # input_record with the NOTE removed.

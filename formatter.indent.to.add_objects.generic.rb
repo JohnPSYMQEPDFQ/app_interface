@@ -72,7 +72,7 @@ def put_record( stack_record_H )
     stringer = stack_record_H[ K.fmtr_record_indent_keys ].join( ". " ) +
                ". " +
                stack_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__text_idx ]
-    output_record_H[ K.fmtr_record ][ K.title ] = stringer.strip.gsub( /\.$/,'' )
+    output_record_H[ K.fmtr_record ][ K.title ] = stringer.strip.gsub( /[\.\,]$/,'' )
     
     output_record_H[ K.fmtr_record ][ K.dates ] = [ ]
     date_A_A = stack_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__dates_idx ]
@@ -80,13 +80,13 @@ def put_record( stack_record_H )
         date_A_A.each do | date_A |
             if ( date_A.maxindex == 0 ) then
                 single_date_O = Record_Format.new( :single_date )
-                single_date_O.record_H = { K.label => K.existence }
+                single_date_O.record_H = { K.label => K.creation }
                 single_date_O.record_H = { K.begin => date_A[ 0 ] }
                 output_record_H[ K.fmtr_record ][ K.dates ].push( single_date_O.record_H )
             end
             if ( date_A.maxindex == 1 ) then
                 inclusive_dates_O = Record_Format.new( :inclusive_dates )
-                inclusive_dates_O.record_H[ K.label ] = K.existence 
+                inclusive_dates_O.record_H[ K.label ] = K.creation 
                 inclusive_dates_O.record_H[ K.begin ] = date_A[ 0 ]
                 inclusive_dates_O.record_H[ K.end ] = date_A[ 1 ]
                 output_record_H[ K.fmtr_record ][ K.dates ].push( inclusive_dates_O.record_H )
