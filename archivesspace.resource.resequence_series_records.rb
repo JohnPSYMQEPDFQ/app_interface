@@ -1,6 +1,6 @@
 =begin
 
-Reset the Series record sequence numbers.  
+    Reset the Series record sequence numbers.  
 
 =end
 

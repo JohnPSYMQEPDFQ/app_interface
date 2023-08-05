@@ -1,16 +1,6 @@
 =begin
 
-Abbreviations,  AO = archival object (Everything's an AO, but there's also uri "archive_objects". It's confusing...)
-                AS = ArchivesSpace
-                IT = instance type
-                TC = top container
-                SC = Sub-container
-                _H = Hash
-                _A = Array
-                _I = Index(of Array)
-                _O = Object
-               _0R = Zero Relative
-
+    Display a selection of AS record types.
 
 =end
 
@@ -33,7 +23,7 @@ cmdln_option = { :rep_num => 2  ,
                  :res_num => nil  ,
                  :filter => false }
 OptionParser.new do |option|
-    option.banner = "Usage: #{myself_name} --res-num n [res] [(ao|tc|loc|index) n,n,...]..."
+    option.banner = "Usage: #{myself_name} --res-num n [res] [(res|ao|tc|loc|index) n,n,...]..."
     option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
         cmdln_option[ :rep_num ] = opt_arg
     end

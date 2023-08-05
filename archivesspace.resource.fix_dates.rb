@@ -1,6 +1,8 @@
 =begin
 
-Loop through all the dates of a given resource and change specific errors.
+    Loop through all the dates of a given resource and change specific errors.
+    BTW, the "expression" field is filled-in by AS someplace...
+    
 =end
 
 require 'json'

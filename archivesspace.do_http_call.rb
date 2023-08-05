@@ -1,17 +1,7 @@
 =begin
 
-Abbreviations,  AO = archival object (Everything's an AO, but there's also uri "archive_objects". It's confusing...)
-                AS = ArchivesSpace
-                IT = instance type
-                TC = top container
-                SC = Sub-container
-                _H = Hash
-                _A = Array
-                _I = Index(of Array)
-                _O = Object
-               _0R = Zero Relative
-
-
+    Does a single http call to the AS backend and returns the results.
+    
 =end
 
 require 'json'
@@ -73,7 +63,6 @@ else
 end
 
 uri.sub!( ':repo_id', rep_num.to_s )
-#p a1
 puts "uri=#{uri}, params=#{params}"
 stringer = http_O.method( method ).call( uri, params ) 
 puts stringer.ai

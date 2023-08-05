@@ -1,6 +1,6 @@
 =begin
 
-Display all the resources of a repository.
+    Display all the resources of a repository.
 
 =end
 
@@ -53,9 +53,10 @@ rep_O = Repository.new( aspace_O, rep_num )
 #SE.pom(rep_O)
 #SE.pov(rep_O)
 
-cnt = 0; Repository_Query.new( rep_O ).get_all_Resource.buf_A.each do | res_buf_O |
-    cnt += 1
-    puts "#{res_buf_O.res_O.num}: #{res_buf_O.record_H[ K.title ]}"
+#   id_0 is called the unitid in the XML EAD file.
+puts "res_num, title, id_0/unitid, ead_id"
+Repository_Query.new( rep_O ).get_all_Resource.buf_A.each do | res_buf_O |
+    puts "#{res_buf_O.res_O.num}: #{res_buf_O.record_H[ K.title ]} '#{res_buf_O.record_H[ K.id_0 ]}' '#{res_buf_O.record_H[ K.ead_id ]}'"
 end
 
 

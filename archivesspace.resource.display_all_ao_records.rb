@@ -1,7 +1,7 @@
 =begin
 
-Display all the Archival-Objects of a Resource, with a few different 
-print options.
+    Display all the Archival-Objects of a Resource, with a few different 
+    print options.
 
 =end
 

@@ -70,7 +70,7 @@ module K
     def K.dimensions; return 'dimensions'.freeze; end   # extents
     def K.display_string; return 'display_string'.freeze; end
     def K.ead; return 'ead'.freeze; end   # spreadsheet column header for K.ead_id
-    def K.ead_id; return 'ead_id'.freeze; end   # resource
+    def K.ead_id; return 'ead_id'.freeze; end   # resource,  This and the id_0 must be unique
     def K.ead_location; return 'ead_location'.freeze; end   # resource
     def K.end; return 'end'.freeze; end   # dates
     def K.era; return 'era'.freeze; end   # dates
@@ -116,7 +116,8 @@ module K
     def K.has_unpublished_ancestor; return 'has_unpublished_ancestor'.freeze; end
     def K.hierarchy; return 'hierarchy'.freeze; end   # spreadsheet
     def K.id; return 'id'.freeze; end   # tree
-    def K.id_0; return 'id_0'.freeze; end   # resource
+    def K.id_0; return 'id_0'.freeze; end   # resource  This and the ead_id must be unique.  
+                                            #           This is called the 'unitid' in the XML dump file!
     def K.ils_holding_id; return 'ils_holding_id'.freeze; end   # top_container
     def K.ils_item_id; return 'ils_item_id'.freeze; end   # top_container
     def K.inclusive; return 'inclusive'.freeze; end
