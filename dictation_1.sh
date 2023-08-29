@@ -63,37 +63,54 @@ then
     exit 4
 fi
 file_name="$1"
-rm ${myself_name}.*.err ${myself_name}.*.txt
+rm ${myself_name}.*.err ${myself_name}.*.txt 2>/dev/null
 
 (   set -x
     run_ruby.sh formatter.txt.to.indent.dictation_1.rb --max_levels=${max_group_levels} \
                                                        "${file_name}" \
                 2>"${myself_name}.formatter.err" >"${myself_name}.${file_name%.*}.indent.txt"
+    if [[ $? -gt 0 ]]
+    then
+        exit 1
+    fi
     sort -f "${myself_name}.${file_name%.*}.indent.txt" | \
     run_ruby.sh formatter.indent.to.add_objects.generic.rb ${combine_like_records:+--combine_like_records} \
                                                            ${max_series_records:+--max_series=}${max_series_records:+"${max_series_records}"} \
                                                            ${parent_title:+--parent_title=}${parent_title:+"${parent_title}"} \
                2>"${myself_name}.indent.err" >"${myself_name}.${file_name%.*}.add_objects.txt"
+    if [[ $? -gt 0 ]]
+    then
+        exit 1
+    fi
     if [[ -n "${ead_id}" ]] 
     then
         run_ruby.sh spreadsheet.add_objects.to.csv.rb --ead "${ead_id}" "${myself_name}.${file_name%.*}.add_objects.txt" 2>"${myself_name}.spreadsheet.err" >"${myself_name}.${file_name%.*}.csv" 
     fi
-    )
+)
 {
-    echo '========================================'
-    echo '   Formatter results:'
-    echo ''
-    cat "${myself_name}.formatter.err"
-    echo '========================================'
-    echo '   Indenter results:'
-    echo ''
-    cat "${myself_name}.indent.err"
-    if [[ -n "${ead_id}" ]] 
+    if [[ -a "${myself_name}.formatter.err" ]] 
     then
         echo '========================================'
-        echo '   cvs creator results:'
+        echo '   Formatter results:'
         echo ''
-        cat "${myself_name}.spreadsheet.err"
+        cat "${myself_name}.formatter.err"
+    fi
+    if [[ -a "${myself_name}.indent.err" ]] 
+    then
+        echo '========================================'
+        echo '   Indenter results:'
+        echo ''
+        cat "${myself_name}.indent.err"
+    fi
+    if [[ -n "${ead_id}" ]] 
+    then
+        if [[ -a "${myself_name}.spreadsheet.err" ]]
+        then
+            echo '========================================'
+            echo '   cvs creator results:'
+            echo ''
+            cat "${myself_name}.spreadsheet.err"
+        fi
     fi
 } 1>&2
 

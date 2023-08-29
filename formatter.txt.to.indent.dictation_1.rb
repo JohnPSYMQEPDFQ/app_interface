@@ -60,6 +60,7 @@ min_date = ""
 max_date = ""
 note_cnt = 0
 output_record_H = {}
+prepend_A = []
 
 ARGF.each_line do |input_record|
 
@@ -71,16 +72,71 @@ ARGF.each_line do |input_record|
     if ( input_record.match?( /^\s*$/ ) ) then
         next
     end
-  
     saved_input_record = input_record + ""      # + "" <<< gotta change it or it's just a reference.
     
+    a1 = input_record.split( /^\s*(prepend|drop)[\.]?\s*/i ).map( &:to_s ).map( &:strip )
+    if ( a1.maxindex > 0 ) then
+        a1.shift                     # a1[0] == "" for the prepend & drop records
+        if ( a1.maxindex > 1 ) then
+            SE.puts "#{SE.lineno}: got an odd 'prepend' or 'drop' record:"
+            SE.q { 'input_record' }
+            raise
+        end
+        case a1.shift.downcase      # shift-off the prepend or drop "command".   
+        when 'prepend' 
+            if ( a1.length == 0 ) then
+                SE.puts "#{SE.lineno}: got a 'prepend' record without a word:"
+                SE.q { 'input_record' }
+                raise
+            end
+            a2 = a1.first.split( '.' ).map( &:to_s ).map( &:strip ).map{ | e | e.gsub(/^,$/, '') }.reject(&:empty?).map{ | e | e.sub( /./,&:upcase )}
+            if ( a2.maxindex != 0 ) then
+                SE.puts "#{SE.lineno}: got a 'prepend' record with more than 1 period."
+                SE.q { 'input_record' }
+                SE.q { 'a2' }
+                raise
+            end
+            prepend_A << a2.first
+            next
+        when 'drop'
+            if ( a1.length == 0 ) then
+                if ( prepend_A.length > 0 ) then
+                    prepend_A.pop
+                    next
+                end
+                SE.puts "#{SE.lineno}: got a blank 'drop' record but there are no entries in prepend_A."
+                SE.q { 'input_record' }
+                raise
+            end
+            a2 = a1.first.split( '.' ).map( &:to_s ).map( &:strip ).map{ | e | e.gsub(/^,$/, '') }.reject(&:empty?).map{ | e | e.sub( /./,&:upcase )}
+            if ( a2.maxindex != 0 ) then
+                SE.puts "#{SE.lineno}: got a 'drop' record with more than 1 period."
+                SE.q { 'input_record' }
+                raise
+            end           
+            found = false
+            prepend_A.maxindex.downto(0).each do | idx |
+                if ( prepend_A.pop.downcase == a2.first.downcase ) then
+                    found = true
+                    break
+                end
+            end        
+            if ( ! found ) then
+                SE.puts "#{SE.lineno}: got a 'drop' record with a word but no matching entry in prepend_A."
+                SE.q { 'input_record' }
+                raise
+            end            
+            next
+        end
+    end
+
     note_A = [ ]
     a1 = input_record.split( /\s+(note|notes):\s*/i ).map( &:to_s ).map( &:strip )
     if ( a1.maxindex > 0) then
         note_cnt += 1
         input_record = a1.shift( 1 )[ 0 ]   # input_record with the NOTE removed.
-        a1.shift( 1 )   # When using () in the pattern, what's between the () is returned too.
         a1.each do | note |
+            next if ( note =~ /(note|notes)/i ) 
             note_A << note
         end
     end
@@ -108,7 +164,7 @@ ARGF.each_line do |input_record|
         from_thru_date_A_A << from_thru_date_A
     end
 
-    a1 = input_record.split( '.' ).map( &:to_s ).map( &:strip ).map{ | e | e.gsub(/^,$/, '') }.reject(&:empty?).map{ | e | e.sub( /./,&:upcase )}
+    a1 = prepend_A + input_record.split( '.' ).map( &:to_s ).map( &:strip ).map{ | e | e.gsub(/^,$/, '') }.reject(&:empty?).map{ | e | e.sub( /./,&:upcase )}
 
 #       What's left of the input record (now in a1) is used as the sort keys at the front
 #       of the record (and the dates) so the 'sort' command doesn't get confused!   
@@ -117,7 +173,7 @@ ARGF.each_line do |input_record|
     a2 = [ ]
     loop do
         break if ( a1.maxindex < 1 )
-        dot_delimited_word = a1.pop( 1 )[ 0 ]   # pop returns an array, [0] says return the 1st element
+        dot_delimited_word = a1.pop( 1 )[ 0 ]   # pop with an argument returns an array, [0] says return the 1st element
         a2.unshift( dot_delimited_word )
         break if ( a1.maxindex < cmdln_option_H[ :max_levels ] ) 
     end
@@ -150,4 +206,12 @@ SE.puts ""
 SE.puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 SE.puts "The output from '#{myself_name}' SHOULD BE SORTED (sort -f) for the indenter program!"
 SE.puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+if ( prepend_A.length > 0 ) then
+    SE.puts ""
+    SE.puts "ERROR!"
+    SE.puts "ERROR! prepend_A not empty.  Missing drop record."
+    SE.q { 'prepend_A' }
+    SE.puts ""
+    raise
+end
 #p stack_of_recs
