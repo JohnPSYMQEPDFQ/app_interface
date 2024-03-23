@@ -79,10 +79,12 @@ def put_record( stack_record_H )
     if ( date_A_A.maxindex >= 0 ) then
         date_A_A.each do | date_A |
             if ( date_A.maxindex == 0 ) then
-                single_date_O = Record_Format.new( :single_date )
-                single_date_O.record_H = { K.label => K.creation }
-                single_date_O.record_H = { K.begin => date_A[ 0 ] }
-                output_record_H[ K.fmtr_record ][ K.dates ].push( single_date_O.record_H )
+                inclusive_dates_O = Record_Format.new( :inclusive_dates )
+                inclusive_dates_O.record_H[ K.label ] = K.creation 
+                inclusive_dates_O.record_H[ K.begin ] = date_A[ 0 ]
+                inclusive_dates_O.record_H[ K.end ] = date_A[ 0 ]
+                inclusive_dates_O.record_H[ K.expression] = date_A[ 0 ]
+                output_record_H[ K.fmtr_record ][ K.dates ].push( inclusive_dates_O.record_H )
             end
             if ( date_A.maxindex == 1 ) then
                 inclusive_dates_O = Record_Format.new( :inclusive_dates )

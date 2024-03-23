@@ -62,64 +62,76 @@ aspace_O.login( "admin", "admin" )
 
 rep_O = Repository.new( aspace_O, rep_num )
 res_O = Resource.new( rep_O, res_num )
-cnt = 0; Resource_Query.new( res_O ).record_H_A.each do | record_H |
+
+update_cnt = 0
+record_cnt = 0
+Resource_Query.new( res_O ).record_H_A.each do | record_H |
+    record_cnt += 1
     if ( ! ( record_H.key?( K.dates ) and record_H[ K.dates ].length > 0 )) then
         next
     end
-    fix = false
-    record_H[ K.dates ].each do | date |
-        fix = true if ( date[ K.label ] != K.creation ) 
-        fix = true if ( date.key?( K.expression ) and ! date[ K.expression ].in?( [ "", "undated" ] ) )
-        fix = true if ( date.key?( K.begin ) and date[ K.begin ] != "" and date[ K.begin ] == date[ K.end ] )
-    end
-    next if ( ! fix )
-    cnt += 1
-    print "#{cnt} "
-    print "#{record_H[ K.uri ].sub( /.*\//, "")} "
-    print "#{record_H[ K.title ]} "
-    print record_H[ K.dates ].join( " " )
-    print "\n"
+
+    index_image =  ""
+    index_image += "#{record_H[ K.uri ].sub( /.*\//, "")} "
+    index_image += "#{record_H[ K.title ]} "
 
     ao_buf_O = Archival_Object.new(res_O, record_H[ K.uri ] ).new_buffer.read( )
-    print "#{cnt} "
-    print "#{record_H[ K.uri ].sub( /.*\//, "")} "
-    print "#{record_H[ K.title ]} "
-    puts ao_buf_O.record_H[ K.dates ].join( " " )
-   
+
+    before_image = ""
+    before_image += "#{record_H[ K.uri ].sub( /.*\//, "")} "
+    before_image += "#{record_H[ K.title ]} "
+    
+    after_image = before_image + ""
+    
     changed = false
+    date_cnt = 0
     ao_buf_O.record_H[ K.dates ].each_index do | idx |
+        date_cnt += 1
+        change_type = [ " "," "," "," " ]
+        before_image += "#{change_type.join(" ")} #{ao_buf_O.record_H[ K.dates ][ idx]}"
         if ( ao_buf_O.record_H[ K.dates ][ idx][ K.label ] != K.creation ) then
             ao_buf_O.record_H[ K.dates ][ idx][ K.label ] = K.creation
             changed= true
+            change_type[ 0 ] = "0"
         end
         if (    ao_buf_O.record_H[ K.dates ][ idx].key?( K.begin ) and
                 ao_buf_O.record_H[ K.dates ][ idx][ K.begin] != "" and
-                ao_buf_O.record_H[ K.dates ][ idx][ K.begin ] == ao_buf_O.record_H[ K.dates ][ idx][ K.end ] 
+                ao_buf_O.record_H[ K.dates ][ idx][ K.date_type ] == K.single
             ) then
-            ao_buf_O.record_H[ K.dates ][ idx][ K.date_type ]  = K.single
-            ao_buf_O.record_H[ K.dates ][ idx].delete ( K.end )
+            ao_buf_O.record_H[ K.dates ][ idx][ K.date_type ]  = K.inclusive
+            ao_buf_O.record_H[ K.dates ][ idx][ K.end ] = ao_buf_O.record_H[ K.dates ][ idx][ K.begin ]
+            ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] = ao_buf_O.record_H[ K.dates ][ idx][ K.begin ]
             changed = true
+            change_type[ 1 ] = "1"
         end
         if (    ao_buf_O.record_H[ K.dates ][ idx].key?( K.begin ) and
-                ao_buf_O.record_H[ K.dates ][ idx][ K.begin] == ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] 
+                ao_buf_O.record_H[ K.dates ][ idx].key?( K.end ) and
+                ao_buf_O.record_H[ K.dates ][ idx].key?( K.expression ) and
+                ao_buf_O.record_H[ K.dates ][ idx][ K.begin ] != ao_buf_O.record_H[ K.dates ][ idx][ K.end ] 
             ) then
-            ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] = ""
+            ao_buf_O.record_H[ K.dates ][ idx].delete( K.expression )
             changed = true
+            change_type[ 2 ] = "2"           
         end
         if (    ao_buf_O.record_H[ K.dates ][ idx].key?( K.begin ) and
-                ao_buf_O.record_H[ K.dates ][ idx].key?( K.end )
+                ao_buf_O.record_H[ K.dates ][ idx].key?( K.end ) and
+                ao_buf_O.record_H[ K.dates ][ idx].key?( K.expression ) and
                 "#{ao_buf_O.record_H[ K.dates ][ idx][ K.begin ]}-#{ao_buf_O.record_H[ K.dates ][ idx][ K.end ]}" == ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] 
             ) then
-            ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] = ""
+            ao_buf_O.record_H[ K.dates ][ idx].delete( K.expression )
             changed = true
+            change_type[ 3 ] = "3"
         end
+        after_image  += "#{change_type.join(" ")} #{ao_buf_O.record_H[ K.dates ][ idx]}"
     end
-    raise "Nothing changed" if ( ! changed )
-    print "#{cnt} "
-    print "#{record_H[ K.uri ].sub( /.*\//, "")} "
-    print "#{record_H[ K.title ]} "
-    puts ao_buf_O.record_H[ K.dates ].join( " " )
-    puts    
+    next if ( ! changed )
+
+    update_cnt += 1
+        
+#   puts "#{update_cnt} #{date_cnt} #{record_cnt} #{index_image}"
+    puts "#{update_cnt} #{date_cnt} #{record_cnt} #{before_image}"
+    puts "#{update_cnt} #{date_cnt} #{record_cnt} #{after_image}"
+    puts ""
     ao_buf_O.store
 end
 

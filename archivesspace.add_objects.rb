@@ -83,7 +83,7 @@ class Res_Q
         @record_H_A = [ ]
         Resource_Query.new( res_O ).record_H_A.each do | record_H |
             if ( record_H[ K.level ] != K.file ) then
-                SE.puts "%-11s" % record_H[ K.level ] + " #{record_H[ K.uri ]} '#{record_H[ K.title ]}'"
+#               SE.puts "%-11s" % record_H[ K.level ] + " #{record_H[ K.uri ]} '#{record_H[ K.title ]}'"
                 @record_H_A << record_H
             end
         end

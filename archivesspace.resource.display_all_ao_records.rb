@@ -72,7 +72,7 @@ else
     raise
 end
 
-print__record_H = lambda{ | record_H | 
+print__record_H = lambda{ | record_H, cnt | 
     case true
     when cmdln_option[ :print_title_only ] 
         puts "#{record_H[ K.title ]}"
@@ -82,22 +82,23 @@ print__record_H = lambda{ | record_H |
 #           Flatten is useful for comparison of two resources, so remove anything that might
 #           legitimately be different.
 
-        record_H.delete( K.title )          # removed because it's printed above
-        record_H.delete( K.ancestors )
-        record_H.delete( K.ead_id )
-        record_H.delete( K.id_0 )
-        record_H.delete( K.lock_version )
-        record_H.delete( K.parent )         # ao_record
-        record_H.delete( K.parent_id )      # index_record  
-        record_H.delete( K.persistent_id )
-        record_H.delete( K.slugged_url )
-        record_H.delete( K.ref_id )
-        record_H.delete( K.repository )
-        record_H.delete( K.resource )
-        record_H.delete( K.tree )
-        record_H.delete( K.uri )
-        record_H.delete( K.waypoints )
-        record_H.delete( K.waypoint_size )
+        record_H.except_nested!( K.title )          # removed because it's printed above
+        record_H.except_nested!( K.ancestors )
+        record_H.except_nested!( K.ead_id )
+        record_H.except_nested!( K.id_0 )
+        record_H.except_nested!( K.lock_version )
+        record_H.except_nested!( K.parent )         # ao_record
+        record_H.except_nested!( K.parent_id )      # index_record  
+        record_H.except_nested!( K.position )       # this isn't needed as the order is the position
+        record_H.except_nested!( K.persistent_id )
+        record_H.except_nested!( K.slugged_url )
+        record_H.except_nested!( K.ref_id )
+        record_H.except_nested!( K.repository )
+        record_H.except_nested!( K.resource )
+        record_H.except_nested!( K.tree )
+        record_H.except_nested!( K.uri )
+        record_H.except_nested!( K.waypoints )
+        record_H.except_nested!( K.waypoint_size )
         
         print  [ record_H ].join(" ")        
         print "\n"        
@@ -124,11 +125,11 @@ rep_O = Repository.new( aspace_O, rep_num )
 cnt = 0
 res_O = Resource.new( rep_O, res_num )
 if ( cmdln_option[ :print_res_rec ] ) then
-    print__record_H.call( res_O.new_buffer.read.record_H )
+    print__record_H.call( res_O.new_buffer.read.record_H, 0 )
 end
 Resource_Query.new( res_O, cmdln_option[ :get_full_buffer ] ).record_H_A.each do | record_H |
     cnt += 1
-    print__record_H.call( record_H )
+    print__record_H.call( record_H, cnt )
 end
 SE.puts "#{cnt} records."
 

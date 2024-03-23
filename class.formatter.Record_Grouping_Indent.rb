@@ -142,49 +142,51 @@ class Record_Grouping_Indent
             end
             indent_key_I += -1
         end 
-        if ( highest_matched_indent_key_idx_A.maxindex >= 0 ) then
-            matched_indent_key_indexes_are_in_desc_order = ( highest_matched_indent_key_idx_A.each_cons( 2 ).all?{|left, right| left >= right} )
-            SE.p "matched_indent_key_indexes_are_in_desc_order" + 
-                 "=#{matched_indent_key_indexes_are_in_desc_order}" if ( $DEBUG )
-            if ( matched_indent_key_indexes_are_in_desc_order ) then
-                indent_key_I = -1; loop do 
-                    indent_key_I += 1
-                    SE.p "indent_key_I=#{indent_key_I} " +
-                         "highest_matched_indent_key_idx_A.min=#{highest_matched_indent_key_idx_A.min} " +
-                         "@indent_key_stack_A.maxindex=#{@indent_key_stack_A.maxindex} " +
-                         "first_record_indent_keys_A.maxindex=#{first_record_indent_keys_A.maxindex} " if ( $DEBUG )
-                    break if ( indent_key_I > highest_matched_indent_key_idx_A.min )
-                    SE.p "indent_key_I=#{indent_key_I} " +
-                         "@indent_key_stack_A.maxindex=#{@indent_key_stack_A.maxindex}" if ($DEBUG)
-                    if  (  indent_key_I > @indent_key_stack_A.maxindex or
-                           @indent_key_stack_A[ indent_key_I ][ 0 ].downcase != first_record_indent_keys_A[ indent_key_I ].downcase ) then
-                        if ( indent_key_I > @indent_key_stack_A.maxindex )
-                        then
-                            @indent_key_stack_A[ indent_key_I ] = [ first_record_indent_keys_A[ indent_key_I ], 0 ]
-                            SE.p "@indent_key_stack_A[ #{indent_key_I} ]" +
-                                 "=#{@indent_key_stack_A[ indent_key_I ]}" if ( $DEBUG )
-                        end
-                        if ( indent_key_I > 0 ) then
-                            @indent_key_stack_A[ indent_key_I - 1 ][ 1 ] += 1
-                            idx = -1; group_numbers_A = [ ]; loop do
-                                idx += 1
-                                break if ( idx >= indent_key_I )
-                                group_numbers_A << @indent_key_stack_A[ idx ][ 1 ]   # Group numbers: n.n.n.etc...
-                            end 
-                            idx = 0; group_text_A = [ ]; loop do
-                                idx += 1
-                                break if ( idx > indent_key_I )
-                                group_text_A << @indent_key_stack_A[ idx ][ 0 ]
+        if ( ! p1_new_record_H.empty? ) then
+            if ( highest_matched_indent_key_idx_A.maxindex >= 0 ) then
+                matched_indent_key_indexes_are_in_desc_order = ( highest_matched_indent_key_idx_A.each_cons( 2 ).all?{|left, right| left >= right} )
+                SE.p "matched_indent_key_indexes_are_in_desc_order" + 
+                     "=#{matched_indent_key_indexes_are_in_desc_order}" if ( $DEBUG )
+                if ( matched_indent_key_indexes_are_in_desc_order ) then
+                    indent_key_I = -1; loop do 
+                        indent_key_I += 1
+                        SE.p "indent_key_I=#{indent_key_I} " +
+                             "highest_matched_indent_key_idx_A.min=#{highest_matched_indent_key_idx_A.min} " +
+                             "@indent_key_stack_A.maxindex=#{@indent_key_stack_A.maxindex} " +
+                             "first_record_indent_keys_A.maxindex=#{first_record_indent_keys_A.maxindex} " if ( $DEBUG )
+                        break if ( indent_key_I > highest_matched_indent_key_idx_A.min )
+                        SE.p "indent_key_I=#{indent_key_I} " +
+                             "@indent_key_stack_A.maxindex=#{@indent_key_stack_A.maxindex}" if ($DEBUG)
+                        if  (  indent_key_I > @indent_key_stack_A.maxindex or
+                               @indent_key_stack_A[ indent_key_I ][ 0 ].downcase != first_record_indent_keys_A[ indent_key_I ].downcase ) then
+                            if ( indent_key_I > @indent_key_stack_A.maxindex )
+                            then
+                                @indent_key_stack_A[ indent_key_I ] = [ first_record_indent_keys_A[ indent_key_I ], 0 ]
+                                SE.p "@indent_key_stack_A[ #{indent_key_I} ]" +
+                                     "=#{@indent_key_stack_A[ indent_key_I ]}" if ( $DEBUG )
                             end
-                            @indent_print_method.call( group_numbers_A, group_text_A )
-                            @group_rec_cnt += 1
-                            output_record_H={}
-                            output_record_H[ K.fmtr_indent ] = [ K.fmtr_right,  "GROUPING #{group_numbers_A.join( "." )}: #{group_text_A.join( ". " )}" ]
-                            puts output_record_H.to_json
-                            @indent_right_rec_cnt += 1
+                            if ( indent_key_I > 0 ) then
+                                @indent_key_stack_A[ indent_key_I - 1 ][ 1 ] += 1
+                                idx = -1; group_numbers_A = [ ]; loop do
+                                    idx += 1
+                                    break if ( idx >= indent_key_I )
+                                    group_numbers_A << @indent_key_stack_A[ idx ][ 1 ]   # Group numbers: n.n.n.etc...
+                                end 
+                                idx = 0; group_text_A = [ ]; loop do
+                                    idx += 1
+                                    break if ( idx > indent_key_I )
+                                    group_text_A << @indent_key_stack_A[ idx ][ 0 ]
+                                end
+                                @indent_print_method.call( group_numbers_A, group_text_A )
+                                @group_rec_cnt += 1
+                                output_record_H={}
+                                output_record_H[ K.fmtr_indent ] = [ K.fmtr_right,  "GROUPING #{group_numbers_A.join( "." )}: #{group_text_A.join( ". " )}" ]
+                                puts output_record_H.to_json
+                                @indent_right_rec_cnt += 1
+                            end
                         end
-                    end
-                end 
+                    end 
+                end
             end
         end
         @record_print_method.call( first_record_H )
@@ -195,8 +197,10 @@ end
 =begin
 
     How to use Record_Grouping_Indent
+    
+    require 'class.formatter.Record_Grouping_Indent.rb'
 
-    rgi_O.new_with_flush( method( :put_record ), method( :put_indent ), desired_stacksize_0R, [ [ '/', 0 ] ]  ) do |rgi_O|
+    Record_Grouping_Indent.new_with_flush( method( :put_record ), method( :put_indent ), desired_stacksize_0R, [ [ '/', 0 ] ]  ) do |rgi_O|
 
     ARGF.each_line do |input_record|                      #  << loop for each input record...
 
