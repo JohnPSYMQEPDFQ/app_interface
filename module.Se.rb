@@ -7,6 +7,11 @@ module SE
             $stderr.puts e
         end
     end
+    def SE.print(*params)
+        params.each do |e|
+            $stderr.print e
+        end
+    end
     def SE.pp(*params)
         SE.puts "#{SE.lineno(1)}:"
         params.each do |e|
@@ -16,7 +21,7 @@ module SE
     def SE.ap(*params)
         SE.puts "#{SE.lineno(1)}:"
         params.each do |e|
-            $stderr.puts e.ai
+            $stderr.puts e.ai( ( $stderr.isatty ) ? {} : { :plain => true } )
         end
     end
     def SE.p(*params)
@@ -36,7 +41,7 @@ module SE
         if block
             stringer = Array(block[]).collect do |expression|
                 value = eval(expression.to_s, block.binding)
-                "#{expression} = #{value.ai}"
+                "#{expression} = #{value.ai( ( $stderr.isatty ) ? {} : { :plain => true } )}"
             end.join(', ')
             $stderr.puts SE.lineno(1) + ":" + stringer
         else

@@ -867,8 +867,8 @@ class Find_Dates_in_String
 
         case @option_H[ :date_string_composition ]
         when :dates_in_text
-            if (process_input_string_with_all_dates_removed =~ K.month_RE ) then
-                SE.puts "#{SE.lineno}: Warning possible ummatched date '#{$~}' in '#{process_input_string_with_all_dates_removed}'"
+            if (process_input_string_with_all_dates_removed =~ %r~#{K.month_RES}#( |/|-)~i ) then
+                SE.puts "#{SE.lineno}: Warning possible unmatched date '#{$~}' in '#{process_input_string_with_all_dates_removed}'"
                 SE.puts ""
             end
         when :only_dates

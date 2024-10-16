@@ -103,24 +103,27 @@ Resource_Query.new( res_O ).record_H_A.each do | record_H |
             ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] = ao_buf_O.record_H[ K.dates ][ idx][ K.begin ]
             changed = true
             change_type[ 1 ] = "1"
-        end
-        if (    ao_buf_O.record_H[ K.dates ][ idx].key?( K.begin ) and
-                ao_buf_O.record_H[ K.dates ][ idx].key?( K.end ) and
-                ao_buf_O.record_H[ K.dates ][ idx].key?( K.expression ) and
-                ao_buf_O.record_H[ K.dates ][ idx][ K.begin ] != ao_buf_O.record_H[ K.dates ][ idx][ K.end ] 
+        elsif ( ao_buf_O.record_H[ K.dates ][ idx].key?( K.begin ) and
+                ao_buf_O.record_H[ K.dates ][ idx].key?( K.end )
             ) then
-            ao_buf_O.record_H[ K.dates ][ idx].delete( K.expression )
-            changed = true
-            change_type[ 2 ] = "2"           
-        end
-        if (    ao_buf_O.record_H[ K.dates ][ idx].key?( K.begin ) and
-                ao_buf_O.record_H[ K.dates ][ idx].key?( K.end ) and
-                ao_buf_O.record_H[ K.dates ][ idx].key?( K.expression ) and
-                "#{ao_buf_O.record_H[ K.dates ][ idx][ K.begin ]}-#{ao_buf_O.record_H[ K.dates ][ idx][ K.end ]}" == ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] 
-            ) then
-            ao_buf_O.record_H[ K.dates ][ idx].delete( K.expression )
-            changed = true
-            change_type[ 3 ] = "3"
+            if ( ao_buf_O.record_H[ K.dates ][ idx][ K.begin ] == ao_buf_O.record_H[ K.dates ][ idx][ K.end ] ) then
+                stringer = "#{ao_buf_O.record_H[ K.dates ][ idx][ K.begin ]}"
+            else
+                stringer = "#{ao_buf_O.record_H[ K.dates ][ idx][ K.begin ]} - #{ao_buf_O.record_H[ K.dates ][ idx][ K.end ]}"
+            end
+            if  (ao_buf_O.record_H[ K.dates ][ idx].key?( K.expression )) then
+                if  (ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] != stringer) then
+                    ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] = stringer
+                    ao_buf_O.record_H[ K.dates ][ idx][ K.date_type ]  = K.inclusive
+                    changed = true
+                    change_type[ 2 ] = "2"    
+                end
+            else
+                ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] = stringer
+                ao_buf_O.record_H[ K.dates ][ idx][ K.date_type ]  = K.inclusive
+                changed = true
+                change_type[ 3 ] = "3"
+            end
         end
         after_image  += "#{change_type.join(" ")} #{ao_buf_O.record_H[ K.dates ][ idx]}"
     end

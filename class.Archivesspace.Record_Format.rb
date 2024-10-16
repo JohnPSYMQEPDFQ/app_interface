@@ -140,7 +140,7 @@ class Record_Format < Buffer_Base
         return h
     end
             
-    def note_text 
+    def note_text                       # This is the note-text of the multipart-note (in subnotes array)
         h = {
                 K.jsonmodel_type => K.note_text, 
                 K.content => K.undefined
@@ -153,8 +153,8 @@ class Record_Format < Buffer_Base
         h = {
                 K.jsonmodel_type => K.note_multipart, 
                 K.label => '', 
-                K.type => K.undefined, #(processinfo)
-                K.subnotes =>  [  ]            
+                K.type => K.undefined, #(processinfo, general)
+                K.subnotes =>  [  ]    # This is an array of 'note_text' Objects. (above) 
             }
         @record_H.merge!( h )
         return h

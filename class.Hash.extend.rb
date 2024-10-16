@@ -1,5 +1,9 @@
 class Hash
 
+    def not_empty?
+        return ! self.empty?
+    end
+    
     def keys_nested
         result_a = [ ]
         self.each_pair do | k, v |

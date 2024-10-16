@@ -1,29 +1,33 @@
 #!/usr/bin/bash
 
-myself_name=$(basename ${0%.*})
+myself_name=$(basename $0)
 
 function display_usage {
     echo "Usage: ${myself_name} [-cgm] [-s ead_id] [-t title] file"
     echo "       -c = Tell the add_objects program to combine-like-records."
+    echo "       -i = Do InMagic special processing."
     echo "       -g = Maximum number of levels for grouping (default is 3)."
     echo "       -m = Maximum number of series records (default is 0)."
     echo "       -s = Run the csv creation program with the specified ead_id value."
     echo "       -t = The indenter will create a new_parent record with the specified title."
     echo "       Param 1 is the file to process." 
-} 1>&2
+}
 
 combine_like_records=""
 max_group_levels=3
+inmagic_data=""
 max_series_records=0
 ead_id=""
 parent_title=""
 
-while getopts cg:m:s:t: cmdln_opt
+while getopts cg:im:s:t: cmdln_opt
 do
     case $cmdln_opt in
     (c)     combine_like_records="1"
             ;;
     (g)     max_group_levels="$OPTARG"
+            ;;
+    (i)     inmagic_data="--inmagic"
             ;;
     (m)     max_series_records="$OPTARG"
             ;;
@@ -58,59 +62,85 @@ if [[ -n "${ead_id}" && -n "${combine_like_records}" ]]
 then
     {
         echo "The -c and -s options won't work together" 
-        echo "as the 'cvs' program can't handle more than one date per record."
+        echo "as the 'csv' program can't handle more than one date per record."
     } 1>&2
     exit 4
 fi
 file_name="$1"
-rm ${myself_name}.*.err ${myself_name}.*.txt 2>/dev/null
+file_name_prefix="${myself_name%.*}.${file_name%.*}"
+rm ${file_name_prefix}.*.err ${file_name_prefix}.*.txt 2>/dev/null
 
-(   set -x
-    run_ruby.sh formatter.txt.to.indent.dictation_1.rb --max_levels=${max_group_levels} \
-                                                       "${file_name}" \
-                2>"${myself_name}.formatter.err" >"${myself_name}.${file_name%.*}.indent.txt"
-    if [[ $? -gt 0 ]]
-    then
-        exit 1
-    fi
-    sort -f "${myself_name}.${file_name%.*}.indent.txt" | \
-    run_ruby.sh formatter.indent.to.add_objects.generic.rb ${combine_like_records:+--combine_like_records} \
-                                                           ${max_series_records:+--max_series=}${max_series_records:+"${max_series_records}"} \
-                                                           ${parent_title:+--parent_title=}${parent_title:+"${parent_title}"} \
-               2>"${myself_name}.indent.err" >"${myself_name}.${file_name%.*}.add_objects.txt"
-    if [[ $? -gt 0 ]]
-    then
-        exit 1
-    fi
-    if [[ -n "${ead_id}" ]] 
-    then
-        run_ruby.sh spreadsheet.add_objects.to.csv.rb --ead "${ead_id}" "${myself_name}.${file_name%.*}.add_objects.txt" 2>"${myself_name}.spreadsheet.err" >"${myself_name}.${file_name%.*}.csv" 
-    fi
-)
-{
-    if [[ -a "${myself_name}.formatter.err" ]] 
+function trap_0 {
+    echo "Last rc=$?"
+    if [[ -a "${file_name_prefix}.formatter.err" ]] 
     then
         echo '========================================'
         echo '   Formatter results:'
         echo ''
-        cat "${myself_name}.formatter.err"
+        cat "${file_name_prefix}.formatter.err"
     fi
-    if [[ -a "${myself_name}.indent.err" ]] 
+    if [[ -a "${file_name_prefix}.indent.err" ]] 
     then
         echo '========================================'
         echo '   Indenter results:'
         echo ''
-        cat "${myself_name}.indent.err"
+        cat "${file_name_prefix}.indent.err"
     fi
     if [[ -n "${ead_id}" ]] 
     then
-        if [[ -a "${myself_name}.spreadsheet.err" ]]
+        if [[ -a "${file_name_prefix}.spreadsheet.err" ]]
         then
             echo '========================================'
-            echo '   cvs creator results:'
+            echo '   csv creator results:'
             echo ''
-            cat "${myself_name}.spreadsheet.err"
+            cat "${file_name_prefix}.spreadsheet.err"
         fi
     fi
+    echo 
+    echo "sdiff ${file_name_prefix}.add_objects.SORTED.txt ${file_name_prefix}.add_objects.UNSORTED.txt"
 } 1>&2
+trap 'trap_0' 0
+
+(   set -x
+    run_ruby.sh formatter.txt.to.indent.dictation_1.rb --max_levels=${max_group_levels} \
+                                                       ${inmagic_data} \
+                                                       "${file_name}" \
+                2>"${file_name_prefix}.formatter.err" >"${file_name_prefix}.indent.txt"
+)
+[[ $? -gt 0 ]] && exit 5
+
+touch "${file_name_prefix}.indent.err"
+echo ""          >> "${file_name_prefix}.indent.err"
+echo "UNSORTED:" >> "${file_name_prefix}.indent.err"
+(   set -x
+    run_ruby.sh formatter.indent.to.add_objects.generic.rb ${combine_like_records:+--combine_like_records} \
+                                                           ${max_series_records:+--max_series=}${max_series_records:+"${max_series_records}"} \
+                                                           ${parent_title:+--parent_title=}${parent_title:+"${parent_title}"} \
+               2>>"${file_name_prefix}.indent.err" >"${file_name_prefix}.add_objects.UNSORTED.txt" "${file_name_prefix}.indent.txt"
+)
+[[ $? -gt 0 ]] && exit 6
+
+if [[ -z ${inmagic_data} ]]
+then
+    echo ""        >> "${file_name_prefix}.indent.err"
+    echo "SORTED:" >> "${file_name_prefix}.indent.err"
+    (   set -x
+        sort -f "${file_name_prefix}.indent.txt" > "${file_name_prefix}.indent.sorted.txt"
+        run_ruby.sh formatter.indent.to.add_objects.generic.rb ${combine_like_records:+--combine_like_records} \
+                                                               ${max_series_records:+--max_series=}${max_series_records:+"${max_series_records}"} \
+                                                               ${parent_title:+--parent_title=}${parent_title:+"${parent_title}"} \
+                   2>>"${file_name_prefix}.indent.err" >"${file_name_prefix}.add_objects.SORTED.txt" "${file_name_prefix}.indent.sorted.txt"
+    )
+    [[ $? -gt 0 ]] && exit 7
+fi
+
+if [[ -n "${ead_id}" ]] 
+then
+    (   set -x
+        run_ruby.sh spreadsheet.add_objects.to.csv.rb --ead "${ead_id}" "${file_name_prefix}.add_objects.UNSORTED.txt" 2>"${file_name_prefix}.spreadsheet.err" >"${file_name_prefix}.csv" 
+    )
+fi
+[[ $? -gt 0 ]] && exit 8
+
+exit 0
 

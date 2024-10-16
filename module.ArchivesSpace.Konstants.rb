@@ -38,7 +38,7 @@ module K
     def K.area; return 'area'.freeze; end   # location
     def K.barcode; return 'barcode'.freeze; end   # top_container location
     def K.begin; return 'begin'.freeze; end   # dates
-    def K.box; return 'Box'.freeze; end   # top_container
+    def K.box; return 'box'.freeze; end   # top_container
     def K.building; return 'building'.freeze; end   # location
     def K.calendar; return 'calendar'.freeze; end   # dates
     def K.certainty; return 'certainty'.freeze; end   # dates
@@ -95,7 +95,9 @@ module K
     def K.finding_aid_title; return 'finding_aid_title'.freeze; end  # resource
     def K.floor; return 'floor'.freeze; end  # location
     def K.fmtr_container; return '__CONTAINER__'.freeze; end   # formatter
+    def K.fmtr_force_indent; return 'force_indent'.freeze; end  # formatter
     def K.fmtr_indent; return '__INDENT__'.freeze; end  # Formatter
+    def K.fmtr_inmagic_quote; return '__INMAGIC__'.freeze; end  #Formatter
     def K.fmtr_left; return '__LEFT__'.freeze; end  # formatter
     def K.fmtr_new_parent; return '__NEW_PARENT__'.freeze; end  # formatter
     def K.fmtr_record; return '__RECORD__'.freeze; end  # formatter
@@ -107,11 +109,20 @@ module K
     def K.fmtr_record_values__text_idx; return 0.freeze; end  # formatter
     def K.fmtr_record_values__dates_idx; return 1.freeze; end  # formatter
     def K.fmtr_record_values__notes_idx; return 2.freeze; end  # formatter
+    def K.fmtr_record_values__container_idx; return 3.freeze; end  # formatter
+    def K.fmtr_record_values__special_processing_idx; return 4.freeze; end  # formatter
     def K.fmtr_right; return '__RIGHT__'.freeze; end  # formatter
     def K.fmtr_sc_indicator; return '__SC_INDICATOR__'.freeze; end   # formatter
     def K.fmtr_sc_type; return '__SC_TYPE__'.freeze; end   # formatter
     def K.fmtr_tc_indicator; return '__TC_INDICATOR__'.freeze; end   # formatter
     def K.fmtr_tc_type; return '__TC_TYPE__'.freeze; end   # formatter
+    def K.fmtr_empty_container_H
+        h = { K.fmtr_tc_type => K.undefined ,
+            K.fmtr_tc_indicator => K.undefined ,
+            K.fmtr_sc_type => K.undefined ,
+            K.fmtr_sc_indicator => K.undefined }
+        return h
+    end
     def K.folder; return 'Folder'.freeze; end
     def K.has_unpublished_ancestor; return 'has_unpublished_ancestor'.freeze; end
     def K.hierarchy; return 'hierarchy'.freeze; end   # spreadsheet
@@ -181,6 +192,7 @@ module K
     def K.revision_statements; return 'revision_statements'.freeze; end   # resource
     def K.rights_statements; return 'rights_statements'.freeze; end   # archival_object, resource
     def K.room; return 'room'.freeze; end   # archival_object, location
+    def K.scopecontent; return 'scopecontent'.freeze; end  # note_multipart (Scope and Content)
     def K.script; return 'script'.freeze; end   # language_and_script
     def K.series; return 'series'.freeze; end   # archival_object
     def K.session; return 'session'.freeze; end

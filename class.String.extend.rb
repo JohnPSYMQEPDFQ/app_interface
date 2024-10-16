@@ -1,6 +1,10 @@
 
 class String
 
+    def not_empty?
+        return ! self.empty?
+    end
+    
     def in?( array )
         array.include?( self )
     end

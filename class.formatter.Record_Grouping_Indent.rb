@@ -43,152 +43,172 @@ class Record_Grouping_Indent
         if ( @indent_key_stack_A.empty? or @indent_key_stack_A[0][0] != '/' ) then
             @indent_key_stack_A.unshift( [ '/', 0 ])
         end
-        @combine_like_records = false
         @indent_key_prefixes_A = @indent_key_stack_A.transpose[0]
         @indent_left_rec_cnt = 0
         @indent_right_rec_cnt = 0
+        @force_indent_rec_cnt = 0
         @group_rec_cnt = 0
         @file_rec_cnt = 0
     end
     private_class_method :new
-    attr_reader :combine_like_records
-    
-    def combine_like_records=( p1 )
-        if ( p1 == true or p1 == false ) then
-            @combine_like_records = p1
-        else
-            SE.puts "#{SE.lineno}: Expected param1 to be true of false, not '#{p1}'"
-            raise
-        end
-    end
 
     def flush
         @record_stack_size_0R = 0
         loop do
-            break if (@record_H__stack_A.maxindex < 0)
+            break if ( @record_H__stack_A.maxindex < 0 )
             self.add_record( {} )
         end
-        SE.puts "Left record count:  #{@indent_left_rec_cnt}"
-        SE.puts "Right record count: #{@indent_right_rec_cnt}"
-        SE.puts "Group record count: #{@group_rec_cnt}"
-        SE.puts "File record count:  #{@file_rec_cnt}"
-        SE.ap "@indent_key_stack_A:", @indent_key_stack_A if ( @indent_key_stack_A.maxindex > 0 )
+        if ( @indent_key_stack_A.maxindex >= 0 ) then
+            SE.puts "Entries left in @indent_key_stack_A at end: #{@indent_key_stack_A.map{ |e| e[0] }.join(',')}"
+        end
+        loop do 
+            break if ( @indent_key_stack_A.maxindex <= 0 )
+            put_indent_left
+        end
+        SE.puts "Right record count:        #{@indent_right_rec_cnt}"       
+        SE.puts "Force indent record count: #{@force_indent_rec_cnt}"  if ( @force_indent_rec_cnt > 0 )
+        SE.puts "Left record count:         #{@indent_left_rec_cnt}"        
+        SE.puts "Group record count:        #{@group_rec_cnt}"
+        SE.puts "File record count:         #{@file_rec_cnt}"
 #       SE.pp_stack
     end
-
+    
+    def put_indent_left 
+        a1 = @indent_key_stack_A.pop( 1 )[ 0 ]
+        SE.q {[ '@indent_key_stack_A', '@indent_key_stack_A.maxindex' ]} if ( $DEBUG )
+        output_record_H = {}
+        output_record_H[ K.fmtr_indent ] = [ K.fmtr_left, a1[ 0 ] ]
+        puts output_record_H.to_json 
+        @indent_left_rec_cnt += 1
+    end
+    
+    def special_processing_H( record_H )
+        sp_H = record_H[ K.fmtr_record_values ][ K.fmtr_record_values__special_processing_idx ]
+        if ( sp_H.nil? ) then
+            SE.puts "special_processing_H is nil"
+            SE.q {[ 'K.fmtr_record_values', 'K.fmtr_record_values__special_processing_idx', 'record_H' ]}
+            raise 
+        end
+        return sp_H
+    end
+    
     def add_record( p1_new_record_H )
         if (! p1_new_record_H.empty?) then
-            if ( @combine_like_records and ! @record_H__stack_A.empty? ) then
-                previous_record_H = @record_H__stack_A[ -1 ]
-                if (    p1_new_record_H[ K.fmtr_record_indent_keys ] == previous_record_H[ K.fmtr_record_indent_keys ] and
-                        p1_new_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__text_idx ] == previous_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__text_idx ] 
-                ) then
-                    date_A = p1_new_record_H[ K.fmtr_record_values ][K.fmtr_record_values__dates_idx]
-                    if ( ! date_A.empty? ) then
-                        @record_H__stack_A[ -1 ][ K.fmtr_record_values ][K.fmtr_record_values__dates_idx].concat( date_A )
-                    end
-                    note_A = p1_new_record_H[ K.fmtr_record_values ][K.fmtr_record_values__notes_idx]
-                    if ( ! note_A.empty? ) then
-                        @record_H__stack_A[ -1 ][ K.fmtr_record_values ][K.fmtr_record_values__notes_idx].concat( note_A )
-                    end          
-                    return
-                end
-            end
             @record_H__stack_A.push( p1_new_record_H ) 
         end
-
-        SE.ap "@record_H__stack_A:", @record_H__stack_A if ( $DEBUG )
-        SE.ap "@record_H__stack_A.maxindex:", @record_H__stack_A.maxindex if ( $DEBUG )
-        SE.ap "@indent_key_stack_A:", @indent_key_stack_A if ( $DEBUG )
-        return if ( @record_H__stack_A.maxindex < @record_stack_size_0R ) 
-        
+        SE.q {[ '@record_H__stack_A', '@record_H__stack_A.maxindex', '@indent_key_stack_A' ]} if ( $DEBUG )
+        return if ( @record_H__stack_A.maxindex < @record_stack_size_0R )
+               
         first_record_H = @record_H__stack_A.shift( 1 )[ 0 ]
         first_record_indent_keys_A = @indent_key_prefixes_A + first_record_H[ K.fmtr_record_indent_keys ]
+        SE.puts "ORIGINAL RECORD NUMBER: #{first_record_H[ K.fmtr_record_num ]}" if ( $DEBUG )
+        
         highest_matched_indent_key_idx_A = [ ] 
         @record_H__stack_A.each_with_index do |other_record_H, record_stack_I|
+            SE.q {[ '@indent_key_prefixes_A','other_record_H[ K.fmtr_record_indent_keys]' ]}  if ( $DEBUG )
             other_record_indent_keys_A = @indent_key_prefixes_A + other_record_H[ K.fmtr_record_indent_keys ] 
             indent_key_I = 0; loop do
-                SE.p "indent_key_I=#{indent_key_I}, " +
-                     "first_record_indent_keys_A.maxindex=#{first_record_indent_keys_A.maxindex}, " +
-                     "other_record_indent_keys_A.maxindex=#{other_record_indent_keys_A.maxindex}" if ( $DEBUG )
+                SE.q {[ 'indent_key_I', 'first_record_indent_keys_A.maxindex', 'other_record_indent_keys_A.maxindex' ]}  if ( $DEBUG )
                 break if ( indent_key_I > first_record_indent_keys_A.maxindex or indent_key_I > other_record_indent_keys_A.maxindex )
-                SE.p "first_record_indent_keys_A[ #{indent_key_I} ]" +
-                     "='#{first_record_indent_keys_A[ indent_key_I ]}', " +
-                     "other_record_indent_keys_A[ #{indent_key_I} ]='#{other_record_indent_keys_A[ indent_key_I ]}'" if ( $DEBUG )
-                break if ( first_record_indent_keys_A[ indent_key_I ].downcase != other_record_indent_keys_A[ indent_key_I ].downcase )
-                indent_key_I += 1        
+                SE.q {[ 'indent_key_I', 'first_record_indent_keys_A[ indent_key_I ]', 'other_record_indent_keys_A[ indent_key_I ]' ]}  if ( $DEBUG )
+                break if ( first_record_indent_keys_A[ indent_key_I ].downcase != other_record_indent_keys_A[ indent_key_I ].downcase )        
+                indent_key_I += 1
             end
-            indent_key_I += -1        
+            indent_key_I -= 1  
             highest_matched_indent_key_idx_A[ record_stack_I ] = indent_key_I
-            SE.p "highest_matched_indent_key_idx_A:", highest_matched_indent_key_idx_A if ( $DEBUG )
+            SE.q {[ 'highest_matched_indent_key_idx_A' ]}   if ( $DEBUG )
         end
+
+        SE.q {[ '@indent_key_stack_A','@indent_key_stack_A.maxindex' ]}  if ( $DEBUG )
         indent_key_I = @indent_key_stack_A.maxindex; loop do
             break if ( indent_key_I < 0 )
-            SE.p "indent_key_I=#{indent_key_I}" if ( $DEBUG )
-            SE.p "@indent_key_stack_A.maxindex=#{@indent_key_stack_A.maxindex}" if ( $DEBUG )
-            SE.p "@indent_key_stack_A[ indent_key_I ][ 0 ]" +
-                 "=#{@indent_key_stack_A[ indent_key_I ][ 0 ]}" if ( $DEBUG )
-            SE.p "first_record_indent_keys_A.maxindex=#{first_record_indent_keys_A.maxindex}" if ( $DEBUG )
+            SE.q {[ 'indent_key_I', 'first_record_indent_keys_A.maxindex' ]} if ( $DEBUG )
+            SE.q {[ '@indent_key_stack_A[ indent_key_I ][ 0 ].downcase', 'first_record_indent_keys_A[ indent_key_I ].downcase' ]} if ( $DEBUG )
             if (   indent_key_I > first_record_indent_keys_A.maxindex or
                    @indent_key_stack_A[ indent_key_I ][ 0 ].downcase != first_record_indent_keys_A[ indent_key_I ].downcase ) then
-                a1 = @indent_key_stack_A.pop( 1 )[ 0 ]
-                output_record_H = {}
-                output_record_H[ K.fmtr_indent ] = [ K.fmtr_left, a1[ 0 ] ]
-                puts output_record_H.to_json 
-                @indent_left_rec_cnt += 1
+                put_indent_left
             else
-                SE.p "first_record_indent_keys_A[ indent_key_I ].downcase=" +
-                     "#{first_record_indent_keys_A[ indent_key_I ].downcase}" if ( $DEBUG )
+                SE.q {[ 'first_record_indent_keys_A[ indent_key_I ].downcase' ]}  if ( $DEBUG )
             end
-            indent_key_I += -1
+            indent_key_I -= 1
         end 
-        if ( ! p1_new_record_H.empty? ) then
-            if ( highest_matched_indent_key_idx_A.maxindex >= 0 ) then
-                matched_indent_key_indexes_are_in_desc_order = ( highest_matched_indent_key_idx_A.each_cons( 2 ).all?{|left, right| left >= right} )
-                SE.p "matched_indent_key_indexes_are_in_desc_order" + 
-                     "=#{matched_indent_key_indexes_are_in_desc_order}" if ( $DEBUG )
-                if ( matched_indent_key_indexes_are_in_desc_order ) then
-                    indent_key_I = -1; loop do 
-                        indent_key_I += 1
-                        SE.p "indent_key_I=#{indent_key_I} " +
-                             "highest_matched_indent_key_idx_A.min=#{highest_matched_indent_key_idx_A.min} " +
-                             "@indent_key_stack_A.maxindex=#{@indent_key_stack_A.maxindex} " +
-                             "first_record_indent_keys_A.maxindex=#{first_record_indent_keys_A.maxindex} " if ( $DEBUG )
-                        break if ( indent_key_I > highest_matched_indent_key_idx_A.min )
-                        SE.p "indent_key_I=#{indent_key_I} " +
-                             "@indent_key_stack_A.maxindex=#{@indent_key_stack_A.maxindex}" if ($DEBUG)
-                        if  (  indent_key_I > @indent_key_stack_A.maxindex or
-                               @indent_key_stack_A[ indent_key_I ][ 0 ].downcase != first_record_indent_keys_A[ indent_key_I ].downcase ) then
-                            if ( indent_key_I > @indent_key_stack_A.maxindex )
-                            then
-                                @indent_key_stack_A[ indent_key_I ] = [ first_record_indent_keys_A[ indent_key_I ], 0 ]
-                                SE.p "@indent_key_stack_A[ #{indent_key_I} ]" +
-                                     "=#{@indent_key_stack_A[ indent_key_I ]}" if ( $DEBUG )
-                            end
-                            if ( indent_key_I > 0 ) then
-                                @indent_key_stack_A[ indent_key_I - 1 ][ 1 ] += 1
-                                idx = -1; group_numbers_A = [ ]; loop do
-                                    idx += 1
-                                    break if ( idx >= indent_key_I )
-                                    group_numbers_A << @indent_key_stack_A[ idx ][ 1 ]   # Group numbers: n.n.n.etc...
-                                end 
-                                idx = 0; group_text_A = [ ]; loop do
-                                    idx += 1
-                                    break if ( idx > indent_key_I )
-                                    group_text_A << @indent_key_stack_A[ idx ][ 0 ]
-                                end
-                                @indent_print_method.call( group_numbers_A, group_text_A )
-                                @group_rec_cnt += 1
-                                output_record_H={}
-                                output_record_H[ K.fmtr_indent ] = [ K.fmtr_right,  "GROUPING #{group_numbers_A.join( "." )}: #{group_text_A.join( ". " )}" ]
-                                puts output_record_H.to_json
-                                @indent_right_rec_cnt += 1
-                            end
-                        end
+
+        if ( p1_new_record_H.empty? ) then
+            @record_print_method.call( first_record_H )
+            @file_rec_cnt += 1
+            return
+        end     
+        if ( highest_matched_indent_key_idx_A.maxindex < 0 ) then
+            @record_print_method.call( first_record_H )
+            @file_rec_cnt += 1
+            return        
+        end
+        matched_indent_key_indexes_are_in_desc_order = ( highest_matched_indent_key_idx_A.each_cons( 2 ).all?{|left, right| left >= right} )
+        SE.q {[ 'matched_indent_key_indexes_are_in_desc_order' ]}  if ( $DEBUG )
+        if ( ! matched_indent_key_indexes_are_in_desc_order ) then
+            @record_print_method.call( first_record_H )
+            @file_rec_cnt += 1
+            return        
+        end
+        
+        force_indent = special_processing_H( first_record_H )[ K.fmtr_force_indent ]
+        if ( force_indent )          
+            if ( @indent_key_stack_A.last == [ first_record_indent_keys_A[ -2 ], 0 ] ) then
+                SE.puts "#{SE.lineno}: @indent_key_stack_A.last == first_record_indent_keys_A[ -2 ], 0 ]" if ( $DEBUG )
+            else
+                @indent_key_stack_A.push( [ first_record_indent_keys_A[ -2 ], 0 ] )
+                SE.q {[ '@indent_key_stack_A', '@indent_key_stack_A.maxindex' ]} if ( $DEBUG )
+            end
+            output_record_H={}
+            output_record_H[ K.fmtr_indent ] = [ K.fmtr_right,  "FORCE INDENT" ]
+            puts output_record_H.to_json
+            @force_indent_rec_cnt += 1
+        end
+        
+        indent_key_I = -1; loop do 
+            indent_key_I += 1
+            SE.q {[ 'indent_key_I', 'highest_matched_indent_key_idx_A.min',
+                    '@indent_key_stack_A.maxindex', 'first_record_indent_keys_A.maxindex' ]}   if ( $DEBUG )
+            break if ( highest_matched_indent_key_idx_A.length > 0 and
+                       indent_key_I > highest_matched_indent_key_idx_A.min )
+            SE.q {[ '@indent_key_stack_A.maxindex' ]}  if ($DEBUG)
+            if  (  indent_key_I > @indent_key_stack_A.maxindex or
+                   @indent_key_stack_A[ indent_key_I ][ 0 ].downcase != first_record_indent_keys_A[ indent_key_I ].downcase ) then
+                if ( indent_key_I > @indent_key_stack_A.maxindex )
+                then
+                    if ( indent_key_I > first_record_indent_keys_A.maxindex ) then
+                        SE.puts "indent_key_I > first_record_indent_keys_A.maxindex"
+                        SE.q {[ 'indent_key_I', 'first_record_indent_keys_A', '@indent_key_stack_A' ]}
+                        raise "Abort"
+                    end
+                    @indent_key_stack_A.push( [ first_record_indent_keys_A[ indent_key_I ], 0 ] )
+                    SE.q {[ '@indent_key_stack_A[ indent_key_I ]' ]}  if ( $DEBUG )
+                end
+                if ( indent_key_I > 0 ) then
+                    @indent_key_stack_A[ indent_key_I - 1 ][ 1 ] += 1
+                    idx = -1; group_numbers_A = [ ]; loop do
+                        idx += 1
+                        break if ( idx >= indent_key_I )
+                        group_numbers_A << @indent_key_stack_A[ idx ][ 1 ]   # Group numbers: n.n.n.etc...
                     end 
+                    idx = 0; group_text_A = [ ]; loop do
+                        idx += 1
+                        break if ( idx > indent_key_I )
+                        group_text_A << @indent_key_stack_A[ idx ][ 0 ]
+                    end
+                    next_record_H = ( @record_H__stack_A.empty? ) ? nil : @record_H__stack_A[ 0 ]
+                    if ( ! ( next_record_H and special_processing_H( next_record_H )[ K.fmtr_force_indent ] ) ) then
+                        @indent_print_method.call( group_numbers_A, group_text_A )
+                        @group_rec_cnt += 1
+                        output_record_H={}
+                        output_record_H[ K.fmtr_indent ] = [ K.fmtr_right,  "GROUPING #{group_numbers_A.join( "." )}: #{group_text_A.join( ". " )}" ]
+                        puts output_record_H.to_json
+                        @indent_right_rec_cnt += 1
+                    end
                 end
             end
-        end
+        end 
+ 
         @record_print_method.call( first_record_H )
         @file_rec_cnt += 1
     end
