@@ -1,35 +1,50 @@
 module K
-    def K.month_RES
-        stringer = "(january|february|march|april|may|june|july|august|september|october|november|december" +
-                   "|jan\\.|feb\\.|mar\\.|apr\\.|may\\.|jun\\.|jul\\.|aug\\.|sep\\.|oct\\.|nov\\.|dec\\." +
-                   "|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec" +
-                   ")".freeze
+    def K.alpha_month_RES
+        stringer = '(january|february|march|april|may|june|july|august|september|october|november|december' +
+                   '|jan\\.|feb\\.|mar\\.|apr\\.|may\\.|jun\\.|jul\\.|aug\\.|sep\\.|oct\\.|nov\\.|dec\\.' +
+                   '|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec' +
+                   ')'.freeze
         return stringer
     end 
-    def K.month_RE
-        return /#{K.month_RES}/xi
+    def K.alpha_month_RE
+        return /#{K.alpha_month_RES}/xi
+    end 
+    def K.numeric_month_RES
+        stringer = '(?:0?[1-9]|1[012])'.freeze
+        return stringer
+    end
+    def K.numeric_month_RE
+        return /#{K.numeric_month_RES}/xi
     end 
     def K.day_RES
-        stringer = "([0-9]|[012][0-9]|3[01])".freeze
+        stringer = '(?:[0-9]|[012][0-9]|3[01])'.freeze
         return stringer
     end
     def K.day_RE
         return /#{K.day_RES}/
     end 
     def K.year4_RES
-        stringer = "(1[89][0-9][0-9]|20[0-9][0-9])".freeze
+        stringer = '(?:1[89][0-9][0-9]|20[0-9][0-9])'.freeze
         return stringer
     end 
     def K.year4_RE
         return /#{K.year4_RES}/
     end 
     def K.year2_RES
-        stringer = "([0-9][0-9])".freeze
+        stringer = '?:([0-9][0-9])'.freeze
         return stringer
     end
     def K.year2_RE
         return /#{K.year2_RES}/
     end 
+    def K.box_and_folder_RES
+        stringer = '(\A|\s+)box(:\s*|\s+)(?<box_num>[0-9]+)\s+folder(s?)(:\s*|\s+)(?<folder_num>[0-9]+[a-z]?(\s*-\s*[0-9]+[a-z]?)?)(\Z|\s+)'.freeze
+        return stringer
+    end
+    def K.box_and_folder_RE
+        return /#{K.box_and_folder_RES}/i
+    end
+
     
     def K.active_restrictions; return 'active_restrictions'.freeze; end   # top_container
     def K.ancestors; return 'ancestors'.freeze; end   # archival_object
@@ -95,9 +110,12 @@ module K
     def K.finding_aid_title; return 'finding_aid_title'.freeze; end  # resource
     def K.floor; return 'floor'.freeze; end  # location
     def K.fmtr_container; return '__CONTAINER__'.freeze; end   # formatter
-    def K.fmtr_force_indent; return 'force_indent'.freeze; end  # formatter
-    def K.fmtr_indent; return '__INDENT__'.freeze; end  # Formatter
-    def K.fmtr_inmagic_quote; return '__INMAGIC__'.freeze; end  #Formatter
+    def K.fmtr_indent; return '__INDENT__'.freeze; end  # formatter
+    def K.fmtr_inmagic_detail; return 'detail'.freeze; end              #InMagic formatter
+    def K.fmtr_inmagic_quote; return '__INMAGIC__'.freeze; end          #inMagic Formatter
+    def K.fmtr_inmagic_series; return 'series'.freeze; end              #InMagic formatter
+    def K.fmtr_inmagic_seriesdate; return 'seriesdate'.freeze; end      #InMagic formatter
+    def K.fmtr_inmagic_seriesnote; return 'seriesnote'.freeze; end      #InMagic formatter
     def K.fmtr_left; return '__LEFT__'.freeze; end  # formatter
     def K.fmtr_new_parent; return '__NEW_PARENT__'.freeze; end  # formatter
     def K.fmtr_record; return '__RECORD__'.freeze; end  # formatter

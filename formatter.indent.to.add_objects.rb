@@ -53,12 +53,7 @@ def put_indent( group_number_A, group_title_A )
         output_record_H[ K.fmtr_record ][ K.title ] = title        
     else     
         output_record_H[ K.fmtr_record ][ K.level ] = K.recordgrp
-        title = ""
-#       if ( group_number_A.length <= @cmdln_option_H[ :max_levels ] )
-#           title += "#{group_number_A.join( "." )}: " 
-#           output_record_H[ K.fmtr_record ][ K.component_id ] = group_number_A.join( "." ) 
-#       end
-        title += "#{group_title_A.join( ". " )}"
+        title = group_title_A.join( ". " )
         output_record_H[ K.fmtr_record ][ K.title ] = title
     end
     puts output_record_H.to_json
@@ -92,6 +87,11 @@ def put_record( stack_record_H )
              ". " +
              stack_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__text_idx ]
     output_record_H[ K.fmtr_record ][ K.title ] = title.strip.gsub( /[\.\,]$/,'' )
+    if ( output_record_H[ K.fmtr_record ][ K.title ].empty? )
+        SE.puts "output_record_H[ K.fmtr_record ][ K.title ] is empty"
+        SE.q {[ 'stack_record_H', 'output_record_H' ]}
+        raise
+    end
     
     output_record_H[ K.fmtr_record ][ K.dates ] = [ ]
     date_A_A = stack_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__dates_idx ]
@@ -127,15 +127,18 @@ def put_record( stack_record_H )
     output_record_H[ K.fmtr_record ][ K.notes ] = [ ]
     note_A = stack_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__notes_idx ]
     if ( note_A && note_A.maxindex >= 0 ) then
-        note_A.each do | note |
-            if ( output_record_H[ K.fmtr_record ][ K.level ].in?( [ K.series, K.subseries, K.recordgrp ] )) then
+        if ( output_record_H[ K.fmtr_record ][ K.level ].in?( [ K.series, K.subseries, K.recordgrp ] )) then
+            note_multipart_O = Record_Format.new( :note_multipart )
+            note_multipart_O.record_H = { K.type => K.scopecontent }
+            note_multipart_O.record_H = { K.subnotes => [ ] } 
+            note_A.each do | note |
                 note_text_O = Record_Format.new( :note_text )
                 note_text_O.record_H = { K.content => "#{note}" }
-                note_multipart_O = Record_Format.new( :note_multipart )
-                note_multipart_O.record_H = { K.type => K.scopecontent }
-                note_multipart_O.record_H = { K.subnotes => [ note_text_O.record_H ] } 
-                output_record_H[ K.fmtr_record ][ K.notes ].push( note_multipart_O.record_H )
-            else
+                note_multipart_O.record_H[ K.subnotes ].push( note_text_O.record_H )
+            end
+            output_record_H[ K.fmtr_record ][ K.notes ].push( note_multipart_O.record_H )
+        else
+            note_A.each do | note |
                 note_singlepart_O = Record_Format.new( :note_singlepart )
                 note_singlepart_O.record_H = { K.type  => K.materialspec }
                 note_singlepart_O.record_H = { K.content => [ "#{note}" ] }
@@ -216,7 +219,7 @@ Record_Grouping_Indent.new_with_flush( method( :put_record ), method( :put_inden
         begin
             rgi_O.add_record( input_record_H )   
         rescue
-            SE.print "#{SE.lineno}: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            SE.puts "#{SE.lineno}: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             raise
         end
     end

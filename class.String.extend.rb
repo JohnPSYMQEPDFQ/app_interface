@@ -6,7 +6,10 @@ class String
     end
     
     def in?( array )
-        array.include?( self )
+        return (array.include?( self ) )
+    end
+    def not_in?( array )
+        return ( not array.include?( self ) )
     end
 
     def maxoffset( )    # This seems to be the more correct term for a String.

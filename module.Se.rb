@@ -46,7 +46,7 @@ module SE
             $stderr.puts SE.lineno(1) + ":" + stringer
         else
             stuff.each do
-                |thing| SE.puts SE.lineno(3) + ":" + thing.ai
+                |thing| SE.puts SE.lineno(3) + ":" + thing.ai( ( $stderr.isatty ) ? {} : { :plain => true } )
             end
         end
     end
@@ -70,6 +70,9 @@ module SE
     def SE.pp_stack()
         $stderr.puts PP.pp(SE.stack, '')
     end
+    def SE.ap_stack()
+        SE.ap( SE.stack )
+    end
     def SE.stack()
         a = []
         caller.each do |e|
@@ -77,6 +80,26 @@ module SE
         end
         return a
     end    
-
 end
+
+class Loop_detector
+    def initialize( loop_limit = 30 )
+        @loop_cnt = 0
+        @loop_limit = loop_limit
+    end
+    
+    def loop
+        if ( @loop_cnt > @loop_limit ) then
+            raise "LOOP DETECTOR triggered! ( loops=#{@loop_cnt}, limit=#{@loop_limit} )"
+        end
+        if ( @loop_cnt >= @loop_limit ) then
+            $DEBUG = true
+        end
+        @loop_cnt += 1
+    end
+end
+
+        
+    
+        
 

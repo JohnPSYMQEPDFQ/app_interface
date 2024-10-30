@@ -163,6 +163,13 @@ class Resource_Query
     def process_each_node( node_uri )
         if ( node_uri == '' ) then
             waypoint_node_H = @res_O.rep_O.aspace_O.http_calls_O.get( "#{@res_O.uri}/tree/root", { } ) 
+            if (  waypoint_node_H.has_key?( K.precomputed_waypoints ) and
+                  waypoint_node_H[ K.precomputed_waypoints ] == {} ) then
+                SE.puts "#{SE.lineno}: =============================================="
+                SE.puts "#{SE.lineno}: No AO records found"
+                SE.puts "#{SE.lineno}: =============================================="
+                return
+            end
         else
             waypoint_node_H = @res_O.rep_O.aspace_O.http_calls_O.get( "#{@res_O.uri}/tree/node", { K.node_uri => node_uri } ) 
         end

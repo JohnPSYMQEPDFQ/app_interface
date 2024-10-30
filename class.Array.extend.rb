@@ -10,6 +10,14 @@ class Array
     def maxindex( )
         self.length - 1
     end
+    
+#
+#   Return column N
+#
+    def column( n )
+        self.map{ | row | row[ n ] }
+    end
+#
 #
 #       The maximum depth of all the arrays in the arrays.
 #

@@ -93,7 +93,7 @@ class Find_Dates_in_String
                     @option_H[ option_H_key ] = Regexp::escape( @option_H[ option_H_key ] )
                 else
                     SE.puts "#{SE.lineno}: Expected '#{option_H_key}' to be of type Array or String not '#{@option_H[ option_H_key ].class}'"
-                    SE.puts "If more than one is needed, pass them in as an array.  The default is: '-| through '."
+                    SE.puts "#{SE.lineno}: If more than one is needed, pass them in as an array.  The default is: '-| through '."
                     SE.q { 'option_H' }
                     raise
                 end            
@@ -121,7 +121,7 @@ class Find_Dates_in_String
                 end
             when :default_century
                 default_century = @option_H[ option_H_key ]
-                if ( not (default_century.integer? and (default_century.length == 2 or (default.century.length == 4 and default_century[ 2..3 ] != "00" )))) then
+                if ( not (default_century.integer? and (default_century.length == 2 or (default_century.length == 4 and default_century[ 2..3 ] == "00" )))) then
                     SE.puts "#{SE.lineno}: Expected the :default_century to be NN00 (or NN), not '#{default_century}'"
                     raise
                 end
@@ -188,7 +188,7 @@ class Find_Dates_in_String
         end
         if ( not @option_H.key?( :default_century ) )
         then
-            @option_H[ :default_century ] = "19"
+            @option_H[ :default_century ] = ""              # If the default century is blank, only look for 4 digit dates.
         end
         if ( not @option_H.key?( :date_string_composition ) ) then
             @option_H[ :date_string_composition ] = :dates_in_text
@@ -211,23 +211,23 @@ class Find_Dates_in_String
 
         
 #       dash_RES                    = "\\s{0,2}-\\s{0,2}"
-        dash_slash_RES              = "\\s{0,2}(?:-|/){1}\\s{0,2}"          # Note the \\ because it's a double quoted string.
+        slash_dash_RES              = "\\s{0,2}(?:-|/){1}\\s{0,2}"          # Note the \\ because it's a double quoted string.
         space_dash_RES              = "\\s{0,2}(?:\\s|-){1}\\s{0,2}"
         space_dash_slash_RES        = "\\s{0,2}(?:\\s|-|/){1}\\s{0,2}"
         comma_RES                   = "\\s{0,2},\\s{0,2}"
         space_comma_RES             = "\\s{0,2}(?:\\s|,){1}\\s{0,2}"
         space_RES                   = "\\s{0,3}" 
 
-#       soft_month_RES              = "(?:([a-z]{3,11}|[a-z]{3,3}\\.)){1}"  # Vague alpha months
-        hard_month_RES              = K.month_RES                           # Specific month names
-        month_RES                   = hard_month_RES
-        n_nn_RES                    = "(?:\\d{1,2})"                        # For known day positions and numeric month positions
-        nn_nnnn_RES                 = "(?:\\d{2,4})"                        # For possible year positions
+        n_nn_RES                    = "(?:#{K.day_RES}|#{K.numeric_month_RES})" 
+        year_RES                    = ( @option_H[ :default_century ].empty? ) ? "(?:#{K.year4_RES})" : "(?:(?:\\d{2}|\\d{4}))"  
+                                                                            # For possible year positions
+                                                                            # If no default year, only look for 4 digit years.
 
         @thru_date_separator_RES    = "(?:\\s{0,2}(?:#{@option_H[ :thru_date_separators ]})\\s{0,2}){1}"
         @thru_date_begin_delim_RES  = "^\\s*"
-        @begin_delim_RES            = "(?:\\s|(?:#{@option_H[ :date_clump_separators ]}))*"
-        @end_delim_RES              = "\\s*(?:#{@thru_date_separator_RES}|\\W|$){1}"     # The \\W will match any separators
+#       @begin_delim_RES            = "(?:(?:\\A|\\s|#{@option_H[ :date_clump_separators ]}))*"    
+        @begin_delim_RES            = "(?:(?:\\A|\\s+|\\s*#{@option_H[ :date_clump_separators ]}\\s*))"    
+        @end_delim_RES              = "\\s*(?:#{@thru_date_separator_RES}|\\W|\\Z){1}"     # The \\W will match any separators
 
         date_pattern_RES_S = Struct.new( :pattern_name, :pattern_RES )      # The :pattern_name and length are computed and added later.
                                                                             # Literal spaces in the pattern are removed.  Spaces are just
@@ -239,66 +239,77 @@ class Find_Dates_in_String
                                         #   fmt002__ = possible year 
 
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt002__yyyy>           (?<year_M>#{nn_nnnn_RES}))" )
+                "(?<fmt002__yyyy>           (?<year_M>#{year_RES}))" )
  
 
-                                        #   fmt003__ = Dates in 'mmm dd, yyyy' format with spaces between 'mmm' 'dd'
+                                        #   fmt003__ = Dates in 'MMM dd, yyyy' format with spaces between 'MMM' 'dd'
 
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt003__MMM_dd_yyyy>    (?<month_M>#{month_RES})#{space_RES}     (?<day_M>#{n_nn_RES})#{comma_RES}     (?<year_M>#{nn_nnnn_RES}))" )
+                "(?<fmt003__MMM_dd_yyyy>    (?<month_M>#{K.alpha_month_RES})#{space_RES}     (?<day_M>#{n_nn_RES})#{comma_RES}     (?<year_M>#{year_RES}))" )
 
 
-                                        #   fmt004__ = Dates in 'mmm yyyy' or 'mmm-yyyy' format
+                                        #   fmt005__ = Dates in 'MMM yyyy' or 'MMM-yyyy' format
                                         
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt004__MMM_yyyy>       (?<month_M>#{month_RES})#{space_dash_RES}     (?<year_M>#{nn_nnnn_RES}))" )
+                "(?<fmt005__MMM_yyyy>       (?<month_M>#{K.alpha_month_RES})#{space_dash_RES}     (?<year_M>#{year_RES}))" )
+                
+                
+                                        #   fmt006__ = Dates in 'mm yyyy' or 'mm-yyyy' format
+                                        
+        initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
+                "(?<fmt006__mm_yyyy>        (?<month_M>#{K.numeric_month_RES})#{slash_dash_RES}   (?<year_M>#{year_RES}))" )
 
          
-                                        #   fmt005__ = Dates in 'yyyy mmm' or 'yyyy-mmm' format
+                                        #   fmt007__ = Dates in 'yyyy MMM' or 'yyyy-MMM' format
                                         
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt005__yyyy_MMM>       (?<year_M>#{nn_nnnn_RES})#{space_dash_RES}    (?<month_M>#{month_RES}))" )
+                "(?<fmt007__yyyy_MMM>       (?<year_M>#{year_RES})#{space_dash_RES}    (?<month_M>#{K.alpha_month_RES}))" )
+
+         
+                                        #   fmt008__ = Dates in 'yyyy mm' or 'yyyy-mm' format
+                                        
+        initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
+                "(?<fmt008__yyyy_mm>        (?<year_M>#{year_RES})#{slash_dash_RES}    (?<month_M>#{K.numeric_month_RES}))" )
 
 
-                                        #   fmt006__ = Dates in 'dd [-/] mmm [-/] yyyy' or ' yyyy [-/] mmm [-/] dd' format
+                                        #   fmt009__ = Dates in 'dd [-/] MMM [-/] yyyy' or ' yyyy [-/] MMM [-/] dd' format
 
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt006__nn_MMM_nn>  (?:" +    
-                    "   (?: (?<nn_1st_M>#{n_nn_RES})#{space_dash_slash_RES}    (?<month_M>#{month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
-                    "|  (?: (?<nn_1st_M>#{n_nn_RES})#{space_dash_slash_RES}    (?<month_M>#{month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{nn_nnnn_RES}))" +
-                    "|  (?: (?<nn_1st_M>#{nn_nnnn_RES})#{space_dash_slash_RES} (?<month_M>#{month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
+                "(?<fmt009__nn_MMM_nn>  (?:" +    
+                    "   (?: (?<nn_1st_M>#{n_nn_RES})#{space_dash_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
+                    "|  (?: (?<nn_1st_M>#{n_nn_RES})#{space_dash_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{year_RES}))" +
+                    "|  (?: (?<nn_1st_M>#{year_RES})#{space_dash_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
                 "  ) )" )
 
 
-                                         #   fmt008__ = Dates in 'mmm dd - dd, yyyy format (hybid double)
+                                         #   fmt011__ = Dates in 'MMM dd - dd, yyyy format (hybid double)
 
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt008__MMM_dd_dd_yyyy>     (?<month_M>#{month_RES})#{space_RES}    (?<day_M>#{n_nn_RES})"+
-                                                      "#{@thru_date_separator_RES} (?<thru_day_M>#{n_nn_RES})#{space_comma_RES}  (?<year_M>#{nn_nnnn_RES}))" )
+                "(?<fmt011__MMM_dd_dd_yyyy>     (?<month_M>#{K.alpha_month_RES})#{space_RES}    (?<day_M>#{n_nn_RES})"+
+                                                              "#{@thru_date_separator_RES} (?<thru_day_M>#{n_nn_RES})#{space_comma_RES}  (?<year_M>#{year_RES}))" )
 
 
-                                         #   fmt008__ = Dates in 'mmm dd - mmm dd, yyyy format (hybid double)
+                                         #   fmt012__ = Dates in 'MMM dd - MMM dd, yyyy format (hybid double)
                                          
          initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt009__MMM_dd_MMM_dd_yyyy> (?<month_M>#{month_RES})#{space_RES}             (?<day_M>#{n_nn_RES})"+
-              "#{@thru_date_separator_RES} (?<thru_month_M>#{month_RES})#{space_comma_RES}  (?<thru_day_M>#{n_nn_RES})#{comma_RES}(?<year_M>#{nn_nnnn_RES}))" )
+                "(?<fmt012__MMM_dd_MMM_dd_yyyy> (?<month_M>#{K.alpha_month_RES})#{space_RES}             (?<day_M>#{n_nn_RES})"+
+              "#{@thru_date_separator_RES} (?<thru_month_M>#{K.alpha_month_RES})#{space_comma_RES}  (?<thru_day_M>#{n_nn_RES})#{comma_RES}(?<year_M>#{year_RES}))" )
 
-                                        #   fmt010__ = Dates in 'mmm-mmm yy[yy] format (hybid double) Note there's NO COMMA after the month
+                                        #   fmt013__ = Dates in 'MMM-MMMM yy[yy] format (hybid double) Note there's NO COMMA after the month
 
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt010__MMM_MMM_yyyy>       (?<month_M>#{month_RES})#{space_RES}"+
-              "#{@thru_date_separator_RES} (?<thru_month_M>#{month_RES})#{space_RES}                                              (?<year_M>#{nn_nnnn_RES}))" )
+                "(?<fmt013__MMM_MMM_yyyy>       (?<month_M>#{K.alpha_month_RES})#{space_RES}"+
+              "#{@thru_date_separator_RES} (?<thru_month_M>#{K.alpha_month_RES})#{space_RES}                                              (?<year_M>#{year_RES}))" )
 
 
-                                        #   fmt013__ = All numeric dates 'nn [-/] nn [-/] nn ' format,  the 1st and 3rd positions could be 1 or 4 digets (days or years)
+                                        #   fmt014__ = All numeric dates 'nn [-/] nn [-/] nn ' format,  the 1st and 3rd positions could be 1 or 4 digets (days or years)
                                         
          initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt013__nn_nn_nn>   (?:" +
-                    "   (?: (?<nn_1st_M>#{n_nn_RES})#{dash_slash_RES}     (?<nn_2nd_M>#{n_nn_RES})#{dash_slash_RES}   (?<nn_3rd_M>#{n_nn_RES}))" +
-                    "|  (?: (?<nn_1st_M>#{n_nn_RES})#{dash_slash_RES}     (?<nn_2nd_M>#{n_nn_RES})#{dash_slash_RES}   (?<nn_3rd_M>#{nn_nnnn_RES}))" +
-                    "|  (?: (?<nn_1st_M>#{nn_nnnn_RES})#{dash_slash_RES}  (?<nn_2nd_M>#{n_nn_RES})#{dash_slash_RES}   (?<nn_3rd_M>#{n_nn_RES}))" +
+                "(?<fmt014__nn_nn_nn>   (?:" +
+                    "   (?: (?<nn_1st_M>#{n_nn_RES})#{slash_dash_RES}  (?<nn_2nd_M>#{n_nn_RES})#{slash_dash_RES}   (?<nn_3rd_M>#{year_RES}))" +
+#                   "|  (?: (?<nn_1st_M>#{n_nn_RES})#{slash_dash_RES}  (?<nn_2nd_M>#{n_nn_RES})#{slash_dash_RES}   (?<nn_3rd_M>#{year_RES}))" +
+                    "|  (?: (?<nn_1st_M>#{year_RES})#{slash_dash_RES}  (?<nn_2nd_M>#{n_nn_RES})#{slash_dash_RES}   (?<nn_3rd_M>#{n_nn_RES}))" +
                 "  ) )" )
-
 
 #       Set the pattern_name and length
         initial__date_pattern_RES_S__A.each_index do | idx |
@@ -338,6 +349,7 @@ class Find_Dates_in_String
 
         
         @possible_date_C = Struct.new( :pattern_name,
+                                       :regexp,
                                        :match_O,
                                      )
         
@@ -398,6 +410,7 @@ class Find_Dates_in_String
         
         @date_match_C = Struct.new( :match_O,
                                     :pattern_name,
+                                    :regexp,
                                     :ymd_S,
                                     :strptime_O,
                                     :as_date,
@@ -429,18 +442,27 @@ class Find_Dates_in_String
     end
     attr_reader :option_H, :date_pattern_RES_S__A, :pattern_cnt_H
     
+    def option_H=( options_to_set_H )
+        SE.puts "I can never have this method because the date formats are setup at initialization"
+        SE.puts "and it's way to easy to think that setting an option will change the behavior"
+        SE.puts "when - in fact - the behavior is in the formats.  You then spend hours trying to"
+        SE.puts "figure out why changing the { :default_century => '1900' } with this method"
+        SE.puts "doesn't change how the program finds dates."
+        raise
+    end
+    
     def get_tree_of__possible_date_S__A_A( input_string, initial_offset, looking_for_a_thru_date = false, level = 0 )
         tree_of__possible_date_S__A_A = [ ]
         if ( level > 10 ) then
-            SE.puts "In to deep"
+            SE.puts "#{SE.lineno}: In to deep"
             SE.q { 'tree_of__possible_date_S__A_A' }
             raise
         end
         @date_pattern_RES_S__A.each do | date_pattern_RES_S |
             if ( looking_for_a_thru_date ) then
-                regex = %r{(?<begin_M>#{@thru_date_begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?<end_M>#{@end_delim_RES})}xi
+                regexp = %r{(?<begin_M>#{@thru_date_begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?<end_M>#{@end_delim_RES})}xi
             else
-                regex = %r{(?<begin_M>#{@begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?=([^\>]|$))(?<end_M>#{@end_delim_RES})}xi
+                regexp = %r{(?<begin_M>#{@begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?=([^\>]|$))(?<end_M>#{@end_delim_RES})}xi
 #                                                                                
 #                           The lookahead '(?=([^\>]|$))' keeps the pattern from seeing the NNNN> of the date-clump literals
 #                           and turning the NNNN into a year (with the '>' acting as a separator matched on \W).                   
@@ -448,7 +470,7 @@ class Find_Dates_in_String
             scan_begin_offset = initial_offset + 0
             loop do
                 break if ( scan_begin_offset >= input_string.maxoffset )
-                match_O = input_string.match( regex, scan_begin_offset )
+                match_O = input_string.match( regexp, scan_begin_offset )
                 break if ( match_O == nil )
                 match_string = match_O.named_captures[ 'begin_M' ] +
                                match_O.named_captures[ 'date_M' ] +
@@ -457,9 +479,9 @@ class Find_Dates_in_String
                 match_length = match_string.length
                 if ( match_O.named_captures[ 'end_M' ] =~ /#{@thru_date_separator_RES}/ix ) then
                     result = get_tree_of__possible_date_S__A_A( input_string[ match_offset + match_length .. -1 ], 0, true, level + 1 )
-                    tree_of__possible_date_S__A_A << [ @possible_date_C.new( date_pattern_RES_S.pattern_name, match_O ), result ]
+                    tree_of__possible_date_S__A_A << [ @possible_date_C.new( date_pattern_RES_S.pattern_name, regexp, match_O ), result ]
                 else
-                    tree_of__possible_date_S__A_A << [ @possible_date_C.new( date_pattern_RES_S.pattern_name, match_O ), [ ] ]
+                    tree_of__possible_date_S__A_A << [ @possible_date_C.new( date_pattern_RES_S.pattern_name, regexp, match_O ), [ ] ]
                 end
                 scan_begin_offset = match_offset + match_length
             end
@@ -513,6 +535,7 @@ class Find_Dates_in_String
         sorted_combinations_of__possible_date_S__A_A[ 0 ].each do | possible_date_S |             
             date_match_S = @date_match_C.new(   possible_date_S.match_O,
                                                 possible_date_S.pattern_name,
+                                                possible_date_S.regexp,
                                              )
             date_match_S__A << date_match_S
         end
@@ -524,13 +547,9 @@ class Find_Dates_in_String
         date_clump_S__A = [ ]
 
         process_input_string = "" + param_input_string   # Make a new string, not a pointer.
-        loop_detector = 0
+        ld = Loop_detector.new( 100 )
         loop do   
-            if ( ( loop_detector += 1 ) > 100) then
-                SE.puts "#{SE.lineno}: I shouldn't be here: loop_detector > 100"
-                raise
-            end
-
+            ld.loop
             if ( @option_H[ :debug_options ].include?( :print_process_input_string )) then
                 SE.puts ""
                 SE.q { 'process_input_string' }
@@ -607,7 +626,7 @@ class Find_Dates_in_String
                     date_match_S.ymd_S.month =  date_match_S.match_O.named_captures[ 'month_M' ]
                     date_match_S.ymd_S.day   =  date_match_S.match_O.named_captures[ 'day_M' ]
                     
-                    generated_thru_date_match_S = @date_match_C.new( "GENERATED_THRU_DATE" )
+                    generated_thru_date_match_S = @date_match_C.new( date_match_S.match_O )
                     generated_thru_date_match_S.pattern_name = date_match_S.pattern_name
                     generated_thru_date_match_S.ymd_S = @ymd_C.new( )
                     generated_thru_date_match_S.ymd_S.year =  date_match_S.match_O.named_captures[ 'year_M' ]
@@ -718,7 +737,7 @@ class Find_Dates_in_String
                 end
 
                 if ( month and not month.integer? ) then
-                    # month_match_O = month.match( /^(?<month_M>#{K.month_RES})/ )  # Only need for 'soft months' , which isn't programmed
+                    # month_match_O = month.match( /^(?<month_M>#{K.alpha_month_RES})/ )  # Only need for 'soft months' , which isn't programmed
                     # if ( not month_match_O == nil ) then
                         # month_named_captures = month_match_O.named_captures
                         # month = month_named_captures[ 'month_M' ]
@@ -816,7 +835,7 @@ class Find_Dates_in_String
                     process_input_string_with_all_dates_removed[ date_clump_S.replace_uid ] = ""
                 rescue
                     SE.puts "#{SE.lineno}: replace_uid failed"
-                    SE.puts "process_input_string = #{process_input_string}"
+                    SE.puts "#{SE.lineno}: process_input_string = #{process_input_string}"
                     SE.q { 'date_clump_S' }
                     raise
                 end
@@ -826,7 +845,7 @@ class Find_Dates_in_String
                     process_input_string_with_all_dates_removed[ date_clump_S.replace_uid ] = ""
                 rescue
                     SE.puts "#{SE.lineno}: replace_uid failed"
-                    SE.puts "process_input_string = #{process_input_string}"
+                    SE.puts "#{SE.lineno}: process_input_string = #{process_input_string}"
                     SE.q { 'date_clump_S' }
                     raise
                 end
@@ -867,7 +886,7 @@ class Find_Dates_in_String
 
         case @option_H[ :date_string_composition ]
         when :dates_in_text
-            if (process_input_string_with_all_dates_removed =~ %r~#{K.month_RES}#( |/|-)~i ) then
+            if (process_input_string_with_all_dates_removed =~ %r~#{K.alpha_month_RES}#( |/|-)~i ) then
                 SE.puts "#{SE.lineno}: Warning possible unmatched date '#{$~}' in '#{process_input_string_with_all_dates_removed}'"
                 SE.puts ""
             end

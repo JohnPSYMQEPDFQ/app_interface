@@ -68,7 +68,8 @@ then
 fi
 file_name="$1"
 file_name_prefix="${myself_name%.*}.${file_name%.*}"
-rm ${file_name_prefix}.*.err ${file_name_prefix}.*.txt 2>/dev/null
+shopt -s nocaseglob     # Options are NOT inheried, and this is needed to glob files when the pattern contains upper cases.
+rm ${file_name_prefix}.*.err ${file_name_prefix}.*.txt 
 
 function trap_0 {
     echo "Last rc=$?"
@@ -97,15 +98,18 @@ function trap_0 {
         fi
     fi
     echo 
-    echo "sdiff ${file_name_prefix}.add_objects.SORTED.txt ${file_name_prefix}.add_objects.UNSORTED.txt"
+    if [[ -e "${file_name_prefix}.add_objects.SORTED.txt" && -e "${file_name_prefix}.add_objects.UNSORTED.txt" ]]
+    then
+        echo "sdiff ${file_name_prefix}.add_objects.SORTED.txt ${file_name_prefix}.add_objects.UNSORTED.txt"
+    fi
 } 1>&2
 trap 'trap_0' 0
 
 (   set -x
-    run_ruby.sh formatter.txt.to.indent.dictation_1.rb --max_levels=${max_group_levels} \
-                                                       ${inmagic_data} \
-                                                       "${file_name}" \
-                2>"${file_name_prefix}.formatter.err" >"${file_name_prefix}.indent.txt"
+    run_ruby.sh formatter.dictation_1.to.indent.rb --max_levels=${max_group_levels} \
+                                                                ${inmagic_data} \
+                                                                "${file_name}" \
+                          2>"${file_name_prefix}.formatter.err" >"${file_name_prefix}.indent.txt"
 )
 [[ $? -gt 0 ]] && exit 5
 
@@ -113,23 +117,23 @@ touch "${file_name_prefix}.indent.err"
 echo ""          >> "${file_name_prefix}.indent.err"
 echo "UNSORTED:" >> "${file_name_prefix}.indent.err"
 (   set -x
-    run_ruby.sh formatter.indent.to.add_objects.generic.rb ${combine_like_records:+--combine_like_records} \
-                                                           ${max_series_records:+--max_series=}${max_series_records:+"${max_series_records}"} \
-                                                           ${parent_title:+--parent_title=}${parent_title:+"${parent_title}"} \
-               2>>"${file_name_prefix}.indent.err" >"${file_name_prefix}.add_objects.UNSORTED.txt" "${file_name_prefix}.indent.txt"
+    run_ruby.sh formatter.indent.to.add_objects.rb ${combine_like_records:+--combine_like_records} \
+                                                   ${max_series_records:+--max_series=}${max_series_records:+"${max_series_records}"} \
+                                                   ${parent_title:+--parent_title=}${parent_title:+"${parent_title}"} \
+               2>>"${file_name_prefix}.indent.err" >"${file_name%.*}.add_objects.UNSORTED.txt" "${file_name_prefix}.indent.txt"
 )
 [[ $? -gt 0 ]] && exit 6
 
-if [[ -z ${inmagic_data} ]]
+if [[ -z "${inmagic_data}" ]]
 then
     echo ""        >> "${file_name_prefix}.indent.err"
     echo "SORTED:" >> "${file_name_prefix}.indent.err"
     (   set -x
         sort -f "${file_name_prefix}.indent.txt" > "${file_name_prefix}.indent.sorted.txt"
-        run_ruby.sh formatter.indent.to.add_objects.generic.rb ${combine_like_records:+--combine_like_records} \
-                                                               ${max_series_records:+--max_series=}${max_series_records:+"${max_series_records}"} \
-                                                               ${parent_title:+--parent_title=}${parent_title:+"${parent_title}"} \
-                   2>>"${file_name_prefix}.indent.err" >"${file_name_prefix}.add_objects.SORTED.txt" "${file_name_prefix}.indent.sorted.txt"
+        run_ruby.sh formatter.indent.to.add_objects.rb ${combine_like_records:+--combine_like_records} \
+                                                       ${max_series_records:+--max_series=}${max_series_records:+"${max_series_records}"} \
+                                                       ${parent_title:+--parent_title=}${parent_title:+"${parent_title}"} \
+                   2>>"${file_name_prefix}.indent.err" >"${file_name%.*}.add_objects.SORTED.txt" "${file_name_prefix}.indent.sorted.txt"
     )
     [[ $? -gt 0 ]] && exit 7
 fi
@@ -137,7 +141,7 @@ fi
 if [[ -n "${ead_id}" ]] 
 then
     (   set -x
-        run_ruby.sh spreadsheet.add_objects.to.csv.rb --ead "${ead_id}" "${file_name_prefix}.add_objects.UNSORTED.txt" 2>"${file_name_prefix}.spreadsheet.err" >"${file_name_prefix}.csv" 
+        run_ruby.sh spreadsheet.add_objects.to.csv.rb --ead "${ead_id}" "${file_name%.*}.add_objects.UNSORTED.txt" 2>"${file_name_prefix}.spreadsheet.err" >"${file_name%.*}.AS_spreadsheet.csv" 
     )
 fi
 [[ $? -gt 0 ]] && exit 8
