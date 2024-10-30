@@ -80,6 +80,26 @@ module SE
         end
         return a
     end    
+    
+    def SE.debug_on_the_range( thing_to_test, debug_range )
+        if ( not debug_range.is_a?( Range )) then
+            SE.puts "#{SE.lineno}: Was expecting param2 to be a Range, instead it's a #{debug_range.class}"
+            raise
+        end
+#       SE.q {[ 'thing_to_test', 'debug_range', 'debug_range === thing_to_test' ]}
+        if ( $DEBUG ) then
+            if ( not debug_range === thing_to_test ) then   # The range MUST be on the left of the ===  !!!
+                $DEBUG = false
+                SE.ap_stack
+            end
+        else
+            if ( debug_range === thing_to_test  ) then
+                $DEBUG = true
+                SE.ap_stack
+            end
+        end
+    end
+    
 end
 
 class Loop_detector

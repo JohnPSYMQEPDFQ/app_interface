@@ -79,25 +79,6 @@ class Record_Grouping_Indent
         SE.puts "Total record count:        #{@total_rec_cnt}"
 #       SE.pp_stack
     end
-    
-    def debug_on_the_range( thing_to_test, debug_range )
-        if ( not debug_range.is_a?( Range )) then
-            SE.puts "#{SE.lineno}: Was expecting param2 to be a Range, instead it's a #{debug_range.class}"
-            raise
-        end
-#       SE.q {[ 'thing_to_test', 'debug_range', 'debug_range === thing_to_test' ]}
-        if ( $DEBUG ) then
-            if ( not debug_range === thing_to_test ) then   # The range MUST be on the left of the ===  !!!
-                $DEBUG = false
-                SE.ap_stack
-            end
-        else
-            if ( debug_range === thing_to_test  ) then
-                $DEBUG = true
-                SE.ap_stack
-            end
-        end
-    end
 
     def special_processing_H( record_H )
         sp_H = record_H[ K.fmtr_record_values ][ K.fmtr_record_values__special_processing_idx ]
@@ -116,7 +97,7 @@ class Record_Grouping_Indent
         @total_rec_cnt += 1
         SE.puts "#{SE.lineno}: ADD 1 TO TOTAL REC CNT ************" if ( $DEBUG )
         SE.q {[ '@total_rec_cnt' ]}  if ( $DEBUG )
-#       debug_on_the_range( @total_rec_cnt, x..y )
+#       SE.debug_on_the_range( @total_rec_cnt, x..y )
     end
         
     def forced_indent_left( record_H )
@@ -241,7 +222,7 @@ class Record_Grouping_Indent
               
         first_record_H = @record_H__stack_A.shift( 1 )[ 0 ].merge( {} )
         @first_record_indent_keys_A = @indent_key_prefixes_A + first_record_H[ K.fmtr_record_indent_keys ]
-#       debug_on_the_range( first_record_H[ K.fmtr_record_num ].to_i, ( x..y ) )    # Original Record Number
+#       SE.debug_on_the_range( first_record_H[ K.fmtr_record_num ].to_i, ( x..y ) )    # Original Record Number
         SE.puts "#{SE.lineno}: ORIGINAL RECORD NUMBER: #{first_record_H[ K.fmtr_record_num ]}"  if ( $DEBUG )
         SE.q {[ '@first_record_indent_keys_A' ]}  if ( $DEBUG )
 
