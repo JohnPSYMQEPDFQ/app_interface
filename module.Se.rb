@@ -89,11 +89,13 @@ module SE
 #       SE.q {[ 'thing_to_test', 'debug_range', 'debug_range === thing_to_test' ]}
         if ( $DEBUG ) then
             if ( not debug_range === thing_to_test ) then   # The range MUST be on the left of the ===  !!!
+                SE.puts "#{SE.lineno}: DEBUG off !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 $DEBUG = false
                 SE.ap_stack
             end
         else
             if ( debug_range === thing_to_test  ) then
+                SE.puts "#{SE.lineno}: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 $DEBUG = true
                 SE.ap_stack
             end
@@ -110,10 +112,12 @@ class Loop_detector
     
     def loop
         if ( @loop_cnt > @loop_limit ) then
-            raise "LOOP DETECTOR triggered! ( loops=#{@loop_cnt}, limit=#{@loop_limit} )"
+            raise "LOOP DETECTOR: Abort ( loops=#{@loop_cnt}, limit=#{@loop_limit} )"
         end
         if ( @loop_cnt >= @loop_limit ) then
+            SE.puts "#{SE.lineno}: LOOP DETECTOR: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             $DEBUG = true
+            SE.ap_stack
         end
         @loop_cnt += 1
     end
