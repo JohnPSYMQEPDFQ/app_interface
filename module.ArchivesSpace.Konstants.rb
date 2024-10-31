@@ -130,15 +130,16 @@ module K
     def K.fmtr_record_values__container_idx; return 3.freeze; end  # formatter
     def K.fmtr_record_values__special_processing_idx; return 4.freeze; end  # formatter
     def K.fmtr_right; return '__RIGHT__'.freeze; end  # formatter
-    def K.fmtr_sc_indicator; return '__SC_INDICATOR__'.freeze; end   # formatter
-    def K.fmtr_sc_type; return '__SC_TYPE__'.freeze; end   # formatter
-    def K.fmtr_tc_indicator; return '__TC_INDICATOR__'.freeze; end   # formatter
-    def K.fmtr_tc_type; return '__TC_TYPE__'.freeze; end   # formatter
+    def K.fmtr_shelf_box; return '__SHELF_BOX__'.freeze; end  # formatter
     def K.fmtr_empty_container_H
-        h = { K.fmtr_tc_type => K.undefined ,
-            K.fmtr_tc_indicator => K.undefined ,
-            K.fmtr_sc_type => K.undefined ,
-            K.fmtr_sc_indicator => K.undefined }
+        h = { K.shelf => nil,               # Use this to (someday) lookup a location.
+              K.type => K.undefined ,
+              K.indicator => K.undefined ,
+              K.type_2 => K.undefined ,
+              K.indicator_2 => K.undefined ,
+              K.type_3 => nil ,
+              K.indicator_3 => nil ,
+              }
         return h
     end
     def K.folder; return 'Folder'.freeze; end
@@ -214,6 +215,7 @@ module K
     def K.script; return 'script'.freeze; end   # language_and_script
     def K.series; return 'series'.freeze; end   # archival_object
     def K.session; return 'session'.freeze; end
+    def K.shelf; return 'shelf'.freeze; end     # Someday (maybe) the shelf that the box is located on.  
     def K.single; return 'single'.freeze; end
     def K.slugged_url; return 'slugged_url'.freeze; end   # archival_object
     def K.status; return 'status'.freeze; end   # http

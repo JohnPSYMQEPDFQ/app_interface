@@ -306,7 +306,7 @@ for argv in ARGV do
             end
             ao_buf_O.record_H = { K.title => input_record_H[ K.fmtr_record ][ K.title ] }
             if ( input_record_H[ K.fmtr_record ].key?( K.dates ) and
-               ! input_record_H[ K.fmtr_record ][ K.dates ].empty? ) then
+                 input_record_H[ K.fmtr_record ][ K.dates ].not_empty? ) then
                 ao_buf_O.record_H = { K.dates => input_record_H[ K.fmtr_record ][ K.dates ] }
             end
             if ( input_record_H[ K.fmtr_record ].key?( K.notes ) and
@@ -314,11 +314,11 @@ for argv in ARGV do
                 ao_buf_O.record_H = { K.notes => input_record_H[ K.fmtr_record ][ K.notes ] }
             end
             if ( input_record_H[ K.fmtr_record ].key?( K.fmtr_container ) and 
-               ! input_record_H[ K.fmtr_record ][ K.fmtr_container ].empty? ) then
-                type      = "#{input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.fmtr_tc_type ]}"
-                indicator = "#{input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.fmtr_tc_indicator ]}"
+                 input_record_H[ K.fmtr_record ][ K.fmtr_container ].not_empty? ) then
+                type      = "#{input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.type ]}"
+                indicator = "#{input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.indicator ]}"
                 unique_TC_key  = "#{type}#{indicator}"
-                if ( ! tc_uri_H__by_type_and_indicator.key?( unique_TC_key ) ) then
+                if ( tc_uri_H__by_type_and_indicator.has_no_key?( unique_TC_key ) ) then
                     tc_buf_O = Top_Container.new( res_buf_O ).new_buffer.create
                     tc_buf_O.record_H = { K.type => type }
                     tc_buf_O.record_H = { K.indicator => indicator }
@@ -330,8 +330,12 @@ for argv in ARGV do
                 it_frag_O = Record_Format.new( :instance_type )
                 it_frag_O.record_H = { K.instance_type => K.mixed_materials}
                 it_frag_O.record_H = { K.sub_container => { K.top_container => { K.ref => tc_uri_H__by_type_and_indicator[ unique_TC_key ] }}}
-                it_frag_O.record_H = { K.sub_container => { K.type_2 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.fmtr_sc_type ] }}
-                it_frag_O.record_H = { K.sub_container => { K.indicator_2 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.fmtr_sc_indicator ] }}
+                it_frag_O.record_H = { K.sub_container => { K.type_2 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.type_2 ] }}
+                it_frag_O.record_H = { K.sub_container => { K.indicator_2 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.indicator_2 ] }}
+                if ( input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.type_3 ].not_nil? ) then
+                    it_frag_O.record_H = { K.sub_container => { K.type_3 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.type_3 ] }}
+                    it_frag_O.record_H = { K.sub_container => { K.indicator_3 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.indicator_3 ] }}
+                end
 
                 ao_buf_O.record_H = { K.instances => [ it_frag_O.record_H ] }
             end

@@ -6,8 +6,10 @@ require 'optparse'
 
 require 'class.Hash.extend.rb'
 require 'class.Array.extend.rb'
+require 'class.Object.extend.rb'
 require 'class.String.extend.rb'
 require 'class.Find_Dates_in_String.rb'
+require 'class.formatter.Shelf_ID_for_Boxes.rb'
 require 'module.SE.rb'
 require 'module.ArchivesSpace.Konstants.rb'
 
@@ -124,6 +126,7 @@ def write_pending_record_H( next_output_record_H, processed_forced_indent_A_STAC
     @pending_output_record_H = next_output_record_H.merge( {} )
 end
 
+shelf_id = nil 
 ARGF.each_line do |input_record|
 
     if ( @cmdln_option_H[ :r ] and $. > @cmdln_option_H[ :r ] ) then 
@@ -137,6 +140,11 @@ ARGF.each_line do |input_record|
     if ( input_record.count( '"' ) % 2 != 0 ) then
         SE.puts "#{SE.lineno}: WARNING: Odd number of double-quotes found in '#{input_record}'"
     end
+    if ( input_record.match?( /^#{K.fmtr_shelf_box}/i ) ) then
+        shelf_id = Shelf_ID_for_boxes.new.setup( input_record )                                            
+        next
+    end
+       
     saved_input_record = input_record + ""      # + "" <<< gotta change it or it's just a reference.
     input_record.gsub!( '...', '…' )   # Period are removed so this gets around that if the periods are at the end of the line.
     input_record.gsub!( 'R.R.', 'Railroad.' )   # Period are removed so this gets around that.
@@ -164,7 +172,6 @@ ARGF.each_line do |input_record|
         command = a1.shift.downcase    # shift-off the indent, prepend, or drop "command". 
         case command
         when K.fmtr_indent.downcase
-        SE.puts "======================================================================="
             if ( a1.length > 1 ) then
                 SE.puts "#{SE.lineno}: Got a '#{K.fmtr_indent}' record with extra words."
                 SE.q { 'input_record' }
@@ -234,6 +241,12 @@ ARGF.each_line do |input_record|
             next
         end
     end
+    
+    if ( input_record.match?( /^\s*_/ ) ) then
+        SE.puts "#{SE.lineno}: Found an input record that begins with a underscore. This is probably wrong."
+        SE.q {[ 'input_record' ]}
+        raise
+    end
 
     special_processing_H = {}
     if ( @cmdln_option_H[ :inmagic_processing ] ) then     
@@ -280,10 +293,11 @@ ARGF.each_line do |input_record|
     regexp = K.box_and_folder_RE
     if (match_vars = input_record.match( regexp )) then
         input_record.sub!( regexp, "")
-        container_H[ K.fmtr_tc_type ] =  K.box
-        container_H[ K.fmtr_tc_indicator ] =  match_vars[:box_num]
-        container_H[ K.fmtr_sc_type ] =  K.folder
-        container_H[ K.fmtr_sc_indicator ] =  match_vars[:folder_num]
+        container_H[ K.shelf ]       = shelf_id.of_box( match_vars[:box_num] ) if ( shelf_id ) 
+        container_H[ K.type ]        = K.box
+        container_H[ K.indicator ]   = match_vars[:box_num]
+        container_H[ K.type_2 ]      = K.folder
+        container_H[ K.indicator_2 ] = match_vars[:folder_num]
 #       SE.q {[ 'container_H' ]}
     end
     if ( input_record.match( /((\A|\s*)box(:\s*|\s+)|\s+folder(:\s*|\s+))/i )) then
@@ -379,6 +393,7 @@ ARGF.each_line do |input_record|
 end
 write_pending_record_H( {}, processed_forced_indent_A_STACK )
 
+SE.puts "======================================================================="
 SE.puts "Minimum date:  '#{min_date}'"
 SE.puts "Maxmimum date: '#{max_date}'"
 SE.puts "Notes created: '#{note_cnt}'"
