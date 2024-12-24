@@ -21,7 +21,7 @@ require 'json'
 class Http_Calls
 
     def initialize( p1_aspace_O )
-        if ( not p1_aspace_O.is_a?( ASpace ) ) then
+        if ( p1_aspace_O.is_not_a?( ASpace ) ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Param 1 is not a ASpace class object, it's a '${p1_aspace_O.class}'"
             raise
@@ -40,22 +40,21 @@ class Http_Calls
     #   SE.pov( http )
             
         headers = { "Content-type" => "application/json", "X-ArchivesSpace-Session" => @aspace_O.session }
-        response = http.request( Net::HTTP::Get.new( uri.request_uri, headers ))
+        response_O = http.request( Net::HTTP::Get.new( uri.request_uri, headers ))
     #   SE.pov( response )
     #   SE.pom( response )
     #   SE.pp response.to_H   # This defaults to printing the headers
     #   response.each_header do |key, value|
     #       SE.puts "#{key} => #{value}"
     #   end
-        if ( response.code != "200" ) then
+        if ( response_O.code != "200" ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "p1_uri = #{p1_uri}"
-            SE.puts "p2_params = #{p2_params}"
-            SE.puts "response.code = #{response.code}"
-            SE.puts "response.body:" , response.body
+            SE.q { [ 'p1_uri', 'p2_params' ] }
+            SE.q { [ 'response_O.code' ] }
+            SE.q { [ 'response_O.body' ] }
             raise
         end
-        response_body = JSON.parse( response.body )
+        response_body = JSON.parse( response_O.body )
         return response_body
     end           
     
@@ -72,8 +71,9 @@ class Http_Calls
         response_O = http.request( Net::HTTP::Post.new( uri.request_uri, headers ))    
         if ( response_O.code != "200" ) then 
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "response_O.code = #{response_O.code}"
-            SE.pp "response_O.body:" , response_O.body
+            SE.q { [ 'p1_uri', 'p2_params' ] }
+            SE.q { [ 'response_O.code' ] }
+            SE.q { [ 'response_O.body' ] }
             raise
         end
         response_body = JSON.parse( response_O.body )
@@ -90,10 +90,10 @@ class Http_Calls
         response_O = http.request( input_O )
         if ( response_O.code != "200" ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "response_O.code = #{response_O.code}"
-            SE.puts "p1_uri = #{p1_uri}"
-            SE.puts "p2_input_H:", p2_input_H
-            SE.pp "response_O.body:" , response_O.body
+            SE.q { [ 'p1_uri' ] }
+            SE.q { [ 'p2_input_H' ] }
+            SE.q { [ 'response_O.code' ] }
+            SE.q { [ 'response_O.body' ] }
             raise
         end
         response_body = JSON.parse( response_O.body )
@@ -110,8 +110,9 @@ class Http_Calls
         response_O = http.request( Net::HTTP::Delete.new( uri.request_uri, headers ))
         if ( response_O.code != "200" ) then 
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "response_O.code = #{response_O.code}"
-            SE.pp "response_O.body:" , response_O.body
+            SE.q { [ 'p1_uri', 'p2_params' ] }
+            SE.q { [ 'response_O.code' ] }
+            SE.q { [ 'response_O.body' ] }
             raise
         end
         response_body = JSON.parse( response_O.body )

@@ -1,8 +1,5 @@
 class Hash
 
-    def not_empty?
-        return ! self.empty?
-    end
     def has_no_key?( key )
         return ! self.has_key?( key )
     end

@@ -19,7 +19,6 @@ BEGIN {}
 END {}
 
 myself_name = File.basename( $0 )
-api_uri_base = "http://localhost:8089"
 
 cmdln_option = { :rep_num => 2  ,
                  :res_num => nil  ,
@@ -77,7 +76,7 @@ print__record_H = lambda{ | record_H, cnt |
     when cmdln_option[ :print_title_only ] 
         puts "#{record_H[ K.title ]}"
     when cmdln_option[ :flatten ] 
-        print "#{record_H[ K.title ]} "
+        print "#{record_H[ K.title ].gsub( '&amp;', '&' )} "    # This is to get the title printed first.
         
 #           Flatten is useful for comparison of two resources, so remove anything that might
 #           legitimately be different.
@@ -100,7 +99,7 @@ print__record_H = lambda{ | record_H, cnt |
         record_H.except_nested!( K.waypoints )
         record_H.except_nested!( K.waypoint_size )
         
-        print  [ record_H ].join(" ")        
+        print  [ record_H ].join(" ").gsub( '&amp;', '&' )        
         print "\n"        
     else
         print "#{cnt} "
@@ -114,13 +113,7 @@ print__record_H = lambda{ | record_H, cnt |
 }
 
 aspace_O = ASpace.new
-aspace_O.api_uri_base = api_uri_base
-aspace_O.login( "admin", "admin" )
-#SE.pom(aspace_O)
-#SE.pov(aspace_O)
 rep_O = Repository.new( aspace_O, rep_num )
-#SE.pom(rep_O)
-#SE.pov(rep_O)
 
 cnt = 0
 res_O = Resource.new( rep_O, res_num )

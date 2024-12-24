@@ -103,14 +103,7 @@ class Record_Buf < Buffer_Base
             SE.ap "external_record_H:", external_record_H
             raise
         end 
-        if ( @uri == nil or @num == nil ) then
-            SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Was expecting the @uri and @num variables to be set"
-            SE.puts "@uri = #{@uri}"
-            SE.puts "@num = #{@num}"
-            SE.ap "external_record_H:", external_record_H
-            raise               
-        end
+
         if ( ! ( external_record_H.has_key?( K.jsonmodel_type ) ) )
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Was expecting a jsonmodel_type in external_record_H"

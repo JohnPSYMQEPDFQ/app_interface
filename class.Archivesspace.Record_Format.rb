@@ -163,7 +163,7 @@ class Record_Format < Buffer_Base
     def note_singlepart
         h =  {
                 K.jsonmodel_type => K.note_singlepart,
-                K.ingest_problem => '',
+#               K.ingest_problem => '',
                 K.type => K.undefined,    #(physloc)
                 K.publish =>  true,
                 K.content => [ ],
@@ -175,25 +175,28 @@ class Record_Format < Buffer_Base
     
     def resource        
         h = {   
-                K.jsonmodel_type => K.resource,
-                K.title => K.undefined,
-                K.publish => true,
-                K.restrictions => false,
                 K.ead_id => K.undefined,
-                K.finding_aid_title => K.undefined,
-                K.finding_aid_filing_title => K.undefined,
-                K.finding_aid_date => K.undefined,
+                K.external_ids => [],
                 K.finding_aid_author => K.undefined,
-                K.finding_aid_language_note => K.undefined,
-                K.suppressed => false,
-                K.id_0 => K.undefined,
-                K.level => K.undefined,
+                K.finding_aid_date => K.undefined,
+                K.finding_aid_filing_title => K.undefined,
                 K.finding_aid_language => K.undefined,
+                K.finding_aid_language_note => K.undefined,
                 K.finding_aid_script => K.undefined,
                 K.finding_aid_status => K.undefined,
-                K.external_ids => [],
-                K.subjects => [{ K.ref => K.undefined }],
+                K.finding_aid_title => K.undefined,
+                K.id_0 => K.undefined,
+                K.jsonmodel_type => K.resource,
+                K.level => K.undefined,
                 K.linked_events=>[],
+                K.publish => true,
+                K.repository => {
+                    K.ref => K.undefined
+                },
+                K.restrictions => false,
+                K.subjects => [],
+                K.suppressed => false,
+                K.title => K.undefined,
             }
         @record_H.merge!( h )
         return h

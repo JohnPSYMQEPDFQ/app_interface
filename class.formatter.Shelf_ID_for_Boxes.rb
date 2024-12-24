@@ -60,7 +60,7 @@ class Shelf_ID_for_boxes
                     raise
                 end
             end
-            break if ( last_group.empty? )
+            break if ( last_group.blank? )
             boxes_on_shelf_string = last_group + boxes_on_shelf_string
         end
         SE.q {[ '@shelf_A' ]}  if ( $DEBUG )

@@ -5,7 +5,6 @@ myself_name=$(basename $0)
 function display_usage {
     echo "Usage: ${myself_name} [-cgm] [-s ead_id] [-t title] file"
     echo "       -c = Tell the add_objects program to combine-like-records."
-    echo "       -i = Do InMagic special processing."
     echo "       -g = Maximum number of levels for grouping (default is 3)."
     echo "       -m = Maximum number of series records (default is 0)."
     echo "       -s = Run the csv creation program with the specified ead_id value."
@@ -14,8 +13,8 @@ function display_usage {
 }
 
 combine_like_records=""
+do_sort=""
 max_group_levels=3
-inmagic_data=""
 max_series_records=0
 ead_id=""
 parent_title=""
@@ -26,8 +25,6 @@ do
     (c)     combine_like_records="1"
             ;;
     (g)     max_group_levels="$OPTARG"
-            ;;
-    (i)     inmagic_data="--inmagic"
             ;;
     (m)     max_series_records="$OPTARG"
             ;;
@@ -106,9 +103,7 @@ function trap_0 {
 trap 'trap_0' 0
 
 (   set -x
-    run_ruby.sh formatter.dictation_1.to.indent.rb --max_levels=${max_group_levels} \
-                                                                ${inmagic_data} \
-                                                                "${file_name}" \
+    run_ruby.sh formatter.dictation_1.to.indent.rb --max_levels=${max_group_levels} "${file_name}" \
                           2>"${file_name_prefix}.formatter.err" >"${file_name_prefix}.indent.txt"
 )
 [[ $? -gt 0 ]] && exit 5
@@ -124,7 +119,7 @@ echo "UNSORTED:" >> "${file_name_prefix}.indent.err"
 )
 [[ $? -gt 0 ]] && exit 6
 
-if [[ -z "${inmagic_data}" ]]
+if [[ -n "${do_sort}" ]]
 then
     echo ""        >> "${file_name_prefix}.indent.err"
     echo "SORTED:" >> "${file_name_prefix}.indent.err"

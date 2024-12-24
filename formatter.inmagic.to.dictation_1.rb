@@ -3,6 +3,7 @@ require 'optparse'
 
 require 'class.Hash.extend.rb'
 require 'class.Array.extend.rb'
+require 'class.Object.extend.rb'
 require 'class.String.extend.rb'
 require 'module.SE.rb'
 require 'module.ArchivesSpace.Konstants.rb'
@@ -28,7 +29,7 @@ require 'tempfile'
 
 myself_name = File.basename( $0 )
 
-def column_use_H_F
+def column_use_H
     if ( @cmdln_option_H.has_no_key?( :column_use_H ) ) then
         SE.puts "Can find '@cmdln_option_H[ :column_use_H ]"
         SE.q {[ @cmdln_option_H ]} 
@@ -37,77 +38,76 @@ def column_use_H_F
     return @cmdln_option_H[ :column_use_H ]
 end
 def column_name_exists?( column_name )
-    return column_use_H_F.has_key?( column_name)
+    return column_use_H.has_key?( column_name )
 end
-def series_column_name_F()
-    column_use_H_F.each_pair do | c, v | 
+def series_column_name()
+    column_use_H.each_pair do | c, v | 
         if ( v == K.fmtr_inmagic_series ) then
             return c
         end
     end
-    SE.puts "#{SE.lineno}: Can't find the series column_name in 'column_use_H_F'"
-    SE.q {[ 'column_use_H_F' ]}
-    raise
+    return nil
 end
-def series_pos_F( on_nil = :fail )
-    pos = column_pos_by_use_F( K.fmtr_inmagic_series, on_nil )
+def series_pos( on_nil = :fail )
+    pos = column_pos_for_use( K.fmtr_inmagic_series, on_nil )
     return pos
 end
-def seriesdate_pos_F( on_nil = :fail)
-    pos = column_pos_by_use_F( K.fmtr_inmagic_seriesdate, on_nil )
+def seriesdate_pos( on_nil = :fail)
+    pos = column_pos_for_use( K.fmtr_inmagic_seriesdate, on_nil )
     return pos
 end
-def seriesnote_pos_F( on_nil = :fail )
-    pos = column_pos_by_use_F( K.fmtr_inmagic_seriesnote, on_nil )
+def seriesnote_pos( on_nil = :fail )
+    pos = column_pos_for_use( K.fmtr_inmagic_seriesnote, on_nil )
     return pos
 end
-def column_pos_by_use_F( use, on_nil = :fail )
-    pos = column_use_H_F.keys.index( use )
+def column_pos_for_use( use, on_nil = :fail )
+    pos = column_use_H.keys.index( use )
     if ( on_nil == :fail and pos.nil? ) then
-        SE.puts "#{SE.lineno}: Can't find the '#{use}' column in 'column_use_H_F'"
-        SE.q {[ 'column_use_H_F' ]}
+        SE.puts "#{SE.lineno}: Can't find the '#{use}' column in 'column_use_H'"
+        SE.q {[ 'column_use_H' ]}
         raise
     end  
     return pos if ( on_nil == :nil_ok )
     SE.puts "#{SE.lineno}: Invalid value of 'on_nil' parameter, expected :fail or :nil_ok, got '#{on_nil}'"
     raise
 end
-def use_for_output?( column_name )
-    column_use = column_use_H_F[ column_name ]
-    use = @valid_column_uses_H[ column_use ][ :use_for_output ]
+def used_for_detail?( column_name )
+    column_use = column_use_H[ column_name ]
+    use = @valid_column_uses_H[ column_use ][ :used_for_detail ]
     if ( use.nil? ) then
-        SE.puts "@valid_column_uses_H[ column_use_H_F[ column_name ] ][ :use_for_output ] returns nil"
-        SE.q {[ 'column_name', 'column_use_H_F' ]}
+        SE.puts "@valid_column_uses_H[ column_use_H[ column_name ] ][ :used_for_detail ] returns nil"
+        SE.q {[ 'column_name', 'column_use_H' ]}
         SE.q {[ '@valid_column_uses_H' ]}
         raise
     end
     return use
 end
-def split_on_bars?( column_name )
-    column_use = column_use_H_F[ column_name ]
-    use = @valid_column_uses_H[ column_use ][ :split_on_bars ]
+def has_subcolumns?( column_name )
+    column_use = column_use_H[ column_name ]
+    use = @valid_column_uses_H[ column_use ][ :has_subcolumns ]
     if ( use.nil? ) then
-        SE.puts "@valid_column_uses_H[ column_use_H_F[ column_name ] ][ :split_on_bars ] returns nil"
-        SE.q {[ 'column_name', 'column_use_H_F' ]}
+        SE.puts "@valid_column_uses_H[ column_use_H[ column_name ] ][ :has_subcolumns ] returns nil"
+        SE.q {[ 'column_name', 'column_use_H' ]}
         SE.q {[ '@valid_column_uses_H' ]}
         raise
     end
     return use
 end
 
-@valid_column_uses_H = { K.fmtr_inmagic_detail       => { :use_for_output => true , :split_on_bars => true,  } ,
-                         K.fmtr_inmagic_series       => { :use_for_output => true , :split_on_bars => false, } ,
-                         K.fmtr_inmagic_seriesdate   => { :use_for_output => false, :split_on_bars => false, } ,
-                         K.fmtr_inmagic_seriesnote   => { :use_for_output => false, :split_on_bars => true, } ,
+@valid_column_uses_H = { K.fmtr_inmagic_detail       => { :used_for_detail => true , :has_subcolumns => true,  } ,
+                         K.fmtr_inmagic_series       => { :used_for_detail => true , :has_subcolumns => false, } ,
+                         K.fmtr_inmagic_seriesdate   => { :used_for_detail => false, :has_subcolumns => false, } ,
+                         K.fmtr_inmagic_seriesnote   => { :used_for_detail => false, :has_subcolumns => false, } ,
                        }
 
 @cmdln_option_H = { :r => 999999999,
-                 :d => false,
-                 :sort => false,
-                 :default_century => '',
-                 :max_title_size => 150,
-                 :column_use_H => {},
-               }
+                    :output_file_prefix => '',
+                    :d => false,
+                    :sort => false,
+                    :default_century => '',
+                    :max_title_size => 150,
+                    :column_use_H => {},
+                   }
 
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [options] [file]"
@@ -119,8 +119,12 @@ OptionParser.new do |option|
     option.on( "--sort", "Sort the detail records." ) do
         @cmdln_option_H[ :sort ] = true
     end  
+    
+    option.on( "--output-file-prefix=x", "File prefix for the two output files." ) do |opt_arg|
+        @cmdln_option_H[ :output_file_prefix ] = opt_arg
+    end
 
-    option.on( "--default_century n", OptionParser::DecimalInteger, "Default century for 2-digit years." ) do
+    option.on( "--default-century n", OptionParser::DecimalInteger, "Default century for 2-digit years." ) do
         @cmdln_option_H[ :default_century ] = opt_arg
     end  
     
@@ -133,9 +137,9 @@ OptionParser.new do |option|
                 SE.q {[ 'a2', 'a1' ]}
                 raise
             end
-            if ( column_use_H_F.has_key?( a2[ 0 ] ) ) then
+            if ( column_use_H.has_key?( a2[ 0 ] ) ) then
                 SE.puts "Duplicate column_name '#{a2[ 0 ] }' found in --columns option"
-                SE.q {[ 'opt_arg', 'a1', 'column_use_H_F' ]}
+                SE.q {[ 'opt_arg', 'a1', 'column_use_H' ]}
                 raise
             end
             if ( a2[ 1 ] ) then
@@ -171,63 +175,27 @@ OptionParser.new do |option|
 end.parse!  # Bang because ARGV is altered
 SE.q {[ '@cmdln_option_H' ]}
 
-@find_dates_with_4digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :remove },
-                                                              :pattern_name_RES => '.',
-                                                              :date_string_composition => :dates_in_text,
-                                                              :yyyy_min_value => '1800',
-                                                            } )
+# @find_dates_with_4digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :keep },
+                                                              # :pattern_name_RES => '.',
+                                                              # :date_string_composition => :dates_in_text,
+                                                              # :yyyy_min_value => '1800',
+                                                            # } )
 
-@find_dates_with_2digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :keep },
-                                                              :pattern_name_RES => '.',
-                                                              :date_string_composition => :dates_in_text,
-                                                              :default_century => '1900',
-                                                            } ) if ( @cmdln_option_H[ :default_century ].empty? )
+# @find_dates_with_2digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :keep },
+                                                              # :pattern_name_RES => '.',
+                                                              # :date_string_composition => :dates_in_text,
+                                                              # :default_century => '1900',
+                                                            # } ) if ( @cmdln_option_H[ :default_century ].blank? )
 
-def rearrange( sub_column_value )
-    rearranged = sub_column_value + ''
-    inmagic_quote_storage_A = []
-    if ( rearranged.sub!( K.box_and_folder_RE, '') ) then
-        inmagic_quote_storage_A.push( $& )
-    end   
-    if ( rearranged.match( /((\A|\s*)box(:\s*|\s+)|\s+folder(:\s*|\s+))/i ) ) then
-        SE.p "#{SE.lineno}: WARNING: Undiscovered box and folder literals in sub_column '#{sub_column_value}'"
-    end
-    
-    regexp = %r{#{K.fmtr_inmagic_quote}.+?#{K.fmtr_inmagic_quote}}    # .+? The '?' makes it 'non-greedy
-    while true
-        break if ( ! rearranged.sub!( regexp, '' ) )
-        inmagic_quote_storage_A.push( $& )
-    end
-    from_thru_date_A= []
-    rearranged = @find_dates_with_4digit_years_O.do_find( rearranged )
-    @find_dates_with_4digit_years_O.good__date_clump_S__A.each do | date_clump_S |
-        from_thru_date= date_clump_S.from_date
-        if ( date_clump_S.thru_date != "") then
-            from_thru_date += ' - ' + date_clump_S.thru_date 
-        end
-        from_thru_date_A << from_thru_date
-    end
-    if ( @cmdln_option_H[ :default_century ].empty? ) then
-        @find_dates_with_2digit_years_O.do_find( rearranged )
-        @find_dates_with_2digit_years_O.good__date_clump_S__A.each do | date_clump_S |  
-            len = @find_dates_with_2digit_years_O.good__date_clump_S__A.length
-            from_thru_date= date_clump_S.from_date
-            if ( date_clump_S.thru_date != "") then
-                from_thru_date += ' - ' + date_clump_S.thru_date 
-            end
-            SE.puts "#{SE.lineno}: WARNING: #{len} date(s) with 2-digit-years(#{from_thru_date}) found in record:'#{sub_column_value}'"
-            break
-        end
-    end
-    
-    rearranged += " #{from_thru_date_A.sort.join( ',' )} #{inmagic_quote_storage_A.join( ' ' )}"
-    rearranged.gsub!( /  /, ' ' )
-    rearranged.strip!
+
+def output_detail_F_puts( *argv )
+    @output_detail_F.puts argv.join( ' ' )
+    @output_detail_cnt += 1
 end
 
-def put_column( column_H_A, column_idx = 0, title_length = 0 )
-    SE.q { [ 'column_H_A[ column_idx]' ]}  if ( $DEBUG )  
-    column_H     = column_H_A[ column_idx ]
+def put_column( indent_spaces, column_idx = 0, title_length = 0 )
+    SE.q { [ '@detail_column_H_A[ column_idx]' ]}  if ( $DEBUG )  
+    column_H     = @detail_column_H_A[ column_idx ]
     column_name  = column_H[ 'column_name' ]
     column_value = column_H[ 'column_value' ]
     SE.q { [ 'column_idx', 'column_name', 'column_value', 'column_H' ]} if ( $DEBUG ) 
@@ -236,70 +204,144 @@ def put_column( column_H_A, column_idx = 0, title_length = 0 )
         column_value = matchdata[ 1 ]
     end
 
-    if ( split_on_bars?( column_name )) then
-        sub_column_value_A = column_value.split( '|' ).map( &:to_s ).map( &:strip )         
-        sub_column_value_A = sub_column_value_A.each.map { | sub_column_value | rearrange( sub_column_value) } 
+    if ( has_subcolumns?( column_name )) then
+        sub_column_value_A = column_value.split( '|' ).map( &:to_s )# .map( &:strip )    
         sub_column_value_A = sub_column_value_A.sort_by { | k | k.downcase.strip.gsub(/[^[a-z0-9 ]]/,'') } if ( @cmdln_option_H[ :sort ] )
     else
         if ( column_value.include?( '|' )) then
-            SE.puts "#{SE.lineno}: non-bar column has a '|'"
-            SE.q {[ 'column_idx', 'column_H_A' ]}
+            SE.puts "#{SE.lineno}: column has a '|' but doesn't have a use of :subcolumns."
+            SE.q {[ 'column_idx', 'column_name' ] }
+            SE.q {[ 'column_value' ]}
             raise
         end
         sub_column_value_A = [ column_value ]
     end
 
     SE.q { 'sub_column_value_A' } if ( $DEBUG )
-    sub_column_value_A.each do | sub_column_value |
-        sub_column_without_inmagic_quoted_stuff = sub_column_value + ''
-        sub_column_without_inmagic_quoted_stuff.gsub!( /\s+#{K.fmtr_inmagic_quote}.*?#{K.fmtr_inmagic_quote}/, '' )  # .+? The '?' makes it 'non-greedy
-        if ( column_idx < column_H_A.maxindex ) then
-            puts sub_column_value 
-            @output_record_cnt += 1
-            puts "#{K.fmtr_indent}: #{K.fmtr_right}" 
-            @output_record_cnt += 1
-            put_column( column_H_A, column_idx + 1, title_length + sub_column_without_inmagic_quoted_stuff.length )
-            puts "#{K.fmtr_indent}: #{K.fmtr_left}"
-            @output_record_cnt += 1
-        else
-            puts sub_column_value
-            @output_record_cnt += 1
-            if ( sub_column_value.count( '"' ) % 2 != 0 ) then
+    first_sub_column_entry_is_a_subseries = false
+    sub_column_value_A.each_with_index do | sub_column_value, sub_column_idx |
+        next if ( sub_column_value.blank? )
+        sub_column_without_notes = sub_column_value + ''
+        sub_column_without_notes.gsub!( /\s+Note:.*/i, '' )  
+        if ( column_idx < @detail_column_H_A.maxindex ) then
+            output_detail_F_puts indent_spaces + sub_column_value 
+            if ( sub_column_value.match( /^series /i ) ) then
+                #  The Series records are their own "indent_right".
+            else
+                output_detail_F_puts indent_spaces + "#{K.fmtr_indent}: #{K.fmtr_right}" 
+            end
+
+            @current_instance.gsub!( /#{K.fmtr_end_group}/, '' )
+            
+            put_column( indent_spaces + '    ', column_idx + 1, title_length + sub_column_without_notes.length )   # <<<<<<<<<<<<<<<<
+
+            @current_instance += " #{K.fmtr_end_group}"
+
+            if ( sub_column_value.match( /^series /i ) ) then
+                output_detail_F_puts indent_spaces + K.fmtr_end_group
+            else
+                output_detail_F_puts indent_spaces + "#{K.fmtr_indent}: #{K.fmtr_left}"
+            end
+
+        else   
+            note = ''
+            if ( sub_column_value.sub!( /(\(.*?\))\s*$/, '' ) ) then
+                note = $&
+                note.gsub!( /[()]/, '' )
+                note.strip!
+                note.sub!( /./,&:upcase )
+                note.sub!( /\.$/, '' )      # The note is put back AFTER the date logic
+            end
+            
+            stringer = sub_column_value.sub( K.box_and_folder_RE, '' )
+            if ( $&.not_nil? ) then
+                box_folder = $&
+                if ( stringer.blank? ) then                             # If true: the sub_column is ONLY the Box/folder data.
+                    box_folder.strip!
+                    next if ( box_folder == @current_instance )
+                    @current_instance = box_folder
+                    next
+                end
+            end
+            
+            sub_column_value += " Note: #{note}." if ( note.not_blank? )
+
+            if ( sub_column_value.match( /^(subseries|sub-series) /i ) ) then
+                if ( sub_column_idx == 0 ) then
+                    first_sub_column_entry_is_a_subseries = true
+                else
+                    @current_instance += " #{K.fmtr_end_group}"
+                    indent_spaces.sub!( /^    /, '' )
+                    output_detail_F_puts indent_spaces + K.fmtr_end_group + ' End-Begin'
+                end
+                output_detail_F_puts indent_spaces + sub_column_value
+                indent_spaces += '    '
+                SE.puts "WARNING: Series or Sub-series at ln:#{@output_detail_cnt}: '#{sub_column_value}'"
                 SE.puts ""
-                SE.puts "WARNING: Odd number of double-quotes found at #{@output_record_cnt}:'#{sub_column_value}'"
+            else
+                if ( sub_column_value.gsub( '_', '' ).not_blank? ) then
+                    stringer = ''
+                    stringer += indent_spaces
+                    stringer += "%-20s  " % @current_instance if ( @current_instance.not_blank? and not sub_column_value.index( @current_instance ) )
+                    stringer += sub_column_value                            
+                    output_detail_F_puts stringer
+                    if ( stringer.match( /box.*(oversized?|folder|slides?)?.*box.*(oversized?|folder|slides?)?/i ) ) then
+                        SE.puts "WARNING: Multiple repeats of box, folder, oversize, or slide found at ln:#{@output_detail_cnt}: #{stringer}"
+                        SE.puts ""
+                    end     
+                end
+            end
+            if ( first_sub_column_entry_is_a_subseries and sub_column_idx == sub_column_value_A.maxindex ) then
+                @current_instance += " #{K.fmtr_end_group}"
+                indent_spaces.sub!( /^    /, '' )
+                output_detail_F_puts indent_spaces + K.fmtr_end_group + ' Last Record'
+            end
+            if ( sub_column_value.count( '"' ) % 2 != 0 ) then
+                SE.puts "WARNING: Odd number of double-quotes found at ln:#{@output_detail_cnt}:'#{sub_column_value}'"
+                SE.puts ""
             end
             if ( ( sub_column_value.count( ')' ) + sub_column_value.count( '(' ) ) % 2 != 0 ) then
+                SE.puts "WARNING: Odd number of parentheses found at ln:#{@output_detail_cnt}:'#{sub_column_value}'"
                 SE.puts ""
-                SE.puts "WARNING: Odd number of parentheses found at #{@output_record_cnt}:'#{sub_column_value}'"
             end
             if ( ( sub_column_value.count( ']' ) + sub_column_value.count( '[' ) ) % 2 != 0 ) then
+                SE.puts "WARNING: Odd number of square-brackets found at ln:#{@output_detail_cnt}:'#{sub_column_value}'"
                 SE.puts ""
-                SE.puts "WARNING: Odd number of square-brackets found at #{@output_record_cnt}:'#{sub_column_value}'"
             end
-            if ( ( title_length + sub_column_without_inmagic_quoted_stuff.length ) > @cmdln_option_H[ :max_title_size ] ) then
+            if ( ( title_length + sub_column_without_notes.length ) > @cmdln_option_H[ :max_title_size ] ) then
+                SE.puts "WARNING: Max title size is greater than #{@cmdln_option_H[ :max_title_size ]} at ln:#{@output_detail_cnt}:'#{sub_column_value}'"
                 SE.puts ""
-                SE.puts "WARNING: Max title size is greater than #{@cmdln_option_H[ :max_title_size ]} at #{@output_record_cnt}:'#{sub_column_value}'"
             end
         end
     end
+
 end
 
 tmp1_F = Tempfile.new( "#{myself_name}.tmp1_F." )
 #SE.puts "#{SE.lineno}: tmp1_F.path=#{tmp1_F.path}"
 
-ARGF.each do | csv_from_pwsh_as_one_big_A_J |
-    csv_from_pwsh_as_one_big_A_J.chomp
-    csv_from_pwsh_as_one_big_A = JSON.parse( csv_from_pwsh_as_one_big_A_J )
-    csv_from_pwsh_as_one_big_A.each do | input_column_H |
-        tmp1_F.puts input_column_H.to_json
+ARGF.each do | csv_from_pwsh_as_one_big_J |
+    csv_from_pwsh_as_one_big_J.chomp
+    csv_from_pwsh_as_one_big_THING = JSON.parse( csv_from_pwsh_as_one_big_J )
+    case true
+    when csv_from_pwsh_as_one_big_THING.is_a?( Hash )
+        tmp1_F.puts csv_from_pwsh_as_one_big_THING.to_json
+    when csv_from_pwsh_as_one_big_THING.is_a?( Array )
+        csv_from_pwsh_as_one_big_THING.each do | input_column_H |
+            tmp1_F.puts input_column_H.to_json
+        end
+    else
+        SE.puts "#{SE.lineno}: I can't figure out what the data format in the 'csv_from_pwsh_as_one_big_THING' is."
+        SE.q { [ 'csv_from_pwsh_as_one_big_THING' ] }
+        raise
     end
 end
 tmp1_F.close
 
-tmp1_F.open
 tmp2_F = Tempfile.new( "#{myself_name}.tmp2_F." )
-column_has_data_H = {}
+column_with_data_H = {}
 original_file_header_A = []
+tmp1_F.open
 tmp1_F.each_line do | input_column_J |
     if ( $. > @cmdln_option_H[ :r ] ) then 
         SE.puts ""
@@ -328,14 +370,15 @@ tmp1_F.each_line do | input_column_J |
     original_file_header_A.each do | column_header |
         column_value = input_column_H[ column_header ]
         next if ( column_value.nil? ) 
-        column_value.gsub!(/[^[:print:]]/,' ')
+        column_value.gsub!( "\n", '|' )
+        column_value.gsub!( /[^[:print:]]/, ' ' )
         column_value.gsub!( '""', '"' )
-        column_value.strip!
+#       column_value.strip!
         output_column_H[ column_header ] = column_value
        
-        if ( column_value > "" and column_has_data_H.has_no_key?( column_header ) ) then
+        if ( column_value.not_blank? and column_with_data_H.has_no_key?( column_header ) ) then
             stringer = (column_value.include?( '|' ) ) ? '*|*' : '   '
-            column_has_data_H[ column_header ] = "#{stringer} Line=#{$.} '#{column_header}' #{column_value}"
+            column_with_data_H[ column_header ] = "#{stringer} Line=#{$.}: #{column_value}"
         end
     end
     tmp2_F.puts output_column_H.to_json
@@ -343,18 +386,17 @@ end
 tmp1_F.close( true )
 tmp2_F.close
 
-tmp2_F.open
 tmp3_F = Tempfile.new( "#{myself_name}.tmp3_F." )
-
-SE.q {['column_has_data_H']}
+SE.q {['column_with_data_H']}
 used_column_header_A = []
-tmp2_F.each_line do | input_column_J |    # Select the columns wanted based on the --columns option
+tmp2_F.open
+tmp2_F.each_line do | input_column_J |    
     input_column_J.chomp!
     input_column_H = JSON.parse( input_column_J )
     output_column_H={}
     
     input_column_H.keys.each do | column_name |
-        if ( column_has_data_H[ column_name ].nil? ) then
+        if ( column_with_data_H[ column_name ].nil? ) then
             next
         end
         output_column_H[ column_name] = input_column_H[ column_name ]  
@@ -362,41 +404,33 @@ tmp2_F.each_line do | input_column_J |    # Select the columns wanted based on t
 
     if ( $. == 1 ) then
         used_column_header_A = output_column_H.keys
-        if (@cmdln_option_H[ :column_use_H ] == {} ) then
+        if (@cmdln_option_H[ :column_use_H ].empty? ) then
             used_column_header_A.each do | column_name | 
-                @cmdln_option_H[ :column_use_H ][ column_name ] = "" 
+                @cmdln_option_H[ :column_use_H ][ column_name ] = :none_assigned 
             end
         else
-            a1 = column_use_H_F.keys - used_column_header_A           
-            if ( a1 != [] ) then
+            a1 = column_use_H.keys - used_column_header_A           
+            if ( a1.not_empty? ) then
                 SE.puts ""
                 SE.puts ""
                 SE.puts "#{SE.lineno}: Unknown column '#{a1.join(', ')}' in --columns option"
                 SE.puts ""
-                SE.q {[ '@cmdln_option_H[ :column_order_A ]', 'used_column_header_A' ]}
+                SE.q {[ 'column_use_H.keys' ]}
+                SE.q {[ 'used_column_header_A' ]}
                 raise
             end
-            a1 = used_column_header_A - column_use_H_F.keys
-            if ( a1 != [] ) then
+            a1 = used_column_header_A - column_use_H.keys
+            if ( a1.not_empty? ) then
                 SE.puts "The following columns are being skipped:"
                 SE.puts "#{a1.join(', ')}"
             end
-            used_column_header_A = column_use_H_F.keys
+            used_column_header_A = column_use_H.keys
         end
         SE.puts ""
         SE.puts "CSV column headers      : #{original_file_header_A.join( ', ')}"
         SE.puts "Input columns being used: #{used_column_header_A.join( ', ' )}"
-        if ( column_use_H_F.values.all?( &:empty? ) ) then
-            SE.puts ""
-            SE.puts ""
-            SE.puts ""
-            SE.puts "Provide the --columns option to get past this point."
-            SE.puts ""
-            exit
-        end
-#       SE.puts "#{SE.lineno}:   in the following order: #{column_use_H_F.keys.join( ', ' )}"
-        SE.puts "#{SE.lineno}:    for the following use: #{column_use_H_F.values.join( ', ' )}"
-        if ( column_use_H_F.keys.uniq.size == 1 ) then
+        SE.puts "   for the following use: #{column_use_H.values.join( ', ' )}"
+        if ( column_use_H.keys.length > 1 and column_use_H.values.select{ | e | e if ( e != :none_assigned ) }.uniq.size == 1 ) then
             SE.puts ""
             SE.puts ""
             SE.puts ""
@@ -405,42 +439,109 @@ tmp2_F.each_line do | input_column_J |    # Select the columns wanted based on t
             exit
         end
         
-        if ( seriesnote_pos_F( :nil_ok ) and seriesnote_pos_F < series_pos_F ) then
+        if ( seriesnote_pos( :nil_ok ) and seriesnote_pos < series_pos ) then
             SE.puts "#{SE.lineno}: The '#{K.fmtr_inmagic_seriesnote}' column must be after the '#{K.fmtr_inmagic_series}' column"
-            SE.q {[ 'seriesnote_pos_F', 'series_pos_F', 'column_use_H_F ' ]}
+            SE.q {[ 'seriesnote_pos', 'series_pos', 'column_use_H ' ]}
             raise
         end
-        if ( seriesdate_pos_F( :nil_ok ) and seriesdate_pos_F < series_pos_F ) then
+        if ( seriesdate_pos( :nil_ok ) and seriesdate_pos < series_pos ) then
             SE.puts "#{SE.lineno}: The '#{K.fmtr_inmagic_seriesdate}' column must be after the '#{K.fmtr_inmagic_series}' column."
-            SE.q {[ 'seriesdate_pos_F', 'series_pos_F', 'column_use_H_F ' ]}
+            SE.q {[ 'seriesdate_pos', 'series_pos', 'column_use_H ' ]}
             raise
         end
-        if ( seriesdate_pos_F( :nil_ok ) and seriesnote_pos_F( :nil_ok ) and seriesdate_pos_F > seriesnote_pos_F ) then
+        if ( seriesdate_pos( :nil_ok ) and seriesnote_pos( :nil_ok ) and seriesdate_pos > seriesnote_pos ) then
             SE.puts "#{SE.lineno}: The '#{K.fmtr_inmagic_seriesdate}' column must be before the '#{K.fmtr_inmagic_seriesnote}' column,"
             SE.puts "#{SE.lineno}: this is so the dates get put in-front-of the note."
-            SE.q {[ 'seriesdate_pos_F', 'seriesnote_pos_F', 'column_use_H_F ' ]}
+            SE.q {[ 'seriesdate_pos', 'seriesnote_pos', 'column_use_H ' ]}
             raise
         end
         SE.puts ""   
     end
-    
-    a1 = output_column_H.keys.select{ | k | column_name_exists?( k ) and use_for_output?( k )}.map{ | k | output_column_H[ k ] }
-    next if ( a1.all?( &:empty? ) )
     tmp3_F.puts output_column_H.to_json
 end
 tmp2_F.close( true )
-
 tmp3_F.close
+
+# SE.q {[ 'column_use_H' ]}
+
+resource_data_H = {}
 tmp3_F.open
-
-#   Below here, the TEMPFILES only have the "used columns". 
-
-tmp4_F = Tempfile.new( "#{myself_name}.tmp4_F." )
 tmp3_F.each_line do | input_column_J |
     input_column_J.chomp!
     input_column_H = JSON.parse( input_column_J )
+    input_column_H.each_pair do | column_name, column_value |
+        if ( column_value.blank? ) then
+#           SE.puts "#{SE.lineno}: column_name:#{column_name} value blank"
+            next
+        end
+        if ( column_use_H.has_key?( column_name ) and column_use_H[ column_name ] != :none_assigned ) then
+            if ( column_use_H[ column_name ] == K.fmtr_inmagic_seriesdate ) then
+                if ( not ( series_column_name.nil? or input_column_H[ series_column_name ].blank? ) ) then
+                    SE.puts "#{SE.lineno}: NOT ( series_column_name.nil? or input_column_H[ '#{series_column_name}' ].blank? )"
+                    SE.q {[ 'column_name', 'column_value', 'series_column_name' ]}
+                    next
+                end
+            else
+#               SE.puts "#{SE.lineno}: column_use_H[#{column_name}]: NOT #{column_use_H[ column_name ]} == #{K.fmtr_inmagic_seriesdate}"
+                next
+            end
+        end
+        
+        column_value.strip!
+        if ( resource_data_H.has_no_key?( column_name ) ) then
+            resource_data_H[ column_name ] = ''
+        end
+        case column_name.downcase
+        when 'Filing Location'.downcase
+            stringer = (( resource_data_H[ column_name ].blank? ) ? '' : ', ' ) + column_value.sub( /\s*Statewide Museum Collections Center\s*/i, '' )
+            resource_data_H[ column_name ] += stringer.gsub( /\s\s+/, ' ' )
+        else    
+            if ( resource_data_H[ column_name ] != column_value ) then
+                stringer = (( resource_data_H[ column_name ].blank? ) ? '' : ' +++++ ' ) + column_value
+                resource_data_H[ column_name ] += stringer
+            end
+        end
+    end
+end
+tmp3_F.close
+
+output_resource_filename = @cmdln_option_H[ :output_file_prefix ] + ".RESOURCE_DATA.txt"
+SE.puts "Output RESOURCE_DATA file '#{output_resource_filename}'"
+output_resource_F = File::open( output_resource_filename, mode='w' )
+resource_data_H.each_pair do | column_name, column_value |
+    column_value.gsub!( '|', '   ' )
+    h = { column_name => column_value }
+    output_resource_F.puts h.to_json
+end
+output_resource_F.close
+
+if ( column_use_H.values.all?( :none_assigned ) ) then
+    SE.puts ""
+    SE.puts ""
+    SE.puts ""
+    SE.puts "Provide the --columns option to get past this point."
+    SE.puts ""
+    exit
+end
+if ( @cmdln_option_H[ :output_file_prefix ].blank? ) then
+    SE.puts ""
+    SE.puts ""
+    SE.puts ""
+    SE.puts "Provide the --output-file-prefix option to get past this point."
+    SE.puts ""
+    exit
+end
+
+tmp4_F = Tempfile.new( "#{myself_name}.tmp4_F." )
+tmp3_F.open
+tmp3_F.each_line do | input_column_J |
+    input_column_J.chomp!
+    input_column_H = JSON.parse( input_column_J )
+    a1 = input_column_H.keys.select{ | k | column_name_exists?( k ) and used_for_detail?( k )}.map{ | k | input_column_H[ k ] }
+    next if ( a1.all?( &:empty? ) )
+    
     output_column_H = {}
-    column_use_H_F.each_pair do | column_name, column_use |       
+    column_use_H.each_pair do | column_name, column_use |       
         if ( used_column_header_A.index( column_name ).nil? ) then
             SE.puts "#{SE.lineno}: Couldn't find '#{column_name}' in 'used_column_header_A'"
             SE.q {[ 'used_column_header_A' ]}
@@ -449,40 +550,62 @@ tmp3_F.each_line do | input_column_J |
         
         case column_use
         when K.fmtr_inmagic_seriesdate
-            if ( input_column_H[ column_name ].not_empty? ) then
-                output_column_H[ series_column_name_F ] += " #{K.fmtr_inmagic_quote}#{input_column_H[ column_name ]}#{K.fmtr_inmagic_quote}"
+            if ( series_column_name.nil? ) then
+                SE.puts "#{SE.lineno}: Couldn't find the 'series_column_name' for column-use: #{column_use}, for column: #{column_name}"
+                SE.puts "#{SE.lineno}: Note: this is probably the 'extent' column.  If there are NO series records, it's the Resource date"
+                SE.q {[ 'used_column_header_A' ]}
+                raise
+            end
+            if ( input_column_H[ column_name ].not_blank?  ) then
+                output_column_H[ series_column_name ] += " #{input_column_H[ column_name ]}"
             end
 
         when K.fmtr_inmagic_seriesnote
-            if ( input_column_H[ column_name ].not_empty? and split_on_bars?( column_name ) ) then
+            if ( input_column_H[ column_name ].not_blank? ) then
                 note_A = input_column_H[ column_name ].split( '|' ).map( &:to_s ).map( &:strip ) 
                 note_A.each do | note |
-                    output_column_H[ series_column_name_F ] += " #{K.fmtr_inmagic_quote}Note: #{note}#{K.fmtr_inmagic_quote}"
+                    next if ( note.blank? )
+                    note.sub!( /./,&:upcase )
+                    note.sub!( /\.$/, '' )
+                    output_column_H[ series_column_name ] += " Note: #{note}."
                 end
             end
             
         when K.fmtr_inmagic_series
+            input_column_H[ column_name ].sub!( /\A\s*Series\s*/, '' )
             input_column_H[ column_name ].sub!( /\A([0-9])+[.]?\s+/, '' )
             if ( $~.nil? ) then
-                SE.puts "#{SE.lineno}: Used column '#{column_name}' is supposed to be a '#{K.fmtr_inmagic_series}' but there's no series number"
+                SE.puts "#{SE.lineno}: Column '#{column_name}' is supposed to be a '#{K.fmtr_inmagic_series}' but there's no series number"
                 SE.puts "#{SE.lineno}: at the begining of the column."
                 SE.q {[ 'input_column_H' ]}
                 raise
             end
-            output_column_H[ column_name ] = "#{input_column_H[ column_name ]} #{K.fmtr_inmagic_quote}#{K.series} #{$~[ 1 ]}#{K.fmtr_inmagic_quote}"
-            
+            series_num=$~[ 1 ]
+            output_column_H[ column_name ] = ''
+            a1 = input_column_H[ column_name ].split( '|' ).map( &:to_s ).map( &:strip ) 
+            a1.each_with_index do | e, idx |
+                if ( idx == 0 ) then
+                    output_column_H[ column_name ] += "Series #{series_num}: #{e}"
+                end
+                next if ( e.blank? )
+                e.strip!
+                e.sub!( /./,&:upcase )
+                e.sub!( /\.$/, '' )
+                output_column_H[ column_name ] += " Note: #{e}."
+            end
+         
         when K.fmtr_inmagic_detail    
             output_column_H[ column_name ] = input_column_H[ column_name ]
         
         else
             SE.puts "Unknown column_use '#{column_use}'"
-            SE.q {[ column_use_H_F ] }
+            SE.q {[ column_use_H ] }
             raise
         end
     end         
-    if ( output_column_H.keys.maxindex != used_column_header_A.select{ | e | e if (use_for_output?( e ))}.maxindex ) then
-        SE.puts "#{SE.lineno}: output_column_H.keys.maxindex != used_column_header_A.select{ | e | e if (use_for_output?( e ))}.maxindex."
-        SE.q {[ 'output_column_H.keys', 'used_column_header_A.select{ | e | e if (use_for_output?( e ))}' ]}
+    if ( output_column_H.keys.maxindex != used_column_header_A.select{ | e | e if (used_for_detail?( e ))}.maxindex ) then
+        SE.puts "#{SE.lineno}: output_column_H.keys.maxindex != used_column_header_A.select{ | e | e if (used_for_detail?( e ))}.maxindex."
+        SE.q {[ 'output_column_H.keys', 'used_column_header_A.select{ | e | e if (used_for_detail?( e ))}' ]}
         raise
     end
 
@@ -490,29 +613,35 @@ tmp3_F.each_line do | input_column_J |
     tmp4_F.puts output_column_A.to_json
 end
 tmp3_F.close( true )
-
 tmp4_F.close
-tmp4_F.open
 
-@output_record_cnt = 0
+@output_detail_cnt = 0
+@current_instance = ''
+output_detail_filename = @cmdln_option_H[ :output_file_prefix ] + ".DETAIL.txt"
+SE.puts "Output DETAIL file '#{output_detail_filename}'"
+SE.puts ''
+SE.puts ''
+
+@output_detail_F = File::open( output_detail_filename, mode='w' )
+tmp4_F.open
 tmp4_F.each_line do | input_column_J |
     input_column_J.chomp!
-    column_H_A = JSON.parse( input_column_J )
+    @detail_column_H_A = JSON.parse( input_column_J )
     SE.puts "#{SE.lineno}: #{input_column}" if ( $DEBUG )
-
-    put_column( column_H_A )
+    put_column( '' )
 end
 tmp4_F.close( true )
+@output_detail_F.close
 
-SE.puts ""
-SE.puts "Count of 4-digit-year date patterns found:"
-SE.q {[ '@find_dates_with_4digit_years_O.pattern_cnt_H' ]}
+# SE.puts ""
+# SE.puts "Count of 4-digit-year date patterns found:"
+# SE.q {[ '@find_dates_with_4digit_years_O.pattern_cnt_H' ]}
 
-if ( @cmdln_option_H[ :default_century ].empty? ) then
-    SE.puts ""
-    SE.puts "Count of 2-digit-year date patterns found, but not converted to YYYY-mm-dd:"
-    SE.q {[ '@find_dates_with_2digit_years_O.pattern_cnt_H' ]}
-end
+# if ( @cmdln_option_H[ :default_century ].blank? ) then
+    # SE.puts ""
+    # SE.puts "Count of 2-digit-year date patterns found, but not converted to YYYY-mm-dd:"
+    # SE.q {[ '@find_dates_with_2digit_years_O.pattern_cnt_H' ]}
+# end
 
 
 

@@ -202,6 +202,7 @@ class TC_Query
     def initialize( p1_rep_O )
         @rep_O = p1_rep_O
         @uri = "#{p1_rep_O.uri}/top_containers"    
+        @page_cnt = 0
     end
     attr_reader :rep_O, :uri
 
@@ -212,6 +213,7 @@ class TC_Query
     
     def get_page_H( page, page_size )
         http_response_body = @rep_O.aspace_O.http_calls_O.get( @uri, { 'page' => page, 'page_size' => page_size } )
+        @page_cnt += 1
         return http_response_body
     end
    
@@ -243,9 +245,9 @@ class TC_Query
     end
     
     def get_all_TC_S
-        all_TC_C = Struct.new( :record_H_A,
+        all_TC_C = Struct.new( :record_H_A, :page_cnt, 
         )   do
-                def for_R( p1_O )
+                def for_res__record_H_A( p1_O )
                     case true        
                     when p1_O.is_a?( Resource_Record_Buf ) then
                         res_O = p1_O.res_O
@@ -274,7 +276,7 @@ class TC_Query
                     return res_tc_record_H_A
                 end
                 
-                def unused
+                def for_unused__record_H_A
                     unused_tc_record_H_A = [ ]
                     record_H_A.each do | record_H |
                         if ( not ( record_H.key?( K.collection ) && record_H[ K.collection ].count > 0 )) then     
@@ -284,10 +286,13 @@ class TC_Query
                     return unused_tc_record_H_A
                 end
             end
-        record_H_A = self.get_record_H_A
-        all_TC_S = all_TC_C.new( record_H_A )
+        record_H_A = self.get_record_H_A   
+        all_TC_S = all_TC_C.new( record_H_A, @page_cnt )
+#       SE.pom( all_TC_S )
         return all_TC_S
     end
+    #attr_reader :record_H_A   # Don't know why, but a reader and writer is included for 'record_H_A' 
+                               # See 'SE.pom( all_TC_S )' output.  It's something to do with the Structure.
 
     
 end

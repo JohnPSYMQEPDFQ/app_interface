@@ -1,9 +1,6 @@
 class Array
 
-    def not_empty?
-        return ! self.empty?
-    end
-    
+  
 #
 #   A zero-relative length method
 #

@@ -17,7 +17,6 @@ BEGIN {}
 END {}
 
 myself_name = File.basename( $0 )
-api_uri_base = "http://localhost:8089"
 
 cmdln_option = { :rep_num => 2  ,
                  :res_num => nil  ,
@@ -38,14 +37,8 @@ OptionParser.new do |option|
         exit
     end
 end.parse!  # Bang because ARGV is altered
-#p cmdln_option
-#p ARGV
 
 aspace_O = ASpace.new
-aspace_O.api_uri_base = api_uri_base
-aspace_O.login( "admin", "admin" )
-#SE.pom(aspace_O)
-#SE.pov(aspace_O)
  
 record_filter_B = cmdln_option[ :filter ] 
 if ( cmdln_option[ :rep_num ] ) then

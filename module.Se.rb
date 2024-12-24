@@ -43,10 +43,10 @@ module SE
                 value = eval(expression.to_s, block.binding)
                 "#{expression} = #{value.ai( ( $stderr.isatty ) ? {} : { :plain => true } )}"
             end.join(', ')
-            $stderr.puts SE.lineno(1) + ":" + stringer
+            $stderr.puts SE.lineno(1) + ": " + stringer
         else
             stuff.each do
-                |thing| SE.puts SE.lineno(3) + ":" + thing.ai( ( $stderr.isatty ) ? {} : { :plain => true } )
+                |thing| SE.puts SE.lineno(3) + ": " + thing.ai( ( $stderr.isatty ) ? {} : { :plain => true } )
             end
         end
     end
@@ -102,26 +102,27 @@ module SE
         end
     end
     
+    class Loop_detector
+        def initialize( loop_limit = 30 )
+            @loop_cnt = 0
+            @loop_limit = loop_limit
+        end
+        
+        def loop
+            if ( @loop_cnt > @loop_limit ) then
+                raise "LOOP DETECTOR: Abort ( loops=#{@loop_cnt}, limit=#{@loop_limit} )"
+            end
+            if ( @loop_cnt >= @loop_limit ) then
+                SE.puts "#{SE.lineno}: LOOP DETECTOR: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                $DEBUG = true
+                SE.ap_stack
+            end
+            @loop_cnt += 1
+        end
+    end
 end
 
-class Loop_detector
-    def initialize( loop_limit = 30 )
-        @loop_cnt = 0
-        @loop_limit = loop_limit
-    end
-    
-    def loop
-        if ( @loop_cnt > @loop_limit ) then
-            raise "LOOP DETECTOR: Abort ( loops=#{@loop_cnt}, limit=#{@loop_limit} )"
-        end
-        if ( @loop_cnt >= @loop_limit ) then
-            SE.puts "#{SE.lineno}: LOOP DETECTOR: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            $DEBUG = true
-            SE.ap_stack
-        end
-        @loop_cnt += 1
-    end
-end
+
 
         
     

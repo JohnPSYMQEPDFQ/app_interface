@@ -17,10 +17,6 @@ Usage: format_for_add_object.rb --help
 require 'json'
 require 'optparse'
 
-require 'class.Array.extend.rb'
-require 'class.String.extend.rb'
-require 'module.SE.rb'
-
 require 'class.ArchivesSpace.rb'
 require 'class.formatter.Record_Grouping_Indent.rb'
 
@@ -63,32 +59,13 @@ def put_record( stack_record_H )
 
     output_record_H={}
     output_record_H[ K.fmtr_record ] = {}
-    title = ""
-    special_processing_H = stack_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__special_processing_idx ]
-    if ( special_processing_H.has_key?( K.level ) ) then
-        case special_processing_H[ K.level ][ 0 ]
-        when K.series 
-            output_record_H[ K.fmtr_record ][ K.level ] = stack_record_H[ K.series ]
-            title = "Series #{special_processing_H[ K.level ][ 1 ]}: "
-            output_record_H[ K.fmtr_record ][ K.level ] = K.series
-        when K.subseries    
-            output_record_H[ K.fmtr_record ][ K.level ] = stack_record_H[ K.series ]
-            title = "Subseries #{special_processing_H[ K.level ][ 1 ]}: "
-            output_record_H[ K.fmtr_record ][ K.level ] = K.subseries
-        else
-            SE.puts "#{SE.lineno}: I shouldn't be here"
-            SE.q {[ 'stack_record_H', 'special_processing_H' ]}
-            raise 
-        end
-    else
-        output_record_H[ K.fmtr_record ][ K.level ] = K.file
-    end
-    title += stack_record_H[ K.fmtr_record_indent_keys ].join( ". " ) +
-             ". " +
-             stack_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__text_idx ]
+    output_record_H[ K.fmtr_record ][ K.level ] = stack_record_H[ K.level ]
+    
+    a1 = stack_record_H[ K.fmtr_record_indent_keys ].push( stack_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__text_idx ] )
+    title = a1.join( ". " )
     output_record_H[ K.fmtr_record ][ K.title ] = title.strip.gsub( /[\.\,]$/,'' )
-    if ( output_record_H[ K.fmtr_record ][ K.title ].empty? )
-        SE.puts "output_record_H[ K.fmtr_record ][ K.title ] is empty"
+    if ( output_record_H[ K.fmtr_record ][ K.title ].blank? )
+        SE.puts "output_record_H[ K.fmtr_record ][ K.title ] is blank"
         SE.q {[ 'stack_record_H', 'output_record_H' ]}
         raise
     end
@@ -103,18 +80,14 @@ def put_record( stack_record_H )
                 inclusive_dates_O.record_H[ K.label ] = K.creation 
                 inclusive_dates_O.record_H[ K.begin ] = date_A[ 0 ]
                 inclusive_dates_O.record_H[ K.end ] = date_A[ 0 ]
-                inclusive_dates_O.record_H[ K.expression] = date_A[ 0 ]
+                inclusive_dates_O.record_H[ K.expression] = @aspace_O.format_date_expression( date_A[ 0 ] )
                 output_record_H[ K.fmtr_record ][ K.dates ].push( inclusive_dates_O.record_H )
             when 1
                 inclusive_dates_O = Record_Format.new( :inclusive_dates )
                 inclusive_dates_O.record_H[ K.label ] = K.creation 
                 inclusive_dates_O.record_H[ K.begin ] = date_A[ 0 ]
-                inclusive_dates_O.record_H[ K.end ] = date_A[ 1 ]
-                if ( date_A[ 0 ] == date_A[ 1 ] ) then
-                    inclusive_dates_O.record_H[ K.expression] =    date_A[ 0 ]
-                else
-                    inclusive_dates_O.record_H[ K.expression] = "#{date_A[ 0 ]} - #{date_A[ 1 ]}"
-                end
+                inclusive_dates_O.record_H[ K.end ] = date_A[ 1 ]             
+                inclusive_dates_O.record_H[ K.expression] = @aspace_O.format_date_expression( date_A[ 0 ], date_A[ 1 ] )
                 output_record_H[ K.fmtr_record ][ K.dates ].push( inclusive_dates_O.record_H )
             else
                 SE.puts "#{SE.lineno}: Didn't expect date_A.maxindex to be > 1, the value is: #{date_A.maxindex}"
@@ -131,11 +104,13 @@ def put_record( stack_record_H )
             note_multipart_O = Record_Format.new( :note_multipart )
             note_multipart_O.record_H = { K.type => K.scopecontent }
             note_multipart_O.record_H = { K.subnotes => [ ] } 
-            note_A.each do | note |
-                note_text_O = Record_Format.new( :note_text )
-                note_text_O.record_H = { K.content => "#{note}" }
-                note_multipart_O.record_H[ K.subnotes ].push( note_text_O.record_H )
-            end
+
+            note_text_O = Record_Format.new( :note_text )
+            stringer = note_A.join( "\n\n" )
+            note_text_O.record_H = { K.content => "#{stringer}" }
+            
+            note_multipart_O.record_H[ K.subnotes ].push( note_text_O.record_H )
+            
             output_record_H[ K.fmtr_record ][ K.notes ].push( note_multipart_O.record_H )
         else
             note_A.each do | note |
@@ -178,7 +153,7 @@ myself_name = File.basename( $0 )
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [options] [file]"
 
-    option.on( "--min-group-size n", OptionParser::DecimalInteger, "Min records in a Series/Subseries/Record-group (default = 10)" ) do |opt_arg|
+    option.on( "--min-group-size n", OptionParser::DecimalInteger, "Min records in a Series/Subseries/Record-group (default = 4)" ) do |opt_arg|
         @cmdln_option_H[ :min_group_size ] = opt_arg
     end
     option.on( "--max-series n", OptionParser::DecimalInteger, "Max number of Series/Subseries (default = 0)" ) do |opt_arg|
@@ -208,8 +183,13 @@ end
 if ( @cmdln_option_H[ :parent_title ] ) then
     put_new_parent( @cmdln_option_H[ :parent_title ] )
 end
+
+@aspace_O = ASpace.new
+@aspace_O.date_expression_format    = 'mmmddyyyy'
+@aspace_O.date_expression_separator = ' - '
+
 Record_Grouping_Indent.new_with_flush( method( :put_record ), method( :put_indent ), @cmdln_option_H[ :min_group_size ] ) do |rgi_O|
-        
+#   $DEBUG = true   
     ARGF.each_line do | input_record_J |
         input_record_H = JSON.parse( input_record_J )
         if ( @cmdln_option_H[ :r ] and $. > @cmdln_option_H[ :r ] ) then 

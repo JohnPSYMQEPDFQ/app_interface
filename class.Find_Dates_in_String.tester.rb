@@ -17,10 +17,21 @@ myself_name = File.basename( $0 )
 
 cmdln_option_H = { :find_dates_option_H => { },
                  }
-
+formatter_morality_option = '{ :morality_replace_option => { :bad => :keep, :good => :remove_from_end } }'
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [options]"
-    option.on( "-f", "--find_dates_option_H x", "Option Hash passed to the Find_Dates_in_String class." ) do |opt_arg|
+    option.on( "-f", "--formatter", "Short for --find_dates_option_H '${formatter_morality_option}' " ) do 
+        begin
+            cmdln_option_H[ :find_dates_option_H ] = eval( formatter_morality_option ).merge
+        rescue Exception => msg
+            SE.puts ""
+            SE.puts msg
+            SE.ap "Find_Dates_in_String default options:"
+            SE.ap Find_Dates_in_String.new( ).option_H
+            exit
+        end
+    end
+    option.on( "--find_dates_option_H x", "Option Hash passed to the Find_Dates_in_String class." ) do |opt_arg|
         begin
             cmdln_option_H[ :find_dates_option_H ] = eval( opt_arg ).merge
         rescue Exception => msg
@@ -56,7 +67,7 @@ else
     SE.puts "Here is the default test..."
     a1 = []
     a1 << "fmt002_a 1980 through 1990"
-    a1 << "fmt003_a Feb 9, 1981 through Feb 10, 1981"
+    a1 << "fmt003_a Feb 9, 1981 to Feb 10, 1981"
     a1 << "fmt005_a Mar 1982 - April-1982"
     a1 << "fmt005_c March 82 through Apr-82"
     a1 << "fmt006_a 4-1982 - 05-1982"
@@ -64,7 +75,7 @@ else
     a1 << "fmt007_c 83-Apr - 83 May"
     a1 << "fmt008_a 1983-04 - 1983-5"
     a1 << "fmt009_a 9/May/1984 - 10-May-1984"
-    a1 << "fmt009_b 1984/May/9 through 1984-June-10"
+    a1 << "fmt009_b 1984/May/9 to 1984-June-10"
     a1 << "fmt009_c 11/May/84 through 8-Jun-84"
     a1 << "fmt011_a Jun 9 - 10, 1985"
     a1 << "fmt011_b Jun 9 - 10, 85"
@@ -77,6 +88,21 @@ else
     input_string += a1.join( " " ) 
     input_string += a1.map{ | e | e.sub(/^fmt\d\d\d_./, '') }.shuffle.join( " and " )
 end
+
+expected_cnt_H = {                      #  As-of 11/19/2024
+                  "fmt002__yyyy" => 4,
+           "fmt003__MMM_dd_yyyy" => 4,
+              "fmt005__MMM_yyyy" => 8,
+               "fmt006__mm_yyyy" => 4,
+              "fmt007__yyyy_MMM" => 8,
+               "fmt008__yyyy_mm" => 4,
+             "fmt009__nn_MMM_nn" => 12,
+        "fmt011__MMM_dd_dd_yyyy" => 4,
+    "fmt012__MMM_dd_MMM_dd_yyyy" => 4,
+          "fmt013__MMM_MMM_yyyy" => 4,
+              "fmt014__nn_nn_nn" => 4,
+    }
+
 SE.puts "input_string  = #{input_string.ai}"
 
 find_dates_O = Find_Dates_in_String.new( {  :morality_replace_option => { :good  => :remove },
@@ -102,14 +128,33 @@ SE.puts "input_string  = #{input_string.ai}"
 SE.puts "----------------------------------"
 SE.puts "output_string = #{output_string.ai}"
 SE.puts "----------------------------------"
-SE.q { 'find_dates_O.pattern_cnt_H' }
+
+find_dates_O.pattern_cnt_H.each_pair do | k, v |
+    print "%30s" % k + " => #{v}"
+    if ( expected_cnt_H.has_key?( k ) ) then
+        if ( ARGV.empty? and v != expected_cnt_H[ k ] ) then
+            puts " expected #{expected_cnt_H[ k ]}"
+        else
+            puts ""
+        end
+    else
+        puts " unexpected key" + k
+    end
+end   
 
 if ( cmdln_option_H[ :find_dates_option_H ].nil? or cmdln_option_H[ :find_dates_option_H ][:default_century].nil? ) then
     SE.puts "Finding 4 digit dates only !!!!!!!!"
     SE.puts "Set --find_date_option_H '{ :default_century => \"20\" }' to include 2 digit dates."
 else
+    SE.puts ""
     SE.puts "Finding 2 and 4 digit dates."
 end
+if ( ARGV.not_empty? ) then
+    SE.puts "Set -f to mimic the formatter program's option of:"
+    SE.puts "#{formatter_morality_option}"
+end
+
+
 
 
 

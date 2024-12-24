@@ -18,7 +18,6 @@ BEGIN {}
 END {}
 
 myself_name = File.basename( $0 )
-api_uri_base = "http://localhost:8089"
 
 cmdln_option = { :rep_num => 2  ,
                  :res_num => nil ,
@@ -56,9 +55,9 @@ else
 end
 
 aspace_O = ASpace.new
-aspace_O.allow_updates = cmdln_option[ :update ]
-aspace_O.api_uri_base  = api_uri_base
-aspace_O.login( "admin", "admin" )
+aspace_O.date_expression_format    = 'mmmddyyyy'
+aspace_O.date_expression_separator = ' - '
+aspace_O.allow_updates             = cmdln_option[ :update ]
 
 rep_O = Repository.new( aspace_O, rep_num )
 res_O = Resource.new( rep_O, res_num )
@@ -76,6 +75,7 @@ Resource_Query.new( res_O ).record_H_A.each do | record_H |
     index_image += "#{record_H[ K.title ]} "
 
     ao_buf_O = Archival_Object.new(res_O, record_H[ K.uri ] ).new_buffer.read( )
+#   SE.puts "URI=#{record_H[ K.uri ]}" 
 
     before_image = ""
     before_image += "#{record_H[ K.uri ].sub( /.*\//, "")} "
@@ -100,17 +100,11 @@ Resource_Query.new( res_O ).record_H_A.each do | record_H |
             ) then
             ao_buf_O.record_H[ K.dates ][ idx][ K.date_type ]  = K.inclusive
             ao_buf_O.record_H[ K.dates ][ idx][ K.end ] = ao_buf_O.record_H[ K.dates ][ idx][ K.begin ]
-            ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] = ao_buf_O.record_H[ K.dates ][ idx][ K.begin ]
+            ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] = aspace_O.format_date_expression( ao_buf_O.record_H[ K.dates ][ idx][ K.begin ] )
             changed = true
             change_type[ 1 ] = "1"
-        elsif ( ao_buf_O.record_H[ K.dates ][ idx].key?( K.begin ) and
-                ao_buf_O.record_H[ K.dates ][ idx].key?( K.end )
-            ) then
-            if ( ao_buf_O.record_H[ K.dates ][ idx][ K.begin ] == ao_buf_O.record_H[ K.dates ][ idx][ K.end ] ) then
-                stringer = "#{ao_buf_O.record_H[ K.dates ][ idx][ K.begin ]}"
-            else
-                stringer = "#{ao_buf_O.record_H[ K.dates ][ idx][ K.begin ]} - #{ao_buf_O.record_H[ K.dates ][ idx][ K.end ]}"
-            end
+        elsif ( ao_buf_O.record_H[ K.dates ][ idx].key?( K.begin ) and ao_buf_O.record_H[ K.dates ][ idx].key?( K.end ) ) then
+            stringer = aspace_O.format_date_expression( ao_buf_O.record_H[ K.dates ][ idx][ K.begin ], ao_buf_O.record_H[ K.dates ][ idx][ K.end ] )
             if  (ao_buf_O.record_H[ K.dates ][ idx].key?( K.expression )) then
                 if  (ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] != stringer) then
                     ao_buf_O.record_H[ K.dates ][ idx][ K.expression ] = stringer

@@ -21,7 +21,6 @@ END {}
 
 binding.pry if ( respond_to? :pry )
 myself_name = File.basename( $0 )
-api_uri_base = "http://localhost:8089"
 
 cmdln_option = { "repository-num" => 2  ,
                }
@@ -42,9 +41,6 @@ if ( ARGV.length < 2 ) then
 end
 
 aspace_O = ASpace.new
-aspace_O.api_uri_base = api_uri_base
-aspace_O.login( "admin", "admin" )
-
 http_O = Http_Calls.new( aspace_O ) 
 method = ARGV[ 0 ] + ""
 if ( not http_O.respond_to?( method )) then

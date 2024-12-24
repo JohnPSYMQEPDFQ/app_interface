@@ -56,12 +56,13 @@ class Record_Grouping_Indent
 
     def flush
         @record_stack_size_0R = 0
-        ld = Loop_detector.new
+        ld = SE::Loop_detector.new
         loop do
-            break if ( @first_record_indent_keys_A.maxindex < 0 )
+            break if ( @record_H__stack_A.maxindex < 0 )  
             ld.loop
             self.add_record( {} )
         end
+        
         if ( @indent_key_stack_A.maxindex >= 1 ) then
             SE.puts "Entries left in @indent_key_stack_A at end: #{@indent_key_stack_A[1 .. -1].column( 0 ).join(',')}"
             Se.q {[ '@record_H__stack_A' ]}
@@ -80,16 +81,6 @@ class Record_Grouping_Indent
 #       SE.pp_stack
     end
 
-    def special_processing_H( record_H )
-        sp_H = record_H[ K.fmtr_record_values ][ K.fmtr_record_values__special_processing_idx ]
-        if ( sp_H.nil? ) then
-            SE.puts "special_processing_H is nil"
-            SE.q {[ 'K.fmtr_record_values', 'K.fmtr_record_values__special_processing_idx', 'record_H' ]}
-            raise 
-        end
-        return sp_H
-    end
-        
     def add_1_to_total_rec_cnt
     
     #       Useful to turn debug on and off at a specific record range.
@@ -101,19 +92,25 @@ class Record_Grouping_Indent
     end
         
     def forced_indent_left( record_H )
-        return if ( special_processing_H( record_H ).has_no_key?( K.fmtr_indent ) ) 
-        return if ( not ( special_processing_H( record_H )[ K.fmtr_indent ] == K.fmtr_left ) )
-        output_record_H = {}
-        output_record_H[ K.fmtr_indent ] = [ K.fmtr_left, '' ]
-        puts output_record_H.to_json 
-        SE.puts "#{SE.lineno}: FORCED INDENT LEFT ****** #{record_H}"   if ( $DEBUG )
-        @forced_indent_left_rec_cnt += 1
-        add_1_to_total_rec_cnt
-        
+        return if ( record_H.has_no_key?( K.fmtr_forced_indent ) ) 
+        return if ( not ( record_H[ K.fmtr_forced_indent ].first == K.fmtr_left ) )
+        record_H[ K.fmtr_forced_indent ].each do | e |
+            if ( e != K.fmtr_left ) then
+                SE.puts "#{SE.lineno}: Was expecting only K.fmtr_left in array."
+                SE.q { [ 'record_H' ] }
+                raise
+            end
+            output_record_H = {}
+            output_record_H[ K.fmtr_indent ] = [ K.fmtr_left, '' ]
+            puts output_record_H.to_json 
+            SE.puts "#{SE.lineno}: FORCED INDENT LEFT ****** #{record_H}"   if ( $DEBUG )
+            @forced_indent_left_rec_cnt += 1
+            add_1_to_total_rec_cnt
+        end        
     end
     
     def calculated_indent_left( call_type )
-        ld = Loop_detector.new
+        ld = SE::Loop_detector.new
         SE.q {[ '@record_H__stack_A.maxindex' ]}  if ( $DEBUG )
         SE.q {[ '@indent_key_stack_A.maxindex','@indent_key_stack_A' ]}  if ( $DEBUG )
         indent_key_I = @indent_key_stack_A.maxindex; loop do
@@ -141,19 +138,26 @@ class Record_Grouping_Indent
     end
     
     def forced_indent_right( record_H )
-        return if ( special_processing_H( record_H ).has_no_key?( K.fmtr_indent ) )
-        return if ( not ( special_processing_H( record_H )[ K.fmtr_indent ] == K.fmtr_right ) )
-        output_record_H = {}
-        output_record_H[ K.fmtr_indent ] = [ K.fmtr_right, '' ]
-        puts output_record_H.to_json
-        SE.puts "#{SE.lineno}: FORCED INDENT RIGHT ****** #{record_H}"   if ( $DEBUG )
-        @forced_indent_right_rec_cnt += 1
-        add_1_to_total_rec_cnt
+        return if ( record_H.has_no_key?( K.fmtr_forced_indent ) )
+        return if ( not ( record_H[ K.fmtr_forced_indent ].first == K.fmtr_right ) )
+        record_H[ K.fmtr_forced_indent ].each do | e |
+            if ( e != K.fmtr_right ) then
+                SE.puts "#{SE.lineno}: Was expecting only K.fmtr_right in array."
+                SE.q { [ 'record_H' ] }
+                raise
+            end
+            output_record_H = {}
+            output_record_H[ K.fmtr_indent ] = [ K.fmtr_right, '' ]
+            puts output_record_H.to_json
+            SE.puts "#{SE.lineno}: FORCED INDENT RIGHT ****** #{record_H}"   if ( $DEBUG )
+            @forced_indent_right_rec_cnt += 1
+            add_1_to_total_rec_cnt
+        end
     end
     
     def calculated_indent_right
         SE.q {[ '@indent_key_stack_A' ]}  if ( $DEBUG )
-        ld = Loop_detector.new
+        ld = SE::Loop_detector.new
         indent_key_I = -1; loop do 
             ld.loop
             indent_key_I += 1
@@ -182,24 +186,24 @@ class Record_Grouping_Indent
             
             SE.q {[ 'indent_key_I', '@indent_key_stack_A' ]}  if ( $DEBUG )
             @indent_key_stack_A[ indent_key_I - 1 ][ 1 ] += 1
-            idx = -1; group_numbers_A = [ ]; loop do
+            idx = -1; group_number_A = [ ]; loop do
                 idx += 1
                 break if ( idx >= indent_key_I or idx > @indent_key_stack_A.maxindex )
-                group_numbers_A << @indent_key_stack_A[ idx ][ 1 ]   # Group numbers: n.n.n.etc...
+                group_number_A << @indent_key_stack_A[ idx ][ 1 ]   # Group numbers: n.n.n.etc...
             end 
             
-            idx = 0; group_text_A = [ ]; loop do
+            idx = 0; group_title_A = [ ]; loop do
                 idx += 1
                 break if ( idx > indent_key_I or idx > @indent_key_stack_A.maxindex )
-                group_text_A << @indent_key_stack_A[ idx ][ 0 ]
+                group_title_A << @indent_key_stack_A[ idx ][ 0 ]
             end
 
-            @indent_print_method.call( group_numbers_A, group_text_A )
+            @indent_print_method.call( group_number_A, group_title_A )
             @group_rec_cnt += 1
             add_1_to_total_rec_cnt
 
             output_record_H={}
-            output_record_H[ K.fmtr_indent ] = [ K.fmtr_right, "GROUPING #{group_numbers_A.join( "." )}: #{group_text_A.join( ". " )}, indent_key_I=#{indent_key_I}" ]
+            output_record_H[ K.fmtr_indent ] = [ K.fmtr_right, "GROUPING #{group_number_A.join( "." )}: #{group_title_A.join( ". " )}, indent_key_I=#{indent_key_I}" ]
             puts output_record_H.to_json
             SE.puts "#{SE.lineno}: CALCULATED INDENT RIGHT #{output_record_H[ K.fmtr_indent ]} *****************"  if ( $DEBUG )
             @calculated_indent_right_rec_cnt += 1
@@ -226,7 +230,7 @@ class Record_Grouping_Indent
         SE.puts "#{SE.lineno}: ORIGINAL RECORD NUMBER: #{first_record_H[ K.fmtr_record_num ]}"  if ( $DEBUG )
         SE.q {[ '@first_record_indent_keys_A' ]}  if ( $DEBUG )
 
-        ld = Loop_detector.new
+        ld = SE::Loop_detector.new
         @highest_matched_indent_key_idx_A = [ ] 
         @record_H__stack_A.each_with_index do |other_record_H, record_stack_I|
             ld.loop
@@ -245,8 +249,6 @@ class Record_Grouping_Indent
         end
         
         calculated_indent_left( :usual_call_before_printing_detail_line )
-        
-        forced_indent_right( first_record_H )
 
         if ( p1_new_record_H.not_empty? and @highest_matched_indent_key_idx_A.not_empty? ) then
             matched_indent_key_indexes_are_in_desc_order = ( @highest_matched_indent_key_idx_A.each_cons( 2 ).all?{|left, right| left >= right} )
@@ -264,8 +266,12 @@ class Record_Grouping_Indent
         if ( @record_H__stack_A.maxindex < 0 ) then
             calculated_indent_left( :special_last_record_call)
         end
-        
+
         forced_indent_left( first_record_H )
+                               
+        forced_indent_right( first_record_H )
+
+
     end
 end
 

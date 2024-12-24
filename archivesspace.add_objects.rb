@@ -116,13 +116,12 @@ END {}
 
 binding.pry if ( respond_to? :pry )
 myself_name = File.basename( $0 )
-api_uri_base = "http://localhost:8089"
 
 cmdln_option = { :rep_num => 2  ,
                  :res_num => nil  ,
                  :ao_num => nil  ,
                  :initial_parent_title => nil ,
-                 :delete_TC_only => false ,
+                 :reuse_TCs => false ,
                  :update => false ,
                  :last_record_num => nil ,
                  }
@@ -140,8 +139,8 @@ OptionParser.new do |option|
     option.on( "--initial-parent-title x", "Initial parent AO Title  ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
         cmdln_option[ :initial_parent_title ] = opt_arg
     end
-    option.on( "--delete-tc-only", "Delete TC records, then stop" ) do |opt_arg|
-        cmdln_option[ :delete_TC_only ] = true
+    option.on( "--reuse-tcs", "Reuse TC records." ) do |opt_arg|
+        cmdln_option[ :reuse_TCs ] = true
     end
     option.on( "--update", "Do updates" ) do |opt_arg|
         cmdln_option[ :update ] = true
@@ -154,8 +153,12 @@ OptionParser.new do |option|
         exit
     end
 end.parse!  # Bang because ARGV is altered
-#p cmdln_option
-#p ARGV
+if ( ARGV.maxindex < 0 ) then
+    SE.puts "No input file provided."
+    exit
+end
+# SE.q {[ 'cmdln_option' ]}
+
 if ( ! cmdln_option[ :rep_num ] ) then
     SE.puts "The --rep-num option is required."
     raise
@@ -167,8 +170,6 @@ end
 
 aspace_O = ASpace.new
 aspace_O.allow_updates=cmdln_option[ :update ] 
-aspace_O.api_uri_base = api_uri_base
-aspace_O.login( "admin", "admin" )
 #SE.pom(aspace_O)
 #SE.pov(aspace_O)
 rep_O = Repository.new( aspace_O, cmdln_option[ :rep_num ] )
@@ -198,38 +199,25 @@ else
     end
 end
 
-SE.puts "Finding Top_Containers (which takes some time) ..."
-time_begin = Time.now
-all_TC_S = TC_Query.new( rep_O ).get_all_TC_S
-elapsed_seconds = Time.now - time_begin
-SE.puts "Elapsed seconds = #{elapsed_seconds}"
-
 tc_uri_H__by_type_and_indicator = {}
-all_TC_S.for_R( res_O ).each do | record_H |
-    if ( record_H.key?( K.type ) and record_H.key?( K.indicator )) then
-        stringer=record_H[ K.type ] + record_H[ K.indicator ]
-        SE.puts "Reusing TC: #{record_H[ K.uri ].sub( /^.*\//, '' )}, type=#{record_H[ K.type ]}, indicator='#{record_H[ K.indicator ]}'"
-        if ( tc_uri_H__by_type_and_indicator.key?( stringer ) ) then
-            SE.puts "#{SE.lineno}: Duplicate record_H 'type+indicator' #{stringer}, K.uri=#{record_H[ K.uri ]}"
-            next
+if ( cmdln_option[ :reuse_TCs ] ) then
+    SE.puts "Finding Top_Containers (which takes some time) ..."
+    time_begin = Time.now
+    all_TC_S = TC_Query.new( rep_O ).get_all_TC_S
+    elapsed_seconds = Time.now - time_begin
+    SE.puts "Elapsed seconds = #{elapsed_seconds}"
+    all_TC_S.for_res__record_H_A( res_O ).each do | record_H |
+        if ( record_H.key?( K.type ) and record_H.key?( K.indicator )) then
+            stringer=record_H[ K.type ] + record_H[ K.indicator ]
+            SE.puts "Reusing TC: #{record_H[ K.uri ].sub( /^.*\//, '' )}, type=#{record_H[ K.type ]}, indicator='#{record_H[ K.indicator ]}'"
+            if ( tc_uri_H__by_type_and_indicator.key?( stringer ) ) then
+                SE.puts "#{SE.lineno}: Duplicate record_H 'type+indicator' #{stringer}, K.uri=#{record_H[ K.uri ]}"
+                next
+            end
+            tc_uri_H__by_type_and_indicator[ stringer ] = record_H[ K.uri ]
         end
-        tc_uri_H__by_type_and_indicator[ stringer ] = record_H[ K.uri ]
     end
 end
-all_TC_S.unused.each do | record_H |
-    SE.puts "#{SE.lineno}: Delete top_container: #{record_H[ K.uri ]}"
-    Top_Container.new( res_O, record_H[ K.uri ] ).new_buffer.delete 
-end
-
-if ( cmdln_option[ :delete_TC_only ] ) then
-    exit
-end
-if ( ARGV.maxindex < 0 ) then
-    SE.puts "No input file provided."
-    exit
-end
-
-#SE.pp "tc_uri_H__by_type_and_indicator:", tc_uri_H__by_type_and_indicator
 
 net_indent_cnt = 0
 record_level_cnt = Hash.new( 0 )  # h.default works too...

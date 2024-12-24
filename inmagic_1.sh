@@ -83,36 +83,38 @@ function trap_0 {
 } 1>&2
 trap 'trap_0' 0
 
-if [[ -z "${run_json_script}" && -e "${filename_prefix}.json.txt" ]] 
-then
-    echo ""
-    echo "The '${filename_prefix}.json.txt' file exists, skipping the 'csv-to-json' step."
-    ls -la "${filename_prefix}.json.txt"
-    echo ""
-    echo ""
-else
-    if grep -i "${new_delimiter}" "${filename}" 
+(
+    if [[ -z "${run_json_script}" && -e "${filename_prefix}.json.txt" ]] 
     then
-        echo_2 "Output delimiter '${new_delimiter}' present in '${filename}' file, aborting..."
-        exit 4
-    fi
-   
-    (   echo "\$csv = import-csv -path '${filename}'"
-        if [[ -n "${series_name}" ]]
+        echo ""
+        echo "The '${filename_prefix}.json.txt' file exists, skipping the 'csv-to-json' step."
+        ls -la "${filename_prefix}.json.txt"
+        echo ""
+        echo ""
+    else
+        if grep -i "${new_delimiter}" "${filename}" 
         then
-            echo "\$csv = \$csv | sort '${series_name}'"
+            echo_2 "Output delimiter '${new_delimiter}' present in '${filename}' file, aborting..."
+            exit 4
         fi
-        echo "\$csv | convertto-json -compress | out-file '${filename_prefix}.json.compress.txt'"
-        echo "\$csv | convertto-json           | out-file '${filename_prefix}.json.txt'"
-    ) | do_pwsh -x 2>> "${filename_prefix}.err" 
-    dos2unix "${filename_prefix}.json.compress.txt" 
-    [[ $? -gt 0 ]] && exit 5
-fi
+       
+        (   echo "\$csv = import-csv -path '${filename}'"
+            if [[ -n "${series_name}" ]]
+            then
+                echo "\$csv = \$csv | sort '${series_name}'"
+            fi
+            echo "\$csv | convertto-json -compress | out-file '${filename_prefix}.json.compress.txt'"
+            echo "\$csv | convertto-json           | out-file '${filename_prefix}.json.txt'"
+        ) | do_pwsh -x  
+        dos2unix "${filename_prefix}.json.compress.txt" 
+        [[ $? -gt 0 ]] && exit 5
+    fi
 
-(   set -x
-    eval run_ruby.sh formatter.inmagic.to.dictation_1.rb ${sort_detail} ${columns:+--columns }${columns} "${filename_prefix}.json.compress.txt" \
-                     > "${filename%.*}.FORMATTED.txt" 2>> "${filename_prefix}.err"
-)
+    (   set -x
+        eval run_ruby.sh formatter.inmagic.to.dictation_1.rb ${sort_detail} ${columns:+--columns }${columns} \
+                                                            --output_file_prefix "${filename%.*}"  "${filename_prefix}.json.compress.txt" 
+    )
+) 2>> "${filename_prefix}.err"
 [[ $? -gt 0 ]] && exit 6
 
 exit 0

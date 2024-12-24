@@ -1,17 +1,6 @@
 
 class String
 
-    def not_empty?
-        return ! self.empty?
-    end
-    
-    def in?( array )
-        return (array.include?( self ) )
-    end
-    def not_in?( array )
-        return ( not array.include?( self ) )
-    end
-
     def maxoffset( )    # This seems to be the more correct term for a String.
         self.length - 1
     end

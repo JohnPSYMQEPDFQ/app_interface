@@ -24,7 +24,8 @@ class Repository
         end    
         if ( ! p1_aspace_O.session or p1_aspace_O.session == K.undefined ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "aspace_O.session undefined, do the ASpace#login method first."
+            SE.puts "aspace_O.session undefined."
+            SE.q {[ 'p1_aspace_O' ]}
             raise
         end
         @aspace_O = p1_aspace_O

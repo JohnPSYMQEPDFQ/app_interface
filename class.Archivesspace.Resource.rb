@@ -20,14 +20,14 @@ class Resource
       there's a 'new_buffer' method that will do it from inside here too, eg:
           resource_buffer_Obj = Resource.new(repository_Obj, resource-num|uri).new_buffer[.read|create]
 =end
-    def initialize( p1_rep_O, p2_res_identifier )
-        if ( not p1_rep_O.is_a?( Repository ) ) then
+    def initialize( p1_rep_O, p2_res_identifier = nil )
+        if ( p1_rep_O.nil? or p1_rep_O.is_not_a?( Repository ) ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Param 1 is not a Repository class object, it's a '#{p1_rep_O.class}'"
             raise
         end    
         @rep_O = p1_rep_O
-        if ( p2_res_identifier == nil ) then
+        if ( p2_res_identifier.nil? ) then
             @num = nil
             @uri = nil
         else
@@ -83,18 +83,35 @@ class Resource_Record_Buf < Record_Buf
     
     def create
         @record_H.merge!( Record_Format.new( @rec_jsonmodel_type ).record_H )
+        @cant_change_A << K.level 
+        @cant_change_A << K.resource
+        return self
+    end
+
+    def load( external_record_H, filter_record_B = true )
+        @record_H = super
+        # if ( not (@record_H.has_key?( K.resource ) and @record_H[K.resource].has_key?( K.ref ) and 
+                  # @record_H[ K.resource ][ K.ref ] == @ao_O.res_O.uri )) then
+            # SE.puts "#{SE.lineno}: =============================================="
+            # SE.puts "Archival_object doesn't belong to current Resource."
+            # SE.puts "@record_H[K.resource][K.ref] != @ao_O.res_O.uri"
+            # SE.ap "@record_H:", @record_H
+            # raise
+        # end
+        @cant_change_A << K.level 
+        @cant_change_A << K.resource
         return self
     end
     
     def read( filter_record_B = true )
         @record_H = super( filter_record_B )
-#       SE.pp "@record_H", @record_H
+#       SE.q { [ '@record_H' ] }
         if ( @record_H.key?( @rec_jsonmodel_type ) and  @record_H[ @rec_jsonmodel_type ].key?( K.ref )) then
             if ( ! ( @record_H[ @rec_jsonmodel_type ][ K.ref ] == "#{@uri}" ) ) then
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.puts "uri is not part of resource '#{@num}'"
                 SE.puts "resource => uri = '#{@uri}'"
-                SE.pp "@record_H:", @record_H
+                SE.q { [ '@record_H' ] }
                 raise
             end
         end
@@ -102,9 +119,23 @@ class Resource_Record_Buf < Record_Buf
     end
     
     def store( )
-        SE.puts "#{SE.lineno}: =============================================="
-        SE.puts "Method not coded"
-        raise
+        if ( not (  @record_H[K.title] and @record_H[K.title] != K.undefined )) then 
+            SE.puts "#{SE.lineno}: =========================================="
+            SE.puts "I was expecting a @record_H[K.title] value";
+            SE.ap "@record_H:", @record_H
+            raise
+        end
+
+        if ( @uri.nil? ) then
+            @uri = "#{@res_O.rep_O.uri}/resources"
+            http_response_body_H = super
+            SE.puts "#{SE.lineno}: Created Resource, uri = #{http_response_body_H[ K.uri ]}";
+        else
+            http_response_body_H = super
+            SE.puts "#{SE.lineno}: Updated Resource, uri = #{http_response_body_H[ K.uri ]}";
+        end
+        @uri = http_response_body_H[ K.uri ] 
+        @num = @uri.sub( /^.*\//, '' )
     end
 end   
 
@@ -173,7 +204,7 @@ class Resource_Query
         else
             waypoint_node_H = @res_O.rep_O.aspace_O.http_calls_O.get( "#{@res_O.uri}/tree/node", { K.node_uri => node_uri } ) 
         end
-#       SE.pp waypoint_node_H
+#       SE.q { [ 'waypoint_node_H' ] }
         if ( not ( waypoint_node_H.has_key?( K.precomputed_waypoints ) and
                    waypoint_node_H[ K.precomputed_waypoints ].has_key?( node_uri ) and
                    waypoint_node_H[ K.precomputed_waypoints ][ node_uri ].has_key?( '0' ) and
@@ -183,7 +214,7 @@ class Resource_Query
                    waypoint_node_H.has_key?( K.uri ) ) ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Missing expected key"
-            SE.pp waypoint_node_H
+            SE.q { [ 'waypoint_node_H' ] }
             raise
         end
         if ( waypoint_node_H[ K.precomputed_waypoints ].keys.length != 1 ) then
@@ -201,7 +232,7 @@ class Resource_Query
 #       SE.puts "node_uri = #{node_uri}, waypoint_node_H[ K.waypoints ] = #{waypoint_node_H[ K.waypoints ]}"
         waypoint_A = waypoint_node_H[ K.precomputed_waypoints ][ node_uri ] [ '0' ]
         waypoint_num = 0; loop do
-#           SE.pp waypoint_A
+#           SE.q { [ 'waypoint_A' ] }
             waypoint_A.each do | child_H |
                 if ( not ( child_H.has_key?( K.child_count ) and
                            child_H.has_key?( K.waypoints ) and
@@ -209,7 +240,7 @@ class Resource_Query
                            child_H.has_key?( K.uri ) ) ) then
                     SE.puts "#{SE.lineno}: =============================================="
                     SE.puts "Missing expected key: K.uri"
-                    SE.pp child_H
+                    SE.q { [ 'child_H' ] } 
                     raise
                 end
                 child_H[ K.resource ] = { K.ref => @res_O.uri }

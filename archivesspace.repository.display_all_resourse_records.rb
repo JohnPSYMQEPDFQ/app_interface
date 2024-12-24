@@ -21,7 +21,6 @@ BEGIN {}
 END {}
 
 myself_name = File.basename( $0 )
-api_uri_base = "http://localhost:8089"
 
 cmdln_option = { :rep_num => 2  ,
                 }
@@ -45,13 +44,7 @@ else
 end
 
 aspace_O = ASpace.new
-aspace_O.api_uri_base = api_uri_base
-aspace_O.login( "admin", "admin" )
-#SE.pom(aspace_O)
-#SE.pov(aspace_O)
 rep_O = Repository.new( aspace_O, rep_num )
-#SE.pom(rep_O)
-#SE.pov(rep_O)
 
 #   id_0 is called the unitid in the XML EAD file.
 puts "res_num, title, id_0/unitid, ead_id"

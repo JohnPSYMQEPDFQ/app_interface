@@ -17,7 +17,6 @@ BEGIN {}
 END {}
 
 myself_name = File.basename( $0 )
-api_uri_base = "http://localhost:8089"
 
 cmdln_option = { :rep_num => 2  ,
                  :res_num => nil ,
@@ -56,14 +55,7 @@ end
 
 aspace_O = ASpace.new
 aspace_O.allow_updates = cmdln_option[ :update ]
-aspace_O.api_uri_base  = api_uri_base
-aspace_O.login( "admin", "admin" )
-#SE.pom(aspace_O)
-#SE.pov(aspace_O)
 rep_O = Repository.new( aspace_O, rep_num )
-#SE.pom(rep_O)
-#SE.pov(rep_O)
-
 res_O = Resource.new( rep_O, res_num )
 series_uri_A = []
 cnt = 0; Resource_Query.new( res_O ).record_H_A.each do | record_H |
