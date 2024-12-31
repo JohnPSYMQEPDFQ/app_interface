@@ -96,18 +96,18 @@ class Find_Dates_in_String
                     SE.q { 'option_H' }
                     raise
                 end            
-            when :date_clump_separators
+            when :date_text_separators
                 if ( @option_H[ option_H_key ].is_a?( Symbol ) ) then
                     if ( @option_H[ option_H_key ] == :none ) then
-                        @option_H[ :date_clump_separators ] = 255.chr                        #  Use 255.chr \xFF for none
+                        @option_H[ :date_text_separators ] = 255.chr                        #  Use 255.chr \xFF for none
                     else
-                        SE.puts "#{SE.lineno}: option_H[ :date_clump_separators ] should be :none, or [xyz] (where xyz = some separators)."
+                        SE.puts "#{SE.lineno}: option_H[ :date_text_separators ] should be :none, or [xyz] (where xyz = some separators)."
                         SE.q { 'option_H' }
                         raise
                     end
                 else
                     if ( not ( @option_H[ option_H_key ].length > 1 and @option_H[ option_H_key ] =~ /\[\W\]+/ ) ) then
-                        SE.puts "#{SE.lineno}: option_H[ :date_clump_separators ] should be :none, or [xyz] (where xyz = some separators)."
+                        SE.puts "#{SE.lineno}: option_H[ :date_text_separators ] should be :none, or [xyz] (where xyz = some separators)."
                         SE.q { 'option_H' }
                         raise
                     end
@@ -176,10 +176,10 @@ class Find_Dates_in_String
             @option_H[ :morality_replace_option ][ :bad ] = :keep
         end
         if ( not @option_H.key?( :thru_date_separators ) ) then
-            @option_H[ :thru_date_separators ] = '-| to | through '
+            @option_H[ :thru_date_separators ] = '-|/| to | through '
         end
-        if ( not @option_H.key?( :date_clump_separators ) ) then
-            @option_H[ :date_clump_separators ] = '[|/]| and '           
+        if ( not @option_H.key?( :date_text_separators ) ) then
+            @option_H[ :date_text_separators ] = '[|]| and '           
         end
         if ( not @option_H.key?( :pattern_name_RES ) )
         then
@@ -223,8 +223,8 @@ class Find_Dates_in_String
 
         @thru_date_separator_RES    = "(?:\\s{0,2}(?:#{@option_H[ :thru_date_separators ]})\\s{0,2}){1}"
         @thru_date_begin_delim_RES  = "^\\s*"
-#       @begin_delim_RES            = "(?:(?:\\A|\\s|#{@option_H[ :date_clump_separators ]}))*"    
-        @begin_delim_RES            = "(?:(?:\\A|\\s+|\\W|\\s*#{@option_H[ :date_clump_separators ]}\\s*))"    
+#       @begin_delim_RES            = "(?:(?:\\A|\\s|#{@option_H[ :date_text_separators ]}))*"    
+        @begin_delim_RES            = "(?:(?:\\A|\\s+|\\W|\\s*#{@option_H[ :date_text_separators ]}\\s*))"    
         @end_delim_RES              = "\\s*(?:#{@thru_date_separator_RES}|\\W|\\Z){1}"     # The \\W will match any separators
 
         date_pattern_RES_S = Struct.new( :pattern_name, :pattern_RES )      # The :pattern_name and length are computed and added later.
@@ -903,7 +903,7 @@ class Find_Dates_in_String
         end
         if ( @option_H[ :morality_replace_option ][ :good ] == :remove_from_end ) then
             loop do
-                process_input_string.sub!( /([\.,])\s*\Z/, '' )
+                process_input_string.sub!( /([\.,;])\s*\Z/, '' )
                 break if ( not process_input_string.sub!( /#{date_clump_uid_string_RE}\s*\Z/, '' ) )
             end
             while ( process_input_string.match( /#{date_clump_uid_string_RE}/ ) ) 

@@ -24,9 +24,9 @@ class Shelf_ID_for_boxes
         max_box_range = 0
         while ( boxes_on_shelf_string.sub!( regexp, '' ) )
             SE.q {[ '$~' ]}  if ( $DEBUG )
-            last_group = $~[3]
-            shelf_id = $~[1].strip
-            box_ranges = $~[2].strip
+            last_group = $3
+            shelf_id = $1.strip
+            box_ranges = $2.strip
             box_ranges_A = box_ranges.split( /,\s*/ )
             box_ranges_A.each do | e |
                 case e.count( '-' )

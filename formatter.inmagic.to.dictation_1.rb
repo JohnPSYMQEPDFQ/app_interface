@@ -129,17 +129,17 @@ OptionParser.new do |option|
     end  
     
     option.on( "--columns=NAME[:use][,NAME:use]...", "Order and use of the columns") do |opt_arg|
-        a1 = opt_arg.split( ',' ).map( &:to_s ).map( &:strip )
-        a1.each do | stringer |
+        arr1 = opt_arg.split( ',' ).map( &:to_s ).map( &:strip )
+        arr1.each do | stringer |
             a2 = stringer.split( ':' ).map( &:to_s ).map( &:strip )
             if ( a2.maxindex > 1 ) then
                 SE.puts "--columns option has wrong formatting, there should only be a max of two pieces not #{a2.length}"
-                SE.q {[ 'a2', 'a1' ]}
+                SE.q {[ 'a2', 'arr1' ]}
                 raise
             end
             if ( column_use_H.has_key?( a2[ 0 ] ) ) then
                 SE.puts "Duplicate column_name '#{a2[ 0 ] }' found in --columns option"
-                SE.q {[ 'opt_arg', 'a1', 'column_use_H' ]}
+                SE.q {[ 'opt_arg', 'arr1', 'column_use_H' ]}
                 raise
             end
             if ( a2[ 1 ] ) then
@@ -256,11 +256,16 @@ def put_column( indent_spaces, column_idx = 0, title_length = 0 )
             stringer = sub_column_value.sub( K.box_and_folder_RE, '' )
             if ( $&.not_nil? ) then
                 box_folder = $&
+                prematch=$`
                 if ( stringer.blank? ) then                             # If true: the sub_column is ONLY the Box/folder data.
                     box_folder.strip!
-                    next if ( box_folder == @current_instance )
-                    @current_instance = box_folder
+                    next if ( box_folder.upcase == @current_instance.upcase )
+                    @current_instance = box_folder.upcase
                     next
+                else
+                    if ( prematch.blank? ) then                         # If true: the Box is the 1st thing in the sub-column
+                        @current_instance = ''                          # which we'll guess to mean to reset the current_instance
+                    end
                 end
             end
             
@@ -409,20 +414,20 @@ tmp2_F.each_line do | input_column_J |
                 @cmdln_option_H[ :column_use_H ][ column_name ] = :none_assigned 
             end
         else
-            a1 = column_use_H.keys - used_column_header_A           
-            if ( a1.not_empty? ) then
+            arr1 = column_use_H.keys - used_column_header_A           
+            if ( arr1.not_empty? ) then
                 SE.puts ""
                 SE.puts ""
-                SE.puts "#{SE.lineno}: Unknown column '#{a1.join(', ')}' in --columns option"
+                SE.puts "#{SE.lineno}: Unknown column '#{arr1.join(', ')}' in --columns option"
                 SE.puts ""
                 SE.q {[ 'column_use_H.keys' ]}
                 SE.q {[ 'used_column_header_A' ]}
                 raise
             end
-            a1 = used_column_header_A - column_use_H.keys
-            if ( a1.not_empty? ) then
+            arr1 = used_column_header_A - column_use_H.keys
+            if ( arr1.not_empty? ) then
                 SE.puts "The following columns are being skipped:"
-                SE.puts "#{a1.join(', ')}"
+                SE.puts "#{arr1.join(', ')}"
             end
             used_column_header_A = column_use_H.keys
         end
@@ -477,8 +482,8 @@ tmp3_F.each_line do | input_column_J |
         if ( column_use_H.has_key?( column_name ) and column_use_H[ column_name ] != :none_assigned ) then
             if ( column_use_H[ column_name ] == K.fmtr_inmagic_seriesdate ) then
                 if ( not ( series_column_name.nil? or input_column_H[ series_column_name ].blank? ) ) then
-                    SE.puts "#{SE.lineno}: NOT ( series_column_name.nil? or input_column_H[ '#{series_column_name}' ].blank? )"
-                    SE.q {[ 'column_name', 'column_value', 'series_column_name' ]}
+#                   SE.puts "#{SE.lineno}: NOT ( series_column_name.nil? or input_column_H[ '#{series_column_name}' ].blank? )"
+#                   SE.q {[ 'column_name', 'column_value', 'series_column_name' ]}
                     next
                 end
             else
@@ -537,8 +542,8 @@ tmp3_F.open
 tmp3_F.each_line do | input_column_J |
     input_column_J.chomp!
     input_column_H = JSON.parse( input_column_J )
-    a1 = input_column_H.keys.select{ | k | column_name_exists?( k ) and used_for_detail?( k )}.map{ | k | input_column_H[ k ] }
-    next if ( a1.all?( &:empty? ) )
+    arr1 = input_column_H.keys.select{ | k | column_name_exists?( k ) and used_for_detail?( k )}.map{ | k | input_column_H[ k ] }
+    next if ( arr1.all?( &:empty? ) )
     
     output_column_H = {}
     column_use_H.each_pair do | column_name, column_use |       
@@ -573,22 +578,24 @@ tmp3_F.each_line do | input_column_J |
             
         when K.fmtr_inmagic_series
             input_column_H[ column_name ].sub!( /\A\s*Series\s*/, '' )
-            input_column_H[ column_name ].sub!( /\A([0-9])+[.]?\s+/, '' )
+            input_column_H[ column_name ].sub!( /\A([0-9]+)[.]?\s+/, '' )
             if ( $~.nil? ) then
                 SE.puts "#{SE.lineno}: Column '#{column_name}' is supposed to be a '#{K.fmtr_inmagic_series}' but there's no series number"
                 SE.puts "#{SE.lineno}: at the begining of the column."
                 SE.q {[ 'input_column_H' ]}
                 raise
             end
-            series_num=$~[ 1 ]
+            series_num=$1
             output_column_H[ column_name ] = ''
-            a1 = input_column_H[ column_name ].split( '|' ).map( &:to_s ).map( &:strip ) 
-            a1.each_with_index do | e, idx |
+            arr1 = input_column_H[ column_name ].split( '|' ).map( &:to_s ).map( &:strip ) 
+            series_name = ''
+            arr1.each_with_index do | e, idx |
                 if ( idx == 0 ) then
                     output_column_H[ column_name ] += "Series #{series_num}: #{e}"
+                    series_name = e
                 end
                 next if ( e.blank? )
-                e.strip!
+                next if ( e.downcase == series_name.downcase )
                 e.sub!( /./,&:upcase )
                 e.sub!( /\.$/, '' )
                 output_column_H[ column_name ] += " Note: #{e}."
@@ -617,6 +624,7 @@ tmp4_F.close
 
 @output_detail_cnt = 0
 @current_instance = ''
+
 output_detail_filename = @cmdln_option_H[ :output_file_prefix ] + ".DETAIL.txt"
 SE.puts "Output DETAIL file '#{output_detail_filename}'"
 SE.puts ''

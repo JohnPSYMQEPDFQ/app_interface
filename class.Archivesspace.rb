@@ -59,14 +59,14 @@ class ASpace
     def login_using_env_vars( p1_user )
         if ( @api_uri_base == nil ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Set it with the ASpace#api_uri_base= method"
+            SE.puts "@api_uri_base isn't set."
             raise 
         end
         userid, password = p1_user.split(':')
         if ( password.nil? ) then
-            print "Enter password:"
+            SE.print "Enter password:"
             password = STDIN.noecho(&:gets).chomp
-            puts ''
+            SE.puts ''
             if ( password.blank? ) then
                 SE.puts "#{SE.lineno}: No password entered."
                 exit

@@ -51,20 +51,29 @@ module K
                    '(\s+(?<box_type>(ov|oversized?|\[oversized?\]|sb|slide[\- ]?box|\[slide[\- ]?box\])))?' + 
                    '(\s+folder(s?)(:\s*|\s+)(?<folder_num>[0-9]+[a-z]?(' + K.box_and_folder_separators_RES + '[0-9]+[a-z]?)?\.?))?' +
                    '(\Z|\.|\s+)'
+        stringer = '(\A|\s+)box(s|es)?\s*(?<box_num>[0-9]+(' + K.box_and_folder_separators_RES + '(box(s|es)?\s*)?[0-9]+)?(\.|,|\s+)?)' + 
+                   '(\s+(?<box_type>(ov|oversized?|\[oversized?\]|rc|record[\- ]?cards?|sb|slide[\- ]?box|\[slide[\- ]?box\]))(\.|,|\s+)?)?' + 
+                   '(\s*folder(s?)\s*(?<folder_num>[0-9]+[a-z]?(' + K.box_and_folder_separators_RES + '[0-9]+[a-z]?)*))?' +
+                   '(\Z|\.|,|\s+)'
         return stringer
     end
     def K.box_and_folder_RE
         return /#{K.box_and_folder_RES}/i
     end
 
-
-    def K.active_restrictions; return 'active_restrictions'; end   # top_container
-    def K.ancestors; return 'ancestors'; end   # archival_object
-    def K.archival_object; return 'archival_object'; end   # root
-    def K.archival_objects; return 'archival_objects'; end    # <<<< Danger Plural
-    def K.area; return 'area'; end   # location
-    def K.barcode; return 'barcode'; end   # top_container location
-    def K.begin; return 'begin'; end   # dates
+    def K.min_length_for_indent_key; return 3; end                  # Used in class.formatter.Record_Grouping_Indent.rb
+    def K.skip_these_values_for_indent_key_A                        # Used in class.formatter.Record_Grouping_Indent.rb
+        arr = [ 'bozo' ]
+        return arr
+    end
+    
+    def K.active_restrictions; return 'active_restrictions'; end    # top_container
+    def K.ancestors; return 'ancestors'; end                        # archival_object
+    def K.archival_object; return 'archival_object'; end            # root
+    def K.archival_objects; return 'archival_objects'; end          # <<<< Danger Plural
+    def K.area; return 'area'; end                                  # location
+    def K.barcode; return 'barcode'; end                            # top_container location
+    def K.begin; return 'begin'; end                                # dates
     def K.box; return 'box'; end              # top_container
     def K.building; return 'building'; end   # location
     def K.calendar; return 'calendar'; end   # dates

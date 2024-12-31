@@ -19,6 +19,7 @@ myself_name = File.basename( $0 )
                     :r => nil,
                     :find_dates_option_H => { },
                     :default_century => '',
+                    :do_2digit_year_test => false,
                     :max_title_size => 250
                  }
 OptionParser.new do |option|
@@ -29,11 +30,14 @@ OptionParser.new do |option|
     option.on( "--max-title-size n", OptionParser::DecimalInteger, "Warn if title-size over n" ) do |opt_arg|
         @cmdln_option_H[ :max_title_size ] = opt_arg
     end
-    option.on( "--default_century n", OptionParser::DecimalInteger, "Default century for 2-digit years." ) do
+    option.on( "--default_century n", OptionParser::DecimalInteger, "Default century for 2-digit years." ) do |opt_arg|
         @cmdln_option_H[ :default_century ] = opt_arg
     end  
     option.on( "-r n", OptionParser::DecimalInteger, "Stop after N input records" ) do |opt_arg|
         @cmdln_option_H[ :r ] = opt_arg
+    end
+    option.on( "--do_2digit_year_test", "When the --default_century option is '', warn if 2digit years found." ) do |opt_arg|
+        @cmdln_option_H[ :do_2digit_year_test ] = true
     end
     option.on( "--find_dates_option_H x", "Option Hash passed to the Find_Dates_in_String class." ) do |opt_arg|
         begin
@@ -87,7 +91,7 @@ def scrape_off_container!( input_record, shelf_id )
     if ( instance_matchdata_O = input_record.match( regexp ) ) then
         input_record.sub!( regexp, '' )
         box_num = instance_matchdata_O[ :box_num ]
-        box_num = box_num.gsub( K.box_and_folder_separators_RE, ',' ).gsub( /box(s|es)?/, ',' ).gsub( /,,+/, ',' ).sub( /\.$/, '' )
+        box_num = box_num.gsub( 'and', ',' ).gsub( /box(s|es)?/, ' ' ).gsub( /\s+and\s+/i, ',').gsub( /,,+/, ',' ).gsub( /\s+,/, ',').sub( /[,.]$/, '' ).strip
         container_H[ K.shelf ]          = shelf_id.of_box( box_num ) if ( shelf_id ) 
         container_H[ K.type ]           = K.box
         container_H[ K.indicator ]      = box_num
@@ -97,13 +101,15 @@ def scrape_off_container!( input_record, shelf_id )
                 container_H[ K.indicator ] += ' OV'
             when instance_matchdata_O[ :box_type ].match( /slide/i ).not_nil?
                 container_H[ K.indicator ] += ' SB'
+            when instance_matchdata_O[ :box_type ].match( /record/i ).not_nil?
+                container_H[ K.indicator ] += ' RC'
             else
                 container_H[ K.indicator ] += " #{instance_matchdata_O[ :box_type ]}"
             end
         end
         if ( instance_matchdata_O[ :folder_num ].not_nil? ) then
             folder_num = instance_matchdata_O[ :folder_num ]
-            folder_num = folder_num.gsub( K.box_and_folder_separators_RE, ',' ).gsub( /folder(s)?/, ',' ).gsub( /,,+/, ',' ).sub( /\.$/, '' )
+            folder_num = folder_num.gsub( 'and', ',' ).gsub( /folders?/, ' ' ).gsub( /\s+and\s+/i, ',').gsub( /,,+/, ',' ).gsub( /\s+,/, ',').sub( /[,.]$/, '' ).strip
             container_H[ K.type_2 ]      = K.folder
             container_H[ K.indicator_2 ] = folder_num
         end            
@@ -160,7 +166,7 @@ def scrape_off_dates( input_record )
         end
         from_thru_date_A_A << from_thru_date_A
     end
-    if ( @cmdln_option_H[ :default_century ].empty? ) then
+    if ( @cmdln_option_H[ :default_century ].empty? and @cmdln_option_H[ :do_2digit_year_test ] ) then
         @find_dates_with_2digit_years_O.do_find( input_record )
         @find_dates_with_2digit_years_O.good__date_clump_S__A.each do | date_clump_S |  
             len = @find_dates_with_2digit_years_O.good__date_clump_S__A.length

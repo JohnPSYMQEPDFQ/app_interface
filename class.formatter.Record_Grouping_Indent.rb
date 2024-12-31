@@ -178,11 +178,24 @@ class Record_Grouping_Indent
                     SE.q {[ 'indent_key_I', '@first_record_indent_keys_A', '@indent_key_stack_A' ]}
                     raise "Abort"
                 end
-                @indent_key_stack_A.push( [ @first_record_indent_keys_A[ indent_key_I ], 0 ] )
+                if  ( @first_record_indent_keys_A[ indent_key_I ].length < K.min_length_for_indent_key ) then
+                    SE.puts "#{SE.lineno}: Record group '#{@first_record_indent_keys_A[ indent_key_I ]}' skipped" + 
+                            "due to being less than length 'K.min_length_for_indent_key'."
+                    next
+                end 
+                if  ( @first_record_indent_keys_A[ indent_key_I ].in?( K.skip_these_values_for_indent_key_A ) ) then
+                    SE.puts "#{SE.lineno}: Record group '#{@first_record_indent_keys_A[ indent_key_I ]}' skipped." +
+                            "due to being in 'K.skip_these_values_for_indent_key_A}'."
+                    next
+                end                    
+                @indent_key_stack_A.push( [ @first_record_indent_keys_A[ indent_key_I ], 0 ] )  # Pushes the value and a 0 
                 SE.q {[ '@indent_key_stack_A[ indent_key_I ]' ]}   if ( $DEBUG )
             end
             
-            next if ( indent_key_I <= 0 )
+            if ( indent_key_I <= 0 ) then
+                SE.puts "#{SE.lineno}: Have you ever seen 'indent_key_I <= 0'?"  
+                next
+            end
             
             SE.q {[ 'indent_key_I', '@indent_key_stack_A' ]}  if ( $DEBUG )
             @indent_key_stack_A[ indent_key_I - 1 ][ 1 ] += 1

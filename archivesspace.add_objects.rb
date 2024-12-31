@@ -120,7 +120,7 @@ myself_name = File.basename( $0 )
 cmdln_option = { :rep_num => 2  ,
                  :res_num => nil  ,
                  :ao_num => nil  ,
-                 :initial_parent_title => nil ,
+                 :ao_title => nil ,
                  :reuse_TCs => false ,
                  :update => false ,
                  :last_record_num => nil ,
@@ -136,8 +136,8 @@ OptionParser.new do |option|
     option.on( "--ao-num n", OptionParser::DecimalInteger, "Initial parent AO URI number ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
         cmdln_option[ :ao_num ] = opt_arg
     end
-    option.on( "--initial-parent-title x", "Initial parent AO Title  ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
-        cmdln_option[ :initial_parent_title ] = opt_arg
+    option.on( "--ao-title x", "Initial parent AO Title  ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
+        cmdln_option[ :ao_title ] = opt_arg
     end
     option.on( "--reuse-tcs", "Reuse TC records." ) do |opt_arg|
         cmdln_option[ :reuse_TCs ] = true
@@ -182,16 +182,16 @@ res_buf_O = res_O.new_buffer.read
 
 parent_ref_stack_A = [ ]
 if ( cmdln_option[ :ao_num ] ) then
-    if ( cmdln_option[ :initial_parent_title ] ) then
-        SE.puts "#{SE.lineno}: The '--ao-num' and 'initial-parent-title' options are mutually exclusive"
+    if ( cmdln_option[ :ao_title ] ) then
+        SE.puts "#{SE.lineno}: The '--ao-num' and 'ao-title' options are mutually exclusive"
         raise
     end
     parent_ref_stack_A << Archival_Object.new( res_buf_O,cmdln_option[ :ao_num ] ).new_buffer.read.record_H[ K.uri ]
     SE.puts "#{SE.lineno}: initial parent uri = #{parent_ref_stack_A[ 0 ]} (From the cmd_line)"
 else
     res_Q_O = Res_Q.new( res_O )
-    if ( cmdln_option[ :initial_parent_title ] ) then
-        parent_ref_stack_A << res_Q_O.uri_of( cmdln_option[ :initial_parent_title ] )
+    if ( cmdln_option[ :ao_title ] ) then
+        parent_ref_stack_A << res_Q_O.uri_of( cmdln_option[ :ao_title ] )
         SE.puts "#{SE.lineno}: initial parent AO uri = #{parent_ref_stack_A[ 0 ]} (From the cmd_line)"
     else
         parent_ref_stack_A << res_buf_O.record_H[ K.uri ]
@@ -265,9 +265,9 @@ for argv in ARGV do
             record_level = input_record_H[ K.fmtr_record ][ K.level ]
             record_level_cnt[ record_level ] += 1
             if ( record_level == K.fmtr_new_parent ) then
-                if (cmdln_option[ :ao_num ] or cmdln_option[ :initial_parent_title ] ) then
+                if (cmdln_option[ :ao_num ] or cmdln_option[ :ao_title ] ) then
                     SE.puts "#{SE.lineno}: Hit 'new_parent' record, but"
-                    SE.puts "the --ao-num and --initial-parent-title options aren't allowed for this record type."
+                    SE.puts "the --ao-num and --ao-title options aren't allowed for this record type."
                     raise
                 end
                 if ( parent_ref_stack_A.maxindex != 0 ) then
