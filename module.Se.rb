@@ -107,17 +107,18 @@ module SE
             @loop_cnt = 0
             @loop_limit = loop_limit
         end
+        private attr_accessor :loop_cnt, :loop_limit
         
         def loop
-            if ( @loop_cnt > @loop_limit ) then
-                raise "LOOP DETECTOR: Abort ( loops=#{@loop_cnt}, limit=#{@loop_limit} )"
+            if ( self.loop_cnt > self.loop_limit ) then
+                raise "LOOP DETECTOR: Abort ( loops=#{self.loop_cnt}, limit=#{self.loop_limit} )"
             end
-            if ( @loop_cnt >= @loop_limit ) then
+            if ( self.loop_cnt >= self.loop_limit ) then
                 SE.puts "#{SE.lineno}: LOOP DETECTOR: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 $DEBUG = true
                 SE.ap_stack
             end
-            @loop_cnt += 1
+            self.loop_cnt += 1
         end
     end
 end

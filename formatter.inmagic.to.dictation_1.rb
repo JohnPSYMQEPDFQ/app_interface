@@ -25,17 +25,23 @@ require 'tempfile'
 
 =end
 
-
+module Main_Global_Variables
+#       Instead of easily mistyped instance-variables, we can do this...
+        attr_accessor :myself_name, :valid_column_uses_H, :cmdln_option_H, :current_box_folder, 
+                      :output_detail_F, :output_detail_cnt, :detail_column_H_A
+end
+include Main_Global_Variables
+#       But not sure why it needs to be in a module...
 
 myself_name = File.basename( $0 )
 
 def column_use_H
-    if ( @cmdln_option_H.has_no_key?( :column_use_H ) ) then
-        SE.puts "Can find '@cmdln_option_H[ :column_use_H ]"
-        SE.q {[ @cmdln_option_H ]} 
+    if ( self.cmdln_option_H.has_no_key?( :column_use_H ) ) then
+        SE.puts "Can find 'self.cmdln_option_H[ :column_use_H ]"
+        SE.q {[ self.cmdln_option_H ]} 
         raise
     end
-    return @cmdln_option_H[ :column_use_H ]
+    return self.cmdln_option_H[ :column_use_H ]
 end
 def column_name_exists?( column_name )
     return column_use_H.has_key?( column_name )
@@ -73,129 +79,35 @@ def column_pos_for_use( use, on_nil = :fail )
 end
 def used_for_detail?( column_name )
     column_use = column_use_H[ column_name ]
-    use = @valid_column_uses_H[ column_use ][ :used_for_detail ]
+    use = self.valid_column_uses_H[ column_use ][ :used_for_detail ]
     if ( use.nil? ) then
-        SE.puts "@valid_column_uses_H[ column_use_H[ column_name ] ][ :used_for_detail ] returns nil"
+        SE.puts "self.valid_column_uses_H[ column_use_H[ column_name ] ][ :used_for_detail ] returns nil"
         SE.q {[ 'column_name', 'column_use_H' ]}
-        SE.q {[ '@valid_column_uses_H' ]}
+        SE.q {[ 'self.valid_column_uses_H' ]}
         raise
     end
     return use
 end
 def has_subcolumns?( column_name )
     column_use = column_use_H[ column_name ]
-    use = @valid_column_uses_H[ column_use ][ :has_subcolumns ]
+    use = self.valid_column_uses_H[ column_use ][ :has_subcolumns ]
     if ( use.nil? ) then
-        SE.puts "@valid_column_uses_H[ column_use_H[ column_name ] ][ :has_subcolumns ] returns nil"
+        SE.puts "self.valid_column_uses_H[ column_use_H[ column_name ] ][ :has_subcolumns ] returns nil"
         SE.q {[ 'column_name', 'column_use_H' ]}
-        SE.q {[ '@valid_column_uses_H' ]}
+        SE.q {[ 'self.valid_column_uses_H' ]}
         raise
     end
     return use
 end
 
-@valid_column_uses_H = { K.fmtr_inmagic_detail       => { :used_for_detail => true , :has_subcolumns => true,  } ,
-                         K.fmtr_inmagic_series       => { :used_for_detail => true , :has_subcolumns => false, } ,
-                         K.fmtr_inmagic_seriesdate   => { :used_for_detail => false, :has_subcolumns => false, } ,
-                         K.fmtr_inmagic_seriesnote   => { :used_for_detail => false, :has_subcolumns => false, } ,
-                       }
-
-@cmdln_option_H = { :r => 999999999,
-                    :output_file_prefix => '',
-                    :d => false,
-                    :sort => false,
-                    :default_century => '',
-                    :max_title_size => 150,
-                    :column_use_H => {},
-                   }
-
-OptionParser.new do |option|
-    option.banner = "Usage: #{myself_name} [options] [file]"
-
-    option.on( "-r n", OptionParser::DecimalInteger, "Stop after N input records" ) do |opt_arg|
-        @cmdln_option_H[ :r ] = opt_arg
-    end
-    
-    option.on( "--sort", "Sort the detail records." ) do
-        @cmdln_option_H[ :sort ] = true
-    end  
-    
-    option.on( "--output-file-prefix=x", "File prefix for the two output files." ) do |opt_arg|
-        @cmdln_option_H[ :output_file_prefix ] = opt_arg
-    end
-
-    option.on( "--default-century n", OptionParser::DecimalInteger, "Default century for 2-digit years." ) do
-        @cmdln_option_H[ :default_century ] = opt_arg
-    end  
-    
-    option.on( "--columns=NAME[:use][,NAME:use]...", "Order and use of the columns") do |opt_arg|
-        arr1 = opt_arg.split( ',' ).map( &:to_s ).map( &:strip )
-        arr1.each do | stringer |
-            a2 = stringer.split( ':' ).map( &:to_s ).map( &:strip )
-            if ( a2.maxindex > 1 ) then
-                SE.puts "--columns option has wrong formatting, there should only be a max of two pieces not #{a2.length}"
-                SE.q {[ 'a2', 'arr1' ]}
-                raise
-            end
-            if ( column_use_H.has_key?( a2[ 0 ] ) ) then
-                SE.puts "Duplicate column_name '#{a2[ 0 ] }' found in --columns option"
-                SE.q {[ 'opt_arg', 'arr1', 'column_use_H' ]}
-                raise
-            end
-            if ( a2[ 1 ] ) then
-                if ( @valid_column_uses_H.has_no_key?( a2[ 1 ] ) ) then
-                    SE.puts "#{SE.lineno}: Unknown column use '#{a2[ 1 ]}' on column '#{a2[ 0 ]}'"
-                    SE.q {[ '@cmdln_option_H' ]}
-                    raise
-                end
-                if ( a2[ 1 ].in?( @valid_column_uses_H.values ) ) then
-                    SE.puts "#{SE.lineno}: column use '#{a2[ 1 ]}' on column '#{a2[ 0 ]}' already exists."
-                    SE.q {[ '@cmdln_option_H' ]}
-                    raise
-                end
-                @cmdln_option_H[ :column_use_H ][ a2[ 0 ] ] = a2[ 1 ].downcase
-            else
-                @cmdln_option_H[ :column_use_H ][ a2[ 0 ] ] = K.fmtr_inmagic_detail
-            end
-        end
-    end
-    
-    option.on( "--max-title-size n", OptionParser::DecimalInteger, "Warn if title-size over n" ) do |opt_arg|
-        @cmdln_option_H[ :max_title_size ] = opt_arg
-    end
-
-    option.on( "-d", "Turn on $DEBUG switch" ) do
-        $DEBUG = true
-    end
-
-    option.on( "-h", "--help" ) do
-        SE.puts option
-        exit
-    end
-end.parse!  # Bang because ARGV is altered
-SE.q {[ '@cmdln_option_H' ]}
-
-# @find_dates_with_4digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :keep },
-                                                              # :pattern_name_RES => '.',
-                                                              # :date_string_composition => :dates_in_text,
-                                                              # :yyyy_min_value => '1800',
-                                                            # } )
-
-# @find_dates_with_2digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :keep },
-                                                              # :pattern_name_RES => '.',
-                                                              # :date_string_composition => :dates_in_text,
-                                                              # :default_century => '1900',
-                                                            # } ) if ( @cmdln_option_H[ :default_century ].blank? )
-
-
 def output_detail_F_puts( *argv )
-    @output_detail_F.puts argv.join( ' ' )
-    @output_detail_cnt += 1
+    self.output_detail_F.puts argv.join( ' ' )
+    self.output_detail_cnt += 1
 end
 
 def put_column( indent_spaces, column_idx = 0, title_length = 0 )
-    SE.q { [ '@detail_column_H_A[ column_idx]' ]}  if ( $DEBUG )  
-    column_H     = @detail_column_H_A[ column_idx ]
+    SE.q { [ 'self.detail_column_H_A[ column_idx]' ]}  if ( $DEBUG )  
+    column_H     = self.detail_column_H_A[ column_idx ]
     column_name  = column_H[ 'column_name' ]
     column_value = column_H[ 'column_value' ]
     SE.q { [ 'column_idx', 'column_name', 'column_value', 'column_H' ]} if ( $DEBUG ) 
@@ -206,7 +118,7 @@ def put_column( indent_spaces, column_idx = 0, title_length = 0 )
 
     if ( has_subcolumns?( column_name )) then
         sub_column_value_A = column_value.split( '|' ).map( &:to_s )# .map( &:strip )    
-        sub_column_value_A = sub_column_value_A.sort_by { | k | k.downcase.strip.gsub(/[^[a-z0-9 ]]/,'') } if ( @cmdln_option_H[ :sort ] )
+        sub_column_value_A = sub_column_value_A.sort_by { | k | k.downcase.strip.gsub(/[^[a-z0-9 ]]/,'') } if ( self.cmdln_option_H[ :sort ] )
     else
         if ( column_value.include?( '|' )) then
             SE.puts "#{SE.lineno}: column has a '|' but doesn't have a use of :subcolumns."
@@ -223,7 +135,7 @@ def put_column( indent_spaces, column_idx = 0, title_length = 0 )
         next if ( sub_column_value.blank? )
         sub_column_without_notes = sub_column_value + ''
         sub_column_without_notes.gsub!( /\s+Note:.*/i, '' )  
-        if ( column_idx < @detail_column_H_A.maxindex ) then
+        if ( column_idx < self.detail_column_H_A.maxindex ) then
             output_detail_F_puts indent_spaces + sub_column_value 
             if ( sub_column_value.match( /^series /i ) ) then
                 #  The Series records are their own "indent_right".
@@ -231,11 +143,11 @@ def put_column( indent_spaces, column_idx = 0, title_length = 0 )
                 output_detail_F_puts indent_spaces + "#{K.fmtr_indent}: #{K.fmtr_right}" 
             end
 
-            @current_instance.gsub!( /#{K.fmtr_end_group}/, '' )
+            self.current_box_folder.gsub!( /#{K.fmtr_end_group}/, '' )
             
             put_column( indent_spaces + '    ', column_idx + 1, title_length + sub_column_without_notes.length )   # <<<<<<<<<<<<<<<<
 
-            @current_instance += " #{K.fmtr_end_group}"
+            self.current_box_folder += " #{K.fmtr_end_group}"
 
             if ( sub_column_value.match( /^series /i ) ) then
                 output_detail_F_puts indent_spaces + K.fmtr_end_group
@@ -259,12 +171,12 @@ def put_column( indent_spaces, column_idx = 0, title_length = 0 )
                 prematch=$`
                 if ( stringer.blank? ) then                             # If true: the sub_column is ONLY the Box/folder data.
                     box_folder.strip!
-                    next if ( box_folder.upcase == @current_instance.upcase )
-                    @current_instance = box_folder.upcase
+                    next if ( box_folder.upcase == self.current_box_folder.upcase )
+                    self.current_box_folder = box_folder.upcase
                     next
                 else
                     if ( prematch.blank? ) then                         # If true: the Box is the 1st thing in the sub-column
-                        @current_instance = ''                          # which we'll guess to mean to reset the current_instance
+                        self.current_box_folder = ''                          # which we'll guess to mean to reset the current_box_folder
                     end
                 end
             end
@@ -275,52 +187,134 @@ def put_column( indent_spaces, column_idx = 0, title_length = 0 )
                 if ( sub_column_idx == 0 ) then
                     first_sub_column_entry_is_a_subseries = true
                 else
-                    @current_instance += " #{K.fmtr_end_group}"
+                    self.current_box_folder += " #{K.fmtr_end_group}"
                     indent_spaces.sub!( /^    /, '' )
                     output_detail_F_puts indent_spaces + K.fmtr_end_group + ' End-Begin'
                 end
                 output_detail_F_puts indent_spaces + sub_column_value
                 indent_spaces += '    '
-                SE.puts "WARNING: Series or Sub-series at ln:#{@output_detail_cnt}: '#{sub_column_value}'"
+                SE.puts "WARNING: Series or Sub-series at ln:#{self.output_detail_cnt}: '#{sub_column_value}'"
                 SE.puts ""
             else
                 if ( sub_column_value.gsub( '_', '' ).not_blank? ) then
                     stringer = ''
                     stringer += indent_spaces
-                    stringer += "%-20s  " % @current_instance if ( @current_instance.not_blank? and not sub_column_value.index( @current_instance ) )
+                    stringer += "%-20s  " % self.current_box_folder if ( self.current_box_folder.not_blank? and not sub_column_value.index( self.current_box_folder ) )
                     stringer += sub_column_value                            
                     output_detail_F_puts stringer
                     if ( stringer.match( /box.*(oversized?|folder|slides?)?.*box.*(oversized?|folder|slides?)?/i ) ) then
-                        SE.puts "WARNING: Multiple repeats of box, folder, oversize, or slide found at ln:#{@output_detail_cnt}: #{stringer}"
+                        SE.puts "WARNING: Multiple repeats of box, folder, oversize, or slide found at ln:#{self.output_detail_cnt}: #{stringer}"
                         SE.puts ""
                     end     
                 end
             end
             if ( first_sub_column_entry_is_a_subseries and sub_column_idx == sub_column_value_A.maxindex ) then
-                @current_instance += " #{K.fmtr_end_group}"
+                self.current_box_folder += " #{K.fmtr_end_group}"
                 indent_spaces.sub!( /^    /, '' )
                 output_detail_F_puts indent_spaces + K.fmtr_end_group + ' Last Record'
             end
             if ( sub_column_value.count( '"' ) % 2 != 0 ) then
-                SE.puts "WARNING: Odd number of double-quotes found at ln:#{@output_detail_cnt}:'#{sub_column_value}'"
+                SE.puts "WARNING: Odd number of double-quotes found at ln:#{self.output_detail_cnt}:'#{sub_column_value}'"
                 SE.puts ""
             end
             if ( ( sub_column_value.count( ')' ) + sub_column_value.count( '(' ) ) % 2 != 0 ) then
-                SE.puts "WARNING: Odd number of parentheses found at ln:#{@output_detail_cnt}:'#{sub_column_value}'"
+                SE.puts "WARNING: Odd number of parentheses found at ln:#{self.output_detail_cnt}:'#{sub_column_value}'"
                 SE.puts ""
             end
             if ( ( sub_column_value.count( ']' ) + sub_column_value.count( '[' ) ) % 2 != 0 ) then
-                SE.puts "WARNING: Odd number of square-brackets found at ln:#{@output_detail_cnt}:'#{sub_column_value}'"
+                SE.puts "WARNING: Odd number of square-brackets found at ln:#{self.output_detail_cnt}:'#{sub_column_value}'"
                 SE.puts ""
             end
-            if ( ( title_length + sub_column_without_notes.length ) > @cmdln_option_H[ :max_title_size ] ) then
-                SE.puts "WARNING: Max title size is greater than #{@cmdln_option_H[ :max_title_size ]} at ln:#{@output_detail_cnt}:'#{sub_column_value}'"
+            if ( ( title_length + sub_column_without_notes.length ) > self.cmdln_option_H[ :max_title_size ] ) then
+                SE.puts "WARNING: Max title size is greater than #{self.cmdln_option_H[ :max_title_size ]} at ln:#{self.output_detail_cnt}:'#{sub_column_value}'"
                 SE.puts ""
             end
         end
     end
 
 end
+
+
+self.valid_column_uses_H = { K.fmtr_inmagic_detail       => { :used_for_detail => true , :has_subcolumns => true,  } ,
+                             K.fmtr_inmagic_series       => { :used_for_detail => true , :has_subcolumns => false, } ,
+                             K.fmtr_inmagic_seriesdate   => { :used_for_detail => false, :has_subcolumns => false, } ,
+                             K.fmtr_inmagic_seriesnote   => { :used_for_detail => false, :has_subcolumns => false, } ,
+                           }
+
+self.cmdln_option_H = { :r => 999999999,
+                        :output_file_prefix => '',
+                        :d => false,
+                        :sort => false,
+                        :default_century => '',
+                        :max_title_size => 150,
+                        :column_use_H => {},
+                       }
+
+OptionParser.new do |option|
+    option.banner = "Usage: #{myself_name} [options] [file]"
+
+    option.on( "-r n", OptionParser::DecimalInteger, "Stop after N input records" ) do |opt_arg|
+        self.cmdln_option_H[ :r ] = opt_arg
+    end
+    
+    option.on( "--sort", "Sort the detail records." ) do
+        self.cmdln_option_H[ :sort ] = true
+    end  
+    
+    option.on( "--output-file-prefix=x", "File prefix for the two output files." ) do |opt_arg|
+        self.cmdln_option_H[ :output_file_prefix ] = opt_arg
+    end
+
+    option.on( "--default-century n", OptionParser::DecimalInteger, "Default century for 2-digit years." ) do
+        self.cmdln_option_H[ :default_century ] = opt_arg
+    end  
+    
+    option.on( "--columns=NAME[:use][,NAME:use]...", "Order and use of the columns") do |opt_arg|
+        arr1 = opt_arg.split( ',' ).map( &:to_s ).map( &:strip )
+        arr1.each do | stringer |
+            a2 = stringer.split( ':' ).map( &:to_s ).map( &:strip )
+            if ( a2.maxindex > 1 ) then
+                SE.puts "--columns option has wrong formatting, there should only be a max of two pieces not #{a2.length}"
+                SE.q {[ 'a2', 'arr1' ]}
+                raise
+            end
+            if ( column_use_H.has_key?( a2[ 0 ] ) ) then
+                SE.puts "Duplicate column_name '#{a2[ 0 ] }' found in --columns option"
+                SE.q {[ 'opt_arg', 'arr1', 'column_use_H' ]}
+                raise
+            end
+            if ( a2[ 1 ] ) then
+                if ( self.valid_column_uses_H.has_no_key?( a2[ 1 ] ) ) then
+                    SE.puts "#{SE.lineno}: Unknown column use '#{a2[ 1 ]}' on column '#{a2[ 0 ]}'"
+                    SE.q {[ 'self.cmdln_option_H' ]}
+                    raise
+                end
+                if ( a2[ 1 ].in?( self.valid_column_uses_H.values ) ) then
+                    SE.puts "#{SE.lineno}: column use '#{a2[ 1 ]}' on column '#{a2[ 0 ]}' already exists."
+                    SE.q {[ 'self.cmdln_option_H' ]}
+                    raise
+                end
+                self.cmdln_option_H[ :column_use_H ][ a2[ 0 ] ] = a2[ 1 ].downcase
+            else
+                self.cmdln_option_H[ :column_use_H ][ a2[ 0 ] ] = K.fmtr_inmagic_detail
+            end
+        end
+    end
+    
+    option.on( "--max-title-size n", OptionParser::DecimalInteger, "Warn if title-size over n" ) do |opt_arg|
+        self.cmdln_option_H[ :max_title_size ] = opt_arg
+    end
+
+    option.on( "-d", "Turn on $DEBUG switch" ) do
+        $DEBUG = true
+    end
+
+    option.on( "-h", "--help" ) do
+        SE.puts option
+        exit
+    end
+end.parse!  # Bang because ARGV is altered
+SE.q {[ 'self.cmdln_option_H' ]}
 
 tmp1_F = Tempfile.new( "#{myself_name}.tmp1_F." )
 #SE.puts "#{SE.lineno}: tmp1_F.path=#{tmp1_F.path}"
@@ -348,9 +342,9 @@ column_with_data_H = {}
 original_file_header_A = []
 tmp1_F.open
 tmp1_F.each_line do | input_column_J |
-    if ( $. > @cmdln_option_H[ :r ] ) then 
+    if ( $. > self.cmdln_option_H[ :r ] ) then 
         SE.puts ""
-        SE.puts "#{SE.lineno}: Stopped after #{@cmdln_option_H[ :r ]} records."
+        SE.puts "#{SE.lineno}: Stopped after #{self.cmdln_option_H[ :r ]} records."
         SE.puts ""
         break
     end
@@ -409,9 +403,9 @@ tmp2_F.each_line do | input_column_J |
 
     if ( $. == 1 ) then
         used_column_header_A = output_column_H.keys
-        if (@cmdln_option_H[ :column_use_H ].empty? ) then
+        if (self.cmdln_option_H[ :column_use_H ].empty? ) then
             used_column_header_A.each do | column_name | 
-                @cmdln_option_H[ :column_use_H ][ column_name ] = :none_assigned 
+                self.cmdln_option_H[ :column_use_H ][ column_name ] = :none_assigned 
             end
         else
             arr1 = column_use_H.keys - used_column_header_A           
@@ -510,7 +504,7 @@ tmp3_F.each_line do | input_column_J |
 end
 tmp3_F.close
 
-output_resource_filename = @cmdln_option_H[ :output_file_prefix ] + ".RESOURCE_DATA.txt"
+output_resource_filename = self.cmdln_option_H[ :output_file_prefix ] + ".RESOURCE_DATA.txt"
 SE.puts "Output RESOURCE_DATA file '#{output_resource_filename}'"
 output_resource_F = File::open( output_resource_filename, mode='w' )
 resource_data_H.each_pair do | column_name, column_value |
@@ -528,7 +522,7 @@ if ( column_use_H.values.all?( :none_assigned ) ) then
     SE.puts ""
     exit
 end
-if ( @cmdln_option_H[ :output_file_prefix ].blank? ) then
+if ( self.cmdln_option_H[ :output_file_prefix ].blank? ) then
     SE.puts ""
     SE.puts ""
     SE.puts ""
@@ -622,34 +616,24 @@ end
 tmp3_F.close( true )
 tmp4_F.close
 
-@output_detail_cnt = 0
-@current_instance = ''
+self.output_detail_cnt = 0
+self.current_box_folder = ''
 
-output_detail_filename = @cmdln_option_H[ :output_file_prefix ] + ".DETAIL.txt"
+output_detail_filename = self.cmdln_option_H[ :output_file_prefix ] + ".DETAIL.txt"
 SE.puts "Output DETAIL file '#{output_detail_filename}'"
 SE.puts ''
 SE.puts ''
 
-@output_detail_F = File::open( output_detail_filename, mode='w' )
+self.output_detail_F = File::open( output_detail_filename, mode='w' )
 tmp4_F.open
 tmp4_F.each_line do | input_column_J |
     input_column_J.chomp!
-    @detail_column_H_A = JSON.parse( input_column_J )
+    self.detail_column_H_A = JSON.parse( input_column_J )
     SE.puts "#{SE.lineno}: #{input_column}" if ( $DEBUG )
     put_column( '' )
 end
 tmp4_F.close( true )
-@output_detail_F.close
-
-# SE.puts ""
-# SE.puts "Count of 4-digit-year date patterns found:"
-# SE.q {[ '@find_dates_with_4digit_years_O.pattern_cnt_H' ]}
-
-# if ( @cmdln_option_H[ :default_century ].blank? ) then
-    # SE.puts ""
-    # SE.puts "Count of 2-digit-year date patterns found, but not converted to YYYY-mm-dd:"
-    # SE.q {[ '@find_dates_with_2digit_years_O.pattern_cnt_H' ]}
-# end
+self.output_detail_F.close
 
 
 

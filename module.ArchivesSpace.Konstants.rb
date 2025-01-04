@@ -63,7 +63,7 @@ module K
 
     def K.min_length_for_indent_key; return 3; end                  # Used in class.formatter.Record_Grouping_Indent.rb
     def K.skip_these_values_for_indent_key_A                        # Used in class.formatter.Record_Grouping_Indent.rb
-        arr = [ 'bozo' ]
+        arr = [ 'box', 'folder' ]
         return arr
     end
     

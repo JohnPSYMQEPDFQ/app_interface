@@ -6,23 +6,42 @@ require 'module.SE.rb'
 require 'module.ArchivesSpace.Konstants.rb'
 
 class Find_Dates_in_String
-    def initialize( option_H = {})
+    def initialize( option_H = {})    
+        binding.pry if ( respond_to? :pry )        
+        set_options( option_H )
+    end    
+    public  attr_reader :option_H, :date_pattern_RES_S__A, :pattern_cnt_H,
+                        :thru_date_separator_RES, :thru_date_begin_delim_RES, :begin_delim_RES, :end_delim_RES, 
+                        :possible_date_C, :date_clump_C, :date_match_C, :ymd_C,
+                        :good__date_clump_S__A, :bad__date_clump_S__A
+    private attr_writer :option_H, :date_pattern_RES_S__A, :pattern_cnt_H,
+                        :thru_date_separator_RES, :thru_date_begin_delim_RES, :begin_delim_RES, :end_delim_RES,
+                        :possible_date_C, :date_clump_C, :date_match_C, :ymd_C,
+                        :good__date_clump_S__A, :bad__date_clump_S__A
     
-        binding.pry if ( respond_to? :pry )
-        
+    # def option_H=( options_to_set_H )
+        # SE.puts "I can never have this method because the date formats are setup at initialization"
+        # SE.puts "and it's way to easy to think that setting an option will change the behavior"
+        # SE.puts "when - in fact - the behavior is in the formats.  You then spend hours trying to"
+        # SE.puts "figure out why changing the { :default_century => '1900' } with this method"
+        # SE.puts "doesn't change how the program finds dates."
+        # raise
+    # end
+    
+    def set_options( option_H  )
         if ( not option_H.is_a?( Hash ) ) then
             SE.puts "#{SE.lineno}: Expected param to be a type HASH."
             SE.q { 'option_H' }
             raise
         end
-
-        @option_H = option_H.merge( {} )
-        @option_H.each_key do | option_H_key |
+        
+        self.option_H = option_H.merge( {} )
+        self.option_H.each_key do | option_H_key |
             case option_H_key
             when :debug_options
                 case true
-                when @option_H[ option_H_key ].is_a?( Hash )
-                    @option_H[ option_H_key ].each_pair do | key, value |
+                when self.option_H[ option_H_key ].is_a?( Hash )
+                    self.option_H[ option_H_key ].each_pair do | key, value |
                         if ( not key.is_a?( Symbol ) ) then
                             SE.puts "#{SE.lineno}: Expected '#{key}' to be of type 'Symbol', not '#{key.class}'"
                             SE.q { 'key' }
@@ -31,13 +50,13 @@ class Find_Dates_in_String
                         end
                         SE.puts "#{SE.lineno}: Debug option: ':#{key}' = '#{value}' set.  Note: Option spelling is NOT checked!!!"
                     end
-                when @option_H[ option_H_key ].is_a?( Symbol )  
-                    h = { @option_H[ option_H_key ] => nil }
-                    SE.puts "#{SE.lineno}: Debug option: ':#{@option_H[ option_H_key]}' = 'nil' set.  Note: Option spelling is NOT checked!!!"
-                    @option_H[ option_H_key ] = h
-                when @option_H[ option_H_key ].is_a?( Array )
+                when self.option_H[ option_H_key ].is_a?( Symbol )  
+                    h = { self.option_H[ option_H_key ] => nil }
+                    SE.puts "#{SE.lineno}: Debug option: ':#{self.option_H[ option_H_key]}' = 'nil' set.  Note: Option spelling is NOT checked!!!"
+                    self.option_H[ option_H_key ] = h
+                when self.option_H[ option_H_key ].is_a?( Array )
                     h = {}
-                    @option_H[ option_H_key ].each do | element |
+                    self.option_H[ option_H_key ].each do | element |
                         if ( not element.is_a?( Symbol ) ) then
                             SE.puts "#{SE.lineno}: Expected '#{element}' to be of type 'Symbol', not '#{element.class}'"
                             SE.q { 'element' }
@@ -47,19 +66,19 @@ class Find_Dates_in_String
                         SE.puts "#{SE.lineno}: Debug option: ':#{element}' = 'nil' set.  Note: Option spelling is NOT checked!!!"
                         h[ element ] = nil                        
                     end
-                    @option_H[ option_H_key ] = h
+                    self.option_H[ option_H_key ] = h
                 else
-                    SE.puts "#{SE.lineno}: Expected '#{option_H_key}' to be of type Symbol, Hash, or Array, not '#{@option_H[ option_H_key ].class}'"
+                    SE.puts "#{SE.lineno}: Expected '#{option_H_key}' to be of type Symbol, Hash, or Array, not '#{self.option_H[ option_H_key ].class}'"
                     SE.q { 'option_H' }
                     raise
                 end               
             when :morality_replace_option
-                if ( not @option_H[ option_H_key ].is_a?( Hash ) ) then
-                    SE.puts "#{SE.lineno}: Expected '#{option_H_key}' to be a type Hash, not '#{@option_H[ option_H_key ].class}'"
+                if ( not self.option_H[ option_H_key ].is_a?( Hash ) ) then
+                    SE.puts "#{SE.lineno}: Expected '#{option_H_key}' to be a type Hash, not '#{self.option_H[ option_H_key ].class}'"
                     SE.q { 'option_H' }
                     raise
                 end
-                @option_H[ option_H_key ].each_pair do | key, value |
+                self.option_H[ option_H_key ].each_pair do | key, value |
                     case key
                     when :good
                         if ( not ( value.is_a?( Symbol ) and value.in?( [ :keep, :replace, :remove, :remove_from_end ] ) ) ) then
@@ -81,131 +100,131 @@ class Find_Dates_in_String
                 end
             when :thru_date_separators
                 case true
-                when @option_H[ option_H_key ].is_a?( Array ) then
+                when self.option_H[ option_H_key ].is_a?( Array ) then
                     ary = []
-                    @option_H[ option_H_key ].each do | separator |
+                    self.option_H[ option_H_key ].each do | separator |
                         separator.strip!
                         ary << Regexp::escape( separator )
                     end
-                    @option_H[ option_H_key ] = ary.join("|") 
-                when @option_H[ option_H_key ].is_a?( String )
-                    @option_H[ option_H_key ] = Regexp::escape( @option_H[ option_H_key ] )
+                    self.option_H[ option_H_key ] = ary.join("|") 
+                when self.option_H[ option_H_key ].is_a?( String )
+                    self.option_H[ option_H_key ] = Regexp::escape( self.option_H[ option_H_key ] )
                 else
-                    SE.puts "#{SE.lineno}: Expected '#{option_H_key}' to be of type Array or String not '#{@option_H[ option_H_key ].class}'"
+                    SE.puts "#{SE.lineno}: Expected '#{option_H_key}' to be of type Array or String not '#{self.option_H[ option_H_key ].class}'"
                     SE.puts "#{SE.lineno}: If more than one is needed, pass them in as an array.  The default is: '-| to | through '."
                     SE.q { 'option_H' }
                     raise
                 end            
             when :date_text_separators
-                if ( @option_H[ option_H_key ].is_a?( Symbol ) ) then
-                    if ( @option_H[ option_H_key ] == :none ) then
-                        @option_H[ :date_text_separators ] = 255.chr                        #  Use 255.chr \xFF for none
+                if ( self.option_H[ option_H_key ].is_a?( Symbol ) ) then
+                    if ( self.option_H[ option_H_key ] == :none ) then
+                        self.option_H[ :date_text_separators ] = 255.chr                        #  Use 255.chr \xFF for none
                     else
                         SE.puts "#{SE.lineno}: option_H[ :date_text_separators ] should be :none, or [xyz] (where xyz = some separators)."
                         SE.q { 'option_H' }
                         raise
                     end
                 else
-                    if ( not ( @option_H[ option_H_key ].length > 1 and @option_H[ option_H_key ] =~ /\[\W\]+/ ) ) then
+                    if ( not ( self.option_H[ option_H_key ].length > 1 and self.option_H[ option_H_key ] =~ /\[\W\]+/ ) ) then
                         SE.puts "#{SE.lineno}: option_H[ :date_text_separators ] should be :none, or [xyz] (where xyz = some separators)."
                         SE.q { 'option_H' }
                         raise
                     end
                 end
             when :pattern_name_RES
-                if ( not @option_H[ option_H_key ].is_a?( String ) ) then
+                if ( not self.option_H[ option_H_key ].is_a?( String ) ) then
                     SE.puts "#{SE.lineno}: option_H[ :pattern_name_RES ] should be an String that will convert to a regexp."
                     SE.q { 'option_H' }
                     raise
                 end
             when :default_century
-                default_century = @option_H[ option_H_key ]
+                default_century = self.option_H[ option_H_key ]
                 if ( not (default_century.integer? and (default_century.length == 2 or (default_century.length == 4 and default_century[ 2..3 ] == "00" )))) then
                     SE.puts "#{SE.lineno}: Expected the :default_century to be NN00 (or NN), not '#{default_century}'"
                     raise
                 end
-                @option_H[ option_H_key ] = @option_H[ option_H_key ][0..1]
+                self.option_H[ option_H_key ] = self.option_H[ option_H_key ][0..1]
             when :yyyy_min_value
-                if ( not (@option_H[ option_H_key ].integer? and @option_H[ option_H_key ].length == 4 )) then
-                    SE.puts "#{SE.lineno}: Expected the :yyyy_min_value to be NNNN, not '#{@option_H[ option_H_key ]}'"
+                if ( not (self.option_H[ option_H_key ].integer? and self.option_H[ option_H_key ].length == 4 )) then
+                    SE.puts "#{SE.lineno}: Expected the :yyyy_min_value to be NNNN, not '#{self.option_H[ option_H_key ]}'"
                     raise
                 end
             when :yyyy_max_value
-                if ( not (@option_H[ option_H_key ].integer? and @option_H[ option_H_key ].length == 4 )) then
-                    SE.puts "#{SE.lineno}: Expected the :yyyy_max_value to be NNNN, not '#{@option_H[ option_H_key ]}'"
+                if ( not (self.option_H[ option_H_key ].integer? and self.option_H[ option_H_key ].length == 4 )) then
+                    SE.puts "#{SE.lineno}: Expected the :yyyy_max_value to be NNNN, not '#{self.option_H[ option_H_key ]}'"
                     raise
                 end
             when :date_string_composition
-                if ( not (@option_H[ option_H_key ].is_a?( Symbol ) and @option_H[ option_H_key ].in?( [ :only_dates, :dates_in_text ] ))) then
-                    SE.puts "#{SE.lineno}: Expected :date_string_composition to be :only_dates or :dates_in_text, not '#{@option_H[ option_H_key ]}'"
+                if ( not (self.option_H[ option_H_key ].is_a?( Symbol ) and self.option_H[ option_H_key ].in?( [ :only_dates, :dates_in_text ] ))) then
+                    SE.puts "#{SE.lineno}: Expected :date_string_composition to be :only_dates or :dates_in_text, not '#{self.option_H[ option_H_key ]}'"
                     raise
                 end
             when :nn_mmm_nn_day_year_order
-                if ( not (@option_H[ option_H_key ].is_a?( Symbol ) and @option_H[ option_H_key ].in?( [ :dd_mm_yy, :yy_mm_dd ] ))) then
-                    SE.puts "#{SE.lineno}: Expected :nn_mmm_nn_day_year_order to be :dd_mm_yy or :yy_mm_dd, not '#{@option_H[ option_H_key ]}'"
+                if ( not (self.option_H[ option_H_key ].is_a?( Symbol ) and self.option_H[ option_H_key ].in?( [ :dd_mm_yy, :yy_mm_dd ] ))) then
+                    SE.puts "#{SE.lineno}: Expected :nn_mmm_nn_day_year_order to be :dd_mm_yy or :yy_mm_dd, not '#{self.option_H[ option_H_key ]}'"
                     raise
                 end
             when :nn_nn_nn_date_order
-                if ( not (@option_H[ option_H_key ].is_a?( Symbol ) and @option_H[ option_H_key ].in?( [ :mm_dd_yy, :dd_mm_yy, :yy_mm_dd ] ))) then
-                    SE.puts "#{SE.lineno}: Expected :nn_nn_nn_date_order to be :mm_dd_yy, :dd_mm_yy, or :yy_mm_dd not '#{@option_H[ option_H_key ]}'"
+                if ( not (self.option_H[ option_H_key ].is_a?( Symbol ) and self.option_H[ option_H_key ].in?( [ :mm_dd_yy, :dd_mm_yy, :yy_mm_dd ] ))) then
+                    SE.puts "#{SE.lineno}: Expected :nn_nn_nn_date_order to be :mm_dd_yy, :dd_mm_yy, or :yy_mm_dd not '#{self.option_H[ option_H_key ]}'"
                     raise
                 end
             when :sort
-                if ( not ( [true, false].include?( @option_H[ option_H_key ] ) ) ) then
-                    SE.puts "#{SE.lineno}: Expected '#{option_H_key}' to be true or false, not '#{@option_H[ option_H_key ]}'"
+                if ( not ( [true, false].include?( self.option_H[ option_H_key ] ) ) ) then
+                    SE.puts "#{SE.lineno}: Expected '#{option_H_key}' to be true or false, not '#{self.option_H[ option_H_key ]}'"
                     SE.q { 'option_H' }
                     raise
                 end
             else
                 SE.puts "#{SE.lineno}: invalid option_H option: '#{option_H_key}'"
-                SE.q { '@option_H' }
+                SE.q { 'self.option_H' }
                 raise
             end
         end
 
-        if ( not @option_H.key?( :debug_options ) )
-            @option_H[ :debug_options ] = []
+        if ( not self.option_H.key?( :debug_options ) )
+            self.option_H[ :debug_options ] = []
         end
-        if ( not @option_H.key?( :morality_replace_option ) )
-            @option_H[ :morality_replace_option ] = { }
+        if ( not self.option_H.key?( :morality_replace_option ) )
+            self.option_H[ :morality_replace_option ] = { }
         end
-        if ( not @option_H[ :morality_replace_option ].key?( :good ) ) then
-            @option_H[ :morality_replace_option ][ :good ] = :remove_from_end
+        if ( not self.option_H[ :morality_replace_option ].key?( :good ) ) then
+            self.option_H[ :morality_replace_option ][ :good ] = :remove_from_end
         end
-        if ( not @option_H[ :morality_replace_option ].key?( :bad ) ) then
-            @option_H[ :morality_replace_option ][ :bad ] = :keep
+        if ( not self.option_H[ :morality_replace_option ].key?( :bad ) ) then
+            self.option_H[ :morality_replace_option ][ :bad ] = :keep
         end
-        if ( not @option_H.key?( :thru_date_separators ) ) then
-            @option_H[ :thru_date_separators ] = '-|/| to | through '
+        if ( not self.option_H.key?( :thru_date_separators ) ) then
+            self.option_H[ :thru_date_separators ] = '-|/| to | through '
         end
-        if ( not @option_H.key?( :date_text_separators ) ) then
-            @option_H[ :date_text_separators ] = '[|]| and '           
+        if ( not self.option_H.key?( :date_text_separators ) ) then
+            self.option_H[ :date_text_separators ] = '[|]| and '           
         end
-        if ( not @option_H.key?( :pattern_name_RES ) )
+        if ( not self.option_H.key?( :pattern_name_RES ) )
         then
-            @option_H[ :pattern_name_RES ] = '.'
+            self.option_H[ :pattern_name_RES ] = '.'
         end
-        if ( not @option_H.key?( :default_century ) )
+        if ( not self.option_H.key?( :default_century ) )
         then
-            @option_H[ :default_century ] = ""              # If the default century is blank, only look for 4 digit dates.
+            self.option_H[ :default_century ] = ""              # If the default century is blank, only look for 4 digit dates.
         end
-        if ( not @option_H.key?( :date_string_composition ) ) then
-            @option_H[ :date_string_composition ] = :dates_in_text
+        if ( not self.option_H.key?( :date_string_composition ) ) then
+            self.option_H[ :date_string_composition ] = :dates_in_text
         end
-        if ( not @option_H.key?( :yyyy_min_value ) ) then
-            @option_H[ :yyyy_min_value ] = '1800'
+        if ( not self.option_H.key?( :yyyy_min_value ) ) then
+            self.option_H[ :yyyy_min_value ] = '1800'
         end
-        if ( not @option_H.key?( :yyyy_max_value ) ) then
-            @option_H[ :yyyy_max_value ] = '2100'
+        if ( not self.option_H.key?( :yyyy_max_value ) ) then
+            self.option_H[ :yyyy_max_value ] = '2100'
         end
-        if ( not @option_H.key?( :nn_mmm_nn_day_year_order ) ) then
-            @option_H[ :nn_mmm_nn_day_year_order ] = :dd_mm_yy
+        if ( not self.option_H.key?( :nn_mmm_nn_day_year_order ) ) then
+            self.option_H[ :nn_mmm_nn_day_year_order ] = :dd_mm_yy
         end
-        if ( not @option_H.key?( :nn_nn_nn_date_order ) ) then
-            @option_H[ :nn_nn_nn_date_order ] = :mm_dd_yy
+        if ( not self.option_H.key?( :nn_nn_nn_date_order ) ) then
+            self.option_H[ :nn_nn_nn_date_order ] = :mm_dd_yy
         end
-        if ( not @option_H.key?( :sort ) ) then
-            @option_H[ :sort ] = true
+        if ( not self.option_H.key?( :sort ) ) then
+            self.option_H[ :sort ] = true
         end
 
 #       dash_RES                    = "\\s{0,2}-\\s{0,2}"
@@ -217,15 +236,15 @@ class Find_Dates_in_String
         space_RES                   = "\\s{0,3}" 
 
         n_nn_RES                    = "(?:#{K.day_RES}|#{K.numeric_month_RES})" 
-        year_RES                    = ( @option_H[ :default_century ].empty? ) ? "#{K.year4_RES}" : "(#{K.year2_RES}|#{K.year4_RES})"  
+        year_RES                    = ( self.option_H[ :default_century ].empty? ) ? "#{K.year4_RES}" : "(#{K.year2_RES}|#{K.year4_RES})"  
                                                                             # For possible year positions
                                                                             # If no default year, only look for 4 digit years.
 
-        @thru_date_separator_RES    = "(?:\\s{0,2}(?:#{@option_H[ :thru_date_separators ]})\\s{0,2}){1}"
-        @thru_date_begin_delim_RES  = "^\\s*"
-#       @begin_delim_RES            = "(?:(?:\\A|\\s|#{@option_H[ :date_text_separators ]}))*"    
-        @begin_delim_RES            = "(?:(?:\\A|\\s+|\\W|\\s*#{@option_H[ :date_text_separators ]}\\s*))"    
-        @end_delim_RES              = "\\s*(?:#{@thru_date_separator_RES}|\\W|\\Z){1}"     # The \\W will match any separators
+        self.thru_date_separator_RES    = "(?:\\s{0,2}(?:#{self.option_H[ :thru_date_separators ]})\\s{0,2}){1}"
+        self.thru_date_begin_delim_RES  = "^\\s*"
+#       self.begin_delim_RES            = "(?:(?:\\A|\\s|#{self.option_H[ :date_text_separators ]}))*"    
+        self.begin_delim_RES            = "(?:(?:\\A|\\s+|\\W|\\s*#{self.option_H[ :date_text_separators ]}\\s*))"    
+        self.end_delim_RES              = "\\s*(?:#{self.thru_date_separator_RES}|\\W|\\Z){1}"     # The \\W will match any separators
 
         date_pattern_RES_S = Struct.new( :pattern_name, :pattern_RES )      # The :pattern_name and length are computed and added later.
                                                                             # Literal spaces in the pattern are removed.  Spaces are just
@@ -284,20 +303,20 @@ class Find_Dates_in_String
 
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt011__MMM_dd_dd_yyyy>     (?<month_M>#{K.alpha_month_RES})#{space_RES}    (?<day_M>#{n_nn_RES})"+
-                                                              "#{@thru_date_separator_RES} (?<thru_day_M>#{n_nn_RES})#{space_comma_RES}  (?<year_M>#{year_RES}))" )
+                                                              "#{self.thru_date_separator_RES} (?<thru_day_M>#{n_nn_RES})#{space_comma_RES}  (?<year_M>#{year_RES}))" )
 
 
                                          #   fmt012__ = Dates in 'MMM dd - MMM dd, yyyy format (hybid double)
                                          
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt012__MMM_dd_MMM_dd_yyyy> (?<month_M>#{K.alpha_month_RES})#{space_RES}             (?<day_M>#{n_nn_RES})"+
-              "#{@thru_date_separator_RES} (?<thru_month_M>#{K.alpha_month_RES})#{space_comma_RES}  (?<thru_day_M>#{n_nn_RES})#{comma_RES}(?<year_M>#{year_RES}))" )
+              "#{self.thru_date_separator_RES} (?<thru_month_M>#{K.alpha_month_RES})#{space_comma_RES}  (?<thru_day_M>#{n_nn_RES})#{comma_RES}(?<year_M>#{year_RES}))" )
 
                                         #   fmt013__ = Dates in 'MMM-MMMM yy[yy] format (hybid double) Note there's NO COMMA after the month
 
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt013__MMM_MMM_yyyy>       (?<month_M>#{K.alpha_month_RES})#{space_RES}"+
-              "#{@thru_date_separator_RES} (?<thru_month_M>#{K.alpha_month_RES})#{space_RES}                                              (?<year_M>#{year_RES}))" )
+              "#{self.thru_date_separator_RES} (?<thru_month_M>#{K.alpha_month_RES})#{space_RES}                                              (?<year_M>#{year_RES}))" )
 
 
                                         #   fmt014__ = All numeric dates 'nn [-/] nn [-/] nn ' format,  the 1st and 3rd positions could be 1 or 4 digets (days or years)
@@ -322,123 +341,122 @@ class Find_Dates_in_String
         end
 
 #       Load date patterns to use
-        @date_pattern_RES_S__A = [ ]
+        self.date_pattern_RES_S__A = [ ]
         initial__date_pattern_RES_S__A.each_index do | idx |
             pattern_name = initial__date_pattern_RES_S__A[ idx ].pattern_name
-            if ( pattern_name.match?( /#{@option_H[ :pattern_name_RES ]}/ )) then
-                @date_pattern_RES_S__A.push( initial__date_pattern_RES_S__A[ idx ] )
+            if ( pattern_name.match?( /#{self.option_H[ :pattern_name_RES ]}/ )) then
+                self.date_pattern_RES_S__A.push( initial__date_pattern_RES_S__A[ idx ] )
             end
         end
-        if ( @date_pattern_RES_S__A.length == 0 ) then
-            SE.puts "#{SE.lineno}: No patterns selected based on RE: #{@option_H[ :pattern_name_RES ]}"
+        if ( self.date_pattern_RES_S__A.length == 0 ) then
+            SE.puts "#{SE.lineno}: No patterns selected based on RE: #{self.option_H[ :pattern_name_RES ]}"
             raise
         end
 
 #       Check for duplicate pattern names
-        @pattern_cnt_H = {}
-        @date_pattern_RES_S__A.each_index do | idx |
+        self.pattern_cnt_H = {}
+        self.date_pattern_RES_S__A.each_index do | idx |
             pattern_name = date_pattern_RES_S__A[ idx ].pattern_name
-            if ( @pattern_cnt_H.key?( pattern_name ) ) then
+            if ( self.pattern_cnt_H.key?( pattern_name ) ) then
                 SE.puts "#{SE.lineno}: I shouldn't be here: duplicate pattern_name '#{pattern_name}'"
                 raise
             end
-            @pattern_cnt_H[ pattern_name ] = 0
+            self.pattern_cnt_H[ pattern_name ] = 0
         end
 
         
-        @possible_date_C = Struct.new( :pattern_name,
-                                       :regexp,
-                                       :match_O,
-                                     )
+        self.possible_date_C = Struct.new( :pattern_name,
+                                           :regexp,
+                                           :match_O,
+                                         )
         
-        @date_clump_C = Struct.new( :full_match_string,
-                                    :uid,                       
-                                    :beginning_offset,   
-                                    :date_match_S__A,
-                                    :morality,
-                                    :error_msg,
-                                    keyword_init: true
-                                    )   do
-                                            def judge_date( judgement, input_error_msg, print = true )
-                                                SE.puts input_error_msg if ( print )
-                                                SE.puts ""              if ( print )
-                                                self.error_msg  = ""    if ( error_msg == nil )
-                                                self.error_msg += "  "  if ( error_msg != "")
-                                                self.error_msg += input_error_msg
-                                                return if ( judgement == nil )
-                                                if ( morality == nil ) then
+        self.date_clump_C = Struct.new( :full_match_string,
+                                        :uid,                       
+                                        :beginning_offset,   
+                                        :date_match_S__A,
+                                        :morality,
+                                        :error_msg,
+                                        keyword_init: true
+                                        )   do
+                                                def judge_date( judgement, input_error_msg, print = true )
+                                                    SE.puts input_error_msg if ( print )
+                                                    SE.puts ""              if ( print )
+                                                    self.error_msg  = ""    if ( error_msg == nil )
+                                                    self.error_msg += "  "  if ( error_msg != "")
+                                                    self.error_msg += input_error_msg
+                                                    return if ( judgement == nil )
+                                                    if ( morality == nil ) then
+                                                        self.morality = judgement
+                                                        return
+                                                    end
+                                                    if ( morality == :bad ) then
+                                                        return if ( judgement == :bad )
+                                                        SE.puts "#{SE.lineno}: Date morality was already bad, not changed to #{judgement}"
+                                                        return
+                                                    end
+                                                    SE.puts "#{SE.lineno}: Date morality was already #{morality}, changed to #{judgement}"
                                                     self.morality = judgement
                                                     return
                                                 end
-                                                if ( morality == :bad ) then
-                                                    return if ( judgement == :bad )
-                                                    SE.puts "#{SE.lineno}: Date morality was already bad, not changed to #{judgement}"
-                                                    return
+                                                def from
+                                                    return date_match_S__A[ 0 ]
                                                 end
-                                                SE.puts "#{SE.lineno}: Date morality was already #{morality}, changed to #{judgement}"
-                                                self.morality = judgement
-                                                return
-                                            end
-                                            def from
-                                                return date_match_S__A[ 0 ]
-                                            end
-                                            def thru
-                                                return date_match_S__A[ 1 ]
-                                            end      
-                                            def from_date
-                                                date_match_S = from
-                                                if ( date_match_S == nil ) then
-                                                    SE.puts "#{SE.lineno}: I shouldn't be here: date_clump_S without a from date"
-                                                    SE.q { :self }
-                                                    raise
-                                                else
-                                                    return date_match_S.as_date
+                                                def thru
+                                                    return date_match_S__A[ 1 ]
+                                                end      
+                                                def from_date
+                                                    date_match_S = from
+                                                    if ( date_match_S == nil ) then
+                                                        SE.puts "#{SE.lineno}: I shouldn't be here: date_clump_S without a from date"
+                                                        SE.q { :self }
+                                                        raise
+                                                    else
+                                                        return date_match_S.as_date
+                                                    end
                                                 end
+                                                def thru_date
+                                                    date_match_S = thru
+                                                    if ( date_match_S == nil ) then
+                                                        return ""
+                                                    else
+                                                        return date_match_S.as_date
+                                                    end
+                                                end    
+                                         
                                             end
-                                            def thru_date
-                                                date_match_S = thru
-                                                if ( date_match_S == nil ) then
-                                                    return ""
-                                                else
-                                                    return date_match_S.as_date
-                                                end
-                                            end    
-                                     
-                                        end
         
-        @date_match_C = Struct.new( :match_O,
-                                    :pattern_name,
-                                    :regexp,
-                                    :ymd_S,
-                                    :strptime_O,
-                                    :as_date,
-                                  ) do
-                                        def all_pieces
-                                            return  match_O.named_captures[ 'begin_M' ] +
-                                                    match_O.named_captures[ 'date_M' ] +
-                                                    match_O.named_captures[ 'end_M' ]
-                                        end
-                                        def piece( num )
-                                            piece_A = [ match_O.named_captures[ 'begin_M' ],
-                                                        match_O.named_captures[ 'date_M' ],
-                                                        match_O.named_captures[ 'end_M' ],
-                                                      ]
-                                            if ( num.is_a?( Integer )) then
-                                                return piece_A[ num ]
+        self.date_match_C = Struct.new( :match_O,
+                                        :pattern_name,
+                                        :regexp,
+                                        :ymd_S,
+                                        :strptime_O,
+                                        :as_date,
+                                      ) do
+                                            def all_pieces
+                                                return  match_O.named_captures[ 'begin_M' ] +
+                                                        match_O.named_captures[ 'date_M' ] +
+                                                        match_O.named_captures[ 'end_M' ]
                                             end
-                                            if ( num.is_a?( Range )) then
-                                                return piece_A[ num ].join('')
+                                            def piece( num )
+                                                piece_A = [ match_O.named_captures[ 'begin_M' ],
+                                                            match_O.named_captures[ 'date_M' ],
+                                                            match_O.named_captures[ 'end_M' ],
+                                                          ]
+                                                if ( num.is_a?( Integer )) then
+                                                    return piece_A[ num ]
+                                                end
+                                                if ( num.is_a?( Range )) then
+                                                    return piece_A[ num ].join('')
+                                                end
+                                                raise "#{SE.lineno}: I shouldn't be here: Was expect a number or range."
                                             end
-                                            raise "#{SE.lineno}: I shouldn't be here: Was expect a number or range."
+                                            alias_method :pieces, :piece
                                         end
-                                        alias_method :pieces, :piece
-                                    end
-                            
-        @ymd_C = Struct.new( :year, :month, :day )
+                                
+        self.ymd_C = Struct.new( :year, :month, :day )
         return                            
         
     end
-    attr_reader :option_H, :date_pattern_RES_S__A, :pattern_cnt_H
     
     def new_date_clump_uid_string( num )
         return '<DATE_CLUMP_#:' + '%010d' % num + '>'
@@ -454,16 +472,7 @@ class Find_Dates_in_String
             SE.q {[ 'string' ]}
         end
     end
-    
-    def option_H=( options_to_set_H )
-        SE.puts "I can never have this method because the date formats are setup at initialization"
-        SE.puts "and it's way to easy to think that setting an option will change the behavior"
-        SE.puts "when - in fact - the behavior is in the formats.  You then spend hours trying to"
-        SE.puts "figure out why changing the { :default_century => '1900' } with this method"
-        SE.puts "doesn't change how the program finds dates."
-        raise
-    end
-    
+       
     def get_tree_of__possible_date_S__A_A( input_string, initial_offset, looking_for_a_thru_date = false, level = 0 )
         tree_of__possible_date_S__A_A = [ ]
         if ( level > 10 ) then
@@ -471,11 +480,11 @@ class Find_Dates_in_String
             SE.q { 'tree_of__possible_date_S__A_A' }
             raise
         end
-        @date_pattern_RES_S__A.each do | date_pattern_RES_S |
+        self.date_pattern_RES_S__A.each do | date_pattern_RES_S |
             if ( looking_for_a_thru_date ) then
-                regexp = %r{(?<begin_M>#{@thru_date_begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?<end_M>#{@end_delim_RES})}xi
+                regexp = %r{(?<begin_M>#{self.thru_date_begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?<end_M>#{self.end_delim_RES})}xi
             else
-                regexp = %r{(?<begin_M>#{@begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?=([^\>]|$))(?<end_M>#{@end_delim_RES})}xi
+                regexp = %r{(?<begin_M>#{self.begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?=([^\>]|$))(?<end_M>#{self.end_delim_RES})}xi
 #                                                                                
 #                           The lookahead '(?=([^\>]|$))' keeps the pattern from seeing the NNNN> of the date-clump literals
 #                           and turning the NNNN into a year (with the '>' acting as a separator matched on \W).                   
@@ -490,11 +499,11 @@ class Find_Dates_in_String
                                match_O.named_captures[ 'end_M' ]
                 match_offset = match_O.offset( :begin_M )[0]
                 match_length = match_string.length
-                if ( match_O.named_captures[ 'end_M' ] =~ /#{@thru_date_separator_RES}/ix ) then
+                if ( match_O.named_captures[ 'end_M' ] =~ /#{self.thru_date_separator_RES}/ix ) then
                     result = get_tree_of__possible_date_S__A_A( input_string[ match_offset + match_length .. -1 ], 0, true, level + 1 )
-                    tree_of__possible_date_S__A_A << [ @possible_date_C.new( date_pattern_RES_S.pattern_name, regexp, match_O ), result ]
+                    tree_of__possible_date_S__A_A << [ self.possible_date_C.new( date_pattern_RES_S.pattern_name, regexp, match_O ), result ]
                 else
-                    tree_of__possible_date_S__A_A << [ @possible_date_C.new( date_pattern_RES_S.pattern_name, regexp, match_O ), [ ] ]
+                    tree_of__possible_date_S__A_A << [ self.possible_date_C.new( date_pattern_RES_S.pattern_name, regexp, match_O ), [ ] ]
                 end
                 scan_begin_offset = match_offset + match_length
             end
@@ -518,7 +527,7 @@ class Find_Dates_in_String
 
     def get_the_longest_date( input_string, initial_offset = 0 )
         tree_of__possible_date_S__A_A = get_tree_of__possible_date_S__A_A( input_string, initial_offset )
-        if ( @option_H[ :debug_options ].include?( :print_date_tree )) then
+        if ( self.option_H[ :debug_options ].include?( :print_date_tree )) then
             SE.puts ""
             SE.q { 'tree_of__possible_date_S__A_A' }
         end  
@@ -526,7 +535,7 @@ class Find_Dates_in_String
         return [ ] if ( tree_of__possible_date_S__A_A.empty? )
         
         combinations_of__possible_date_S__A_A = get_combinations_of__possible_date_S__A_A( tree_of__possible_date_S__A_A )
-        if ( @option_H[ :debug_options ].include?( :print_unsorted_combinations )) then
+        if ( self.option_H[ :debug_options ].include?( :print_unsorted_combinations )) then
             SE.puts ""
             SE.q { 'combinations_of__possible_date_S__A_A' }
         end
@@ -538,7 +547,7 @@ class Find_Dates_in_String
                                 0 + combinations_of__possible_date_S__A[ 0 ].match_O.offset( :begin_M )[0],
                             ]
                             end
-        if ( @option_H[ :debug_options ].include?( :print_sorted_combinations )) then
+        if ( self.option_H[ :debug_options ].include?( :print_sorted_combinations )) then
             SE.puts ""
             SE.q { 'sorted_combinations_of__possible_date_S__A_A' }
         end
@@ -546,7 +555,7 @@ class Find_Dates_in_String
 #       Return only the longest date ( element 0 after sorting) of all the dates found.
         date_match_S__A = [ ]
         sorted_combinations_of__possible_date_S__A_A[ 0 ].each do | possible_date_S |             
-            date_match_S = @date_match_C.new(   possible_date_S.match_O,
+            date_match_S = self.date_match_C.new(   possible_date_S.match_O,
                                                 possible_date_S.pattern_name,
                                                 possible_date_S.regexp,
                                              )
@@ -563,7 +572,7 @@ class Find_Dates_in_String
         ld = SE::Loop_detector.new( 100 )
         loop do   
             ld.loop
-            if ( @option_H[ :debug_options ].include?( :print_process_input_string )) then
+            if ( self.option_H[ :debug_options ].include?( :print_process_input_string )) then
                 SE.puts ""
                 SE.q { 'process_input_string' }
             end     
@@ -572,8 +581,8 @@ class Find_Dates_in_String
             date_match_S__A = get_the_longest_date( process_input_string )
             break if ( date_match_S__A.empty? )
             
-            date_clump_S = @date_clump_C.new( full_match_string: "", 
-                                              date_match_S__A: date_match_S__A,
+            date_clump_S = self.date_clump_C.new( full_match_string: "", 
+                                                  date_match_S__A: date_match_S__A,
                                             )
             date_clump_S__A << date_clump_S
             
@@ -589,16 +598,16 @@ class Find_Dates_in_String
                 end    
                 
                 date_clump_S.full_match_string     += stringer               
-                @pattern_cnt_H[ date_match_S.pattern_name ] += 1
+                self.pattern_cnt_H[ date_match_S.pattern_name ] += 1
  
-                date_match_S.ymd_S = @ymd_C.new( ) 
+                date_match_S.ymd_S = self.ymd_C.new( ) 
                 if ( date_match_S.pattern_name.match?( /__nn_nn_nn/ ) ) then
                     if ( date_match_S.match_O.named_captures[ 'nn_1st_M' ].length == 4 ) then
                         date_match_S.ymd_S.year  = date_match_S.match_O.named_captures[ 'nn_1st_M' ]
                         date_match_S.ymd_S.month = date_match_S.match_O.named_captures[ 'nn_2nd_M' ]
                         date_match_S.ymd_S.day   = date_match_S.match_O.named_captures[ 'nn_3rd_M' ]
                     else
-                        case @option_H[ :nn_nn_nn_date_order ]
+                        case self.option_H[ :nn_nn_nn_date_order ]
                         when :mm_dd_yy
                             date_match_S.ymd_S.month = date_match_S.match_O.named_captures[ 'nn_1st_M' ]
                             date_match_S.ymd_S.day   = date_match_S.match_O.named_captures[ 'nn_2nd_M' ]
@@ -614,12 +623,12 @@ class Find_Dates_in_String
                         else
                             SE.puts "#{SE.lineno}: I shouldn't be here: #{date_match_S.pattern_name}: "+
                                                  "'#{date_match_S.all_pieces}' > "+
-                                                 "invalid :nn_nn_nn_date_order value '#{@option_H[ :nn_nn_nn_date_order ]}'"
+                                                 "invalid :nn_nn_nn_date_order value '#{self.option_H[ :nn_nn_nn_date_order ]}'"
                             raise
                         end
                     end
                 elsif ( date_match_S.pattern_name.match?( /__nn_MMM_nn/ ) ) then
-                    case @option_H[ :nn_mmm_nn_day_year_order ]
+                    case self.option_H[ :nn_mmm_nn_day_year_order ]
                     when :yy_mm_dd
                         date_match_S.ymd_S.year  = date_match_S.match_O.named_captures[ 'nn_1st_M' ]
                         date_match_S.ymd_S.month = date_match_S.match_O.named_captures[ 'month_M' ]
@@ -631,7 +640,7 @@ class Find_Dates_in_String
                     else
                         SE.puts "#{SE.lineno}: I shouldn't be here: #{date_match_S.pattern_name}: "+
                                              "'#{date_match_S.all_pieces}' > "+
-                                             "invalid :nn_mmm_nn_day_year_order value '#{@option_H[ :nn_mmm_nn_day_year_order ]}'"
+                                             "invalid :nn_mmm_nn_day_year_order value '#{self.option_H[ :nn_mmm_nn_day_year_order ]}'"
                         raise
                     end
                 elsif ( date_match_S.pattern_name.match?( /__(MMM_dd_dd_yy|MMM_dd_MMM_dd_yy|MMM_MMM_yy)/ )) then  
@@ -639,9 +648,9 @@ class Find_Dates_in_String
                     date_match_S.ymd_S.month =  date_match_S.match_O.named_captures[ 'month_M' ]
                     date_match_S.ymd_S.day   =  date_match_S.match_O.named_captures[ 'day_M' ]
                     
-                    generated_thru_date_match_S = @date_match_C.new( date_match_S.match_O )
+                    generated_thru_date_match_S = self.date_match_C.new( date_match_S.match_O )
                     generated_thru_date_match_S.pattern_name = date_match_S.pattern_name
-                    generated_thru_date_match_S.ymd_S = @ymd_C.new( )
+                    generated_thru_date_match_S.ymd_S = self.ymd_C.new( )
                     generated_thru_date_match_S.ymd_S.year =  date_match_S.match_O.named_captures[ 'year_M' ]
                     if ( date_match_S.match_O.named_captures.key?( 'thru_month_M' )) then
                         generated_thru_date_match_S.ymd_S.month = date_match_S.match_O.named_captures[ 'thru_month_M' ]
@@ -660,7 +669,7 @@ class Find_Dates_in_String
                     date_match_S.ymd_S.day   =  date_match_S.match_O.named_captures[ 'day_M' ]
                 end
                 
-                break if (date_match_S.piece( 2 ) !~ /#{@thru_date_separator_RES}/ix ) 
+                break if (date_match_S.piece( 2 ) !~ /#{self.thru_date_separator_RES}/ix ) 
             end                                                           
             process_input_string[ date_clump_S.beginning_offset, date_clump_S.full_match_string.length ] = date_clump_S.uid
         end
@@ -710,18 +719,18 @@ class Find_Dates_in_String
                 end
 
                 if ( year.length == 4 )
-                    if ( year < @option_H[ :yyyy_min_value] ) then
+                    if ( year < self.option_H[ :yyyy_min_value] ) then
                         stringer = "#{SE.lineno}: Date dropped: #{date_match_S.pattern_name}, idx=#{date_match_I}: "+
                                                 "'#{date_match_S.all_pieces}' -> "+
-                                                "'#{date_match_S.piece( 1 )}' year < min value #{@option_H[ :yyyy_min_value]}"
+                                                "'#{date_match_S.piece( 1 )}' year < min value #{self.option_H[ :yyyy_min_value]}"
                         SE.puts "#{SE.lineno}: #{param_input_string}"
                         date_clump_S.judge_date( :bad, stringer )
                         next
                     end
-                    if ( year > @option_H[ :yyyy_max_value] ) then
+                    if ( year > self.option_H[ :yyyy_max_value] ) then
                         stringer = "#{SE.lineno}: Date dropped: #{date_match_S.pattern_name}, idx=#{date_match_I}: "+
                                                 "'#{date_match_S.all_pieces}' -> "+
-                                                "'#{date_match_S.piece( 1 )}' year > max value #{@option_H[ :yyyy_max_value]}"
+                                                "'#{date_match_S.piece( 1 )}' year > max value #{self.option_H[ :yyyy_max_value]}"
                         SE.puts "#{SE.lineno}: #{param_input_string}"
                         date_clump_S.judge_date( :bad, stringer )
                         next
@@ -745,12 +754,12 @@ class Find_Dates_in_String
                 end
                 if ( year.length == 2 ) then
                     if ( date_match_I == 0 ) then
-                        year = @option_H[ :default_century ] + year             # These are strings
+                        year = self.option_H[ :default_century ] + year             # These are strings
                     else
                         if ( date_clump_S.from.strptime_O ) then
                             year = date_clump_S.from_date[ 0 .. 1] + year       # Take the century from the converted from_year, which is already in YYYY format
                         else
-                            year = @option_H[ :default_century ] + year  
+                            year = self.option_H[ :default_century ] + year  
                         end
                     end
                 end
@@ -841,7 +850,7 @@ class Find_Dates_in_String
                 end
             end
 
-            if ( @option_H[ :debug_options ].include?( :print_good_dates ) ) then
+            if ( self.option_H[ :debug_options ].include?( :print_good_dates ) ) then
                 stringer = "#{SE.lineno}: good date: #{date_match_S.pattern_name}: '#{date_match_S.all_pieces}'"
                 SE.puts stringer
             end
@@ -852,7 +861,7 @@ class Find_Dates_in_String
 
         process_input_string_with_all_dates_removed = process_input_string + ""
         date_clump_S__A.each do | date_clump_S |
-            replace_option = @option_H[ :morality_replace_option ][ date_clump_S.morality ]
+            replace_option = self.option_H[ :morality_replace_option ][ date_clump_S.morality ]
             case replace_option
             when :keep
                 begin
@@ -896,12 +905,12 @@ class Find_Dates_in_String
                 end
             else
                 SE.puts "#{SE.lineno}: I shouldn't be here, unknown replace_option for morality '#{date_clump_S.morality}' -> "+
-                                     "'#{@option_H[ :morality_replace_option ][ date_clump_S.morality ]}'"
+                                     "'#{self.option_H[ :morality_replace_option ][ date_clump_S.morality ]}'"
                 SE.q { 'date_clump_S' }
                 raise
             end
         end
-        if ( @option_H[ :morality_replace_option ][ :good ] == :remove_from_end ) then
+        if ( self.option_H[ :morality_replace_option ][ :good ] == :remove_from_end ) then
             loop do
                 process_input_string.sub!( /([\.,;])\s*\Z/, '' )
                 break if ( not process_input_string.sub!( /#{date_clump_uid_string_RE}\s*\Z/, '' ) )
@@ -920,23 +929,23 @@ class Find_Dates_in_String
             end
         end
 
-        @good__date_clump_S__A = [ ]
-        @bad__date_clump_S__A = [ ]
+        self.good__date_clump_S__A = [ ]
+        self.bad__date_clump_S__A = [ ]
         date_clump_S__A.each do | date_clump_S |
             case date_clump_S.morality
             when :good
-                @good__date_clump_S__A << date_clump_S
+                self.good__date_clump_S__A << date_clump_S
             when :bad
-                @bad__date_clump_S__A << date_clump_S
+                self.bad__date_clump_S__A << date_clump_S
             else
                 SE.puts "#{SE.lineno}: I shouldn't be here: amoral date: '#{date_clump_S.morality}', #{date_clump_S}"
                 raise
             end
         end
-        if ( @option_H[ :sort ] ) then
-            @good__date_clump_S__A = @good__date_clump_S__A.sort_by { | date_clump_S | [ date_clump_S.from_date ] }
+        if ( self.option_H[ :sort ] ) then
+            self.good__date_clump_S__A = self.good__date_clump_S__A.sort_by { | date_clump_S | [ date_clump_S.from_date ] }
             prev_date=''
-            @good__date_clump_S__A.each_with_index do | date_clump_S, idx |
+            self.good__date_clump_S__A.each_with_index do | date_clump_S, idx |
                 if ( date_clump_S.from_date < prev_date ) then
                     SE.puts "#{SE.lineno}: Warning: Dates overlap! good from-date '#{date_clump_S.from_date} at element #{idx} "+
                             "< previous date #{prev_date}, there may be others."
@@ -948,7 +957,7 @@ class Find_Dates_in_String
             end
         end
 
-        case @option_H[ :date_string_composition ]
+        case self.option_H[ :date_string_composition ]
         when :dates_in_text
             if (process_input_string_with_all_dates_removed =~ %r~#{K.alpha_month_RES}#( |/|-)~i ) then
                 SE.puts "#{SE.lineno}: Warning possible unmatched date '#{$~}' in '#{process_input_string_with_all_dates_removed}'"
@@ -958,15 +967,15 @@ class Find_Dates_in_String
             if (process_input_string_with_all_dates_removed !~ /^\s*$/ ) then
                 SE.puts "#{SE.lineno}: Unconverted dates in: '#{param_input_string}'"
                 SE.puts "#{SE.lineno}: Extra text:           '#{process_input_string_with_all_dates_removed}'"  if ( param_input_string != process_input_string_with_all_dates_removed )
-                if ( @good__date_clump_S__A.length > 0 ) then
-                    stringer = @good__date_clump_S__A.map do | date_clump_S |
+                if ( self.good__date_clump_S__A.length > 0 ) then
+                    stringer = self.good__date_clump_S__A.map do | date_clump_S |
                         date_clump_S.date_match_S__A.map do | date_match_S |
                             date_match_S.as_date
                         end
                     end.join( "','")
-                    SE.puts "#{SE.lineno}: Good dates: '#{stringer}' moved to bad-dates array after row #{@bad__date_clump_S__A.length}"
-                    @bad__date_clump_S__A += @good__date_clump_S__A
-                    @good__date_clump_S__A = [ ]
+                    SE.puts "#{SE.lineno}: Good dates: '#{stringer}' moved to bad-dates array after row #{self.bad__date_clump_S__A.length}"
+                    self.bad__date_clump_S__A += self.good__date_clump_S__A
+                    self.good__date_clump_S__A = [ ]
                 end
                 SE.puts ""
                 process_input_string = param_input_string
@@ -976,7 +985,7 @@ class Find_Dates_in_String
         return process_input_string
 
     end
-    attr_reader :good__date_clump_S__A, :bad__date_clump_S__A
+
     
 end
 

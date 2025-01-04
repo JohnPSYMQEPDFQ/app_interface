@@ -35,7 +35,7 @@ def csrm_collection( repository_uri:,
     h = {   
             "ead_id"                    =>  ead_id,
             "finding_aid_author"        =>  "Library & Archives staff",
-            "finding_aid_date"          =>  "2024 revision",
+            "finding_aid_date"          =>  "2025 revision",
             "finding_aid_filing_title"  =>  collection_name,
             "finding_aid_language"      =>  "und",
             "finding_aid_language_note" =>  ".",
@@ -173,10 +173,10 @@ end
 myself_name = File.basename( $0 )
 
 cmdln_option_H = { :rep_num => 2  ,
-                 :update => false ,
-                 :ead_id => nil ,
-                 :inmagic => false ,
-                }
+                   :update => false ,
+                   :ead_id => nil ,
+                   :inmagic => false ,
+                 }
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [ options ]"
     option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )." ) do |opt_arg|
@@ -295,23 +295,6 @@ csrm_collection_H = csrm_collection( repository_uri: rep_O.uri,
                                      historical_info: historical_info,
                                      series_summary: series_summary
                                      )
-
-res_buf_O_A = Repository_Query.new( rep_O ).get_all_Resource.buf_A
-res_buf_O_A.each do | res_buf_O |
-#   puts "#{res_buf_O.res_O.num}: #{res_buf_O.record_H[ K.title ]} '#{res_buf_O.record_H[ K.id_0 ]}' '#{res_buf_O.record_H[ K.ead_id ]}'"
-    if ( csrm_collection_H[ K.ead_id ] == res_buf_O.record_H[ K.ead_id ] ) then
-        SE.puts "#{SE.lineno}: Resource ead_id already exists."
-        SE.puts "#{SE.lineno}: csrm_collection_H[ K.ead_id ] == res_buf_O.record_H[ K.ead_id ]"
-        SE.q { [ 'csrm_collection_H[ K.ead_id ]', 'res_buf_O.record_H[ K.ead_id ]' ] } 
-        raise 
-    end
-    if ( csrm_collection_H[ K.id_0 ] == res_buf_O.record_H[ K.id_0 ] ) then
-        SE.puts "#{SE.lineno}: Resource id_0 already exists."
-        SE.puts "#{SE.lineno}: csrm_collection_H[ K.id_0 ] == res_buf_O.record_H[ K.id_0 ]"
-        SE.q { [ 'csrm_collection_H[ K.id_0 ]', 'res_buf_O.record_H[ K.id_0 ]' ] } 
-        raise 
-    end
-end
 
 resource_buf_O = Resource.new( rep_O ).new_buffer.create
 resource_buf_O.load( csrm_collection_H )

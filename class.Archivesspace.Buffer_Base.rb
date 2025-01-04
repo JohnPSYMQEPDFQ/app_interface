@@ -46,7 +46,7 @@ class Buffer_Base
     
     def record_H=( set_values_H )
         set_values_H.each do |k, v|
-            if (k.in?( @cant_change_A )) then
+            if (k.in?( self.cant_change_A )) then
                 SE.puts "#{SE.lineno}: ======================================"
                 SE.puts "Key #{k} can't be changed."
                 raise

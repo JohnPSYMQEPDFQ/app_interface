@@ -20,6 +20,14 @@ require 'optparse'
 require 'class.ArchivesSpace.rb'
 require 'class.formatter.Record_Grouping_Indent.rb'
 
+module Main_Global_Variables
+#       Instead of easily mistyped instance-variables, we can do this...
+        attr_accessor :myself_name, :cmdln_option_H, :aspace_O
+end
+include Main_Global_Variables
+#       But not sure why it needs to be in a module...
+
+
 def put_indent( group_number_A, group_title_A )
     output_record_H={}
     output_record_H[ K.fmtr_record ] = {}
@@ -28,20 +36,20 @@ def put_indent( group_number_A, group_title_A )
         SE.puts "#{SE.lineno}: =============================="
         SE.puts "Wasn't expecting param1 group_number_A to be empty"
         raise
-    when 1 .. @cmdln_option_H[ :max_series ]
+    when 1 .. self.cmdln_option_H[ :max_series ]
         output_record_H[ K.fmtr_record ][ K.level ] = K.series
         title = "Series"
-        if ( group_number_A.length <= @cmdln_option_H[ :max_levels ] ) then
+        if ( group_number_A.length <= self.cmdln_option_H[ :max_levels ] ) then
             title += " #{group_number_A.join( "." )}" 
             output_record_H[ K.fmtr_record ][ K.component_id ] = group_number_A.join( "." )
         end
         title += ": #{group_title_A.join( ". " )}"  
         output_record_H[ K.fmtr_record ][ K.title ] = title
     
-    when 2 .. @cmdln_option_H[ :max_series ] 
+    when 2 .. self.cmdln_option_H[ :max_series ] 
         output_record_H[ K.fmtr_record ][ K.level ] = K.subseries
         title = "Subseries"
-        if ( group_number_A.length <= @cmdln_option_H[ :max_levels ] ) then
+        if ( group_number_A.length <= self.cmdln_option_H[ :max_levels ] ) then
             title += " #{group_number_A.join( "." )}" 
             output_record_H[ K.fmtr_record ][ K.component_id ] = group_number_A.join( "." ) 
         end
@@ -80,14 +88,14 @@ def put_record( stack_record_H )
                 inclusive_dates_O.record_H[ K.label ] = K.creation 
                 inclusive_dates_O.record_H[ K.begin ] = date_A[ 0 ]
                 inclusive_dates_O.record_H[ K.end ] = date_A[ 0 ]
-                inclusive_dates_O.record_H[ K.expression] = @aspace_O.format_date_expression( date_A[ 0 ] )
+                inclusive_dates_O.record_H[ K.expression] = self.aspace_O.format_date_expression( date_A[ 0 ] )
                 output_record_H[ K.fmtr_record ][ K.dates ].push( inclusive_dates_O.record_H )
             when 1
                 inclusive_dates_O = Record_Format.new( :inclusive_dates )
                 inclusive_dates_O.record_H[ K.label ] = K.creation 
                 inclusive_dates_O.record_H[ K.begin ] = date_A[ 0 ]
                 inclusive_dates_O.record_H[ K.end ] = date_A[ 1 ]             
-                inclusive_dates_O.record_H[ K.expression] = @aspace_O.format_date_expression( date_A[ 0 ], date_A[ 1 ] )
+                inclusive_dates_O.record_H[ K.expression] = self.aspace_O.format_date_expression( date_A[ 0 ], date_A[ 1 ] )
                 output_record_H[ K.fmtr_record ][ K.dates ].push( inclusive_dates_O.record_H )
             else
                 SE.puts "#{SE.lineno}: Didn't expect date_A.maxindex to be > 1, the value is: #{date_A.maxindex}"
@@ -144,55 +152,55 @@ myself_name = File.basename( $0 )
 
 #   Note that:  The "Class variables" can be used in "programs", which means that
 #               the program itself is somewhat like a class.
-@cmdln_option_H = { :min_group_size => 4, 
-                    :max_series => 0,
-                    :max_levels => nil,
-                    :parent_title => nil,
-                    :r => nil,
-                  }
+self.cmdln_option_H = { :min_group_size => 4, 
+                        :max_series => 0,
+                        :max_levels => nil,
+                        :parent_title => nil,
+                        :r => nil,
+                      }
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [options] [file]"
 
     option.on( "--min-group-size n", OptionParser::DecimalInteger, "Min records in a Series/Subseries/Record-group (default = 4)" ) do |opt_arg|
-        @cmdln_option_H[ :min_group_size ] = opt_arg
+        self.cmdln_option_H[ :min_group_size ] = opt_arg
     end
     option.on( "--max-series n", OptionParser::DecimalInteger, "Max number of Series/Subseries (default = 0)" ) do |opt_arg|
-        @cmdln_option_H[ :max_series ] = opt_arg
+        self.cmdln_option_H[ :max_series ] = opt_arg
     end
     option.on( "--max-levels n", OptionParser::DecimalInteger, "Max number of N.N.N things to show (default --max-series)" ) do |opt_arg|
-        @cmdln_option_H[ :max_levels ] = opt_arg
+        self.cmdln_option_H[ :max_levels ] = opt_arg
     end
     option.on( "--parent-title x", "The title of the record to attach the rest of the records too" ) do |opt_arg|
-        @cmdln_option_H[ :parent_title ] = opt_arg
+        self.cmdln_option_H[ :parent_title ] = opt_arg
     end
     option.on( "-r n", OptionParser::DecimalInteger, "Stop after N input records" ) do |opt_arg|
-        @cmdln_option_H[ :r ] = opt_arg
+        self.cmdln_option_H[ :r ] = opt_arg
     end
     option.on( "-h", "--help" ) do
         warn option
         exit
     end
 end.parse!  # Bang because ARGV is altered
-@cmdln_option_H[ :min_group_size ] -= 1                   # min-group-size is zero relative.
-@cmdln_option_H[ :min_group_size ] = 0 if ( @cmdln_option_H[ :min_group_size ] < 0 )
+self.cmdln_option_H[ :min_group_size ] -= 1                   # min-group-size is zero relative.
+self.cmdln_option_H[ :min_group_size ] = 0 if ( self.cmdln_option_H[ :min_group_size ] < 0 )
 
-if ( not @cmdln_option_H[ :max_levels] ) then
-    @cmdln_option_H[ :max_levels ] = @cmdln_option_H[ :max_series]
+if ( not self.cmdln_option_H[ :max_levels] ) then
+    self.cmdln_option_H[ :max_levels ] = self.cmdln_option_H[ :max_series]
 end
 
-if ( @cmdln_option_H[ :parent_title ] ) then
-    put_new_parent( @cmdln_option_H[ :parent_title ] )
+if ( self.cmdln_option_H[ :parent_title ] ) then
+    put_new_parent( self.cmdln_option_H[ :parent_title ] )
 end
 
-@aspace_O = ASpace.new
-@aspace_O.date_expression_format    = 'mmmddyyyy'
-@aspace_O.date_expression_separator = ' - '
+self.aspace_O = ASpace.new
+self.aspace_O.date_expression_format    = 'mmmddyyyy'
+self.aspace_O.date_expression_separator = ' - '
 
-Record_Grouping_Indent.new_with_flush( method( :put_record ), method( :put_indent ), @cmdln_option_H[ :min_group_size ] ) do |rgi_O|
+Record_Grouping_Indent.new_with_flush( method( :put_record ), method( :put_indent ), self.cmdln_option_H[ :min_group_size ] ) do |rgi_O|
 #   $DEBUG = true   
     ARGF.each_line do | input_record_J |
         input_record_H = JSON.parse( input_record_J )
-        if ( @cmdln_option_H[ :r ] and $. > @cmdln_option_H[ :r ] ) then 
+        if ( self.cmdln_option_H[ :r ] and $. > self.cmdln_option_H[ :r ] ) then 
             break
         end
         SE.q {[ 'input_record_H' ]} if ( $DEBUG )

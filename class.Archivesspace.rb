@@ -52,14 +52,15 @@ class ASpace
             end
         end
 #       SE.puts "================ In Aspace:initialize @session=#{@session}"
-    end
-    attr_reader :allow_updates, :api_uri_base, :session, :http_calls_O, :date_expression_format, :date_expression_separator
-    attr_writer :allow_updates
-        
+    end       
+    public  attr_reader :allow_updates, :api_uri_base, :session, :http_calls_O, :date_expression_format, :date_expression_separator
+    public  attr_writer :allow_updates
+    private attr_writer                 :api_uri_base, :session, :http_calls_O 
+    
     def login_using_env_vars( p1_user )
-        if ( @api_uri_base == nil ) then
+        if ( self.api_uri_base == nil ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "@api_uri_base isn't set."
+            SE.puts "self.api_uri_base isn't set."
             raise 
         end
         userid, password = p1_user.split(':')
@@ -73,20 +74,13 @@ class ASpace
             end
         end
 
-        @http_calls_O = Http_Calls.new( self )
-        @session = nil
-        @uri = "/users/#{userid}/login"
-        http_response_body_H = @http_calls_O.post_with_params( @uri, { K.password => password } )
-        @session = http_response_body_H[ K.session ]
-    #   SE.puts "session = #{@session}"
+        self.http_calls_O = Http_Calls.new( self )
+        self.session = nil
+        uri = "/users/#{userid}/login"
+        http_response_body_H = self.http_calls_O.post_with_params( uri, { K.password => password } )
+        self.session = http_response_body_H[ K.session ]
+    #   SE.puts "session = #{self.session}"
         return http_response_body_H
-    end
-    
-    def login( p1_userid , p2_password )
-        SE.puts "#{SE.lineno}: Method: 'ASpace.login' ignored."
-    end
-    def api_uri_base=( stringer )
-        SE.puts "#{SE.lineno}: Method: 'ASpace.api_uri_base=' ignored"
     end
     
     def date_expression_format=( date_format )
@@ -108,7 +102,7 @@ class ASpace
     end
     
     def format_date( yyyyDmmDdd ) 
-        return yyyyDmmDdd + '' if ( @date_expression_format == 'aspace_default' )
+        return yyyyDmmDdd + '' if ( self.date_expression_format == 'aspace_default' )
         short_month = [ 'Jan.', 'Feb.', 'Mar.', 'Apr.', 'May.', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.' ]
         date_formatted = ''
         if ( yyyyDmmDdd.maxoffset >= 5 ) then
@@ -165,7 +159,7 @@ class ASpace
                 raise
             end
             thru_date_formatted = format_date( thru_yyyyDmmDdd ) 
-            date_expression = "#{from_date_formatted}#{@date_expression_separator}#{thru_date_formatted}"
+            date_expression = "#{from_date_formatted}#{self.date_expression_separator}#{thru_date_formatted}"
         end
         return date_expression      
     end

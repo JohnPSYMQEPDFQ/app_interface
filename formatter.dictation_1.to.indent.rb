@@ -13,35 +13,43 @@ require 'class.formatter.Shelf_ID_for_Boxes.rb'
 require 'module.SE.rb'
 require 'module.ArchivesSpace.Konstants.rb'
 
+module Main_Global_Variables
+#       Instead of easily mistyped instance-variables, we can do this...
+        attr_accessor :myself_name, :cmdln_option_H, :find_dates_with_4digit_years_O, :find_dates_with_2digit_years_O,
+                      :min_date, :max_date, :note_cnt, :pending_output_record_H
+end
+include Main_Global_Variables
+#       But not sure why it needs to be in a module...
+
 myself_name = File.basename( $0 )
 
-@cmdln_option_H = { :max_levels => 5,
-                    :r => nil,
-                    :find_dates_option_H => { },
-                    :default_century => '',
-                    :do_2digit_year_test => false,
-                    :max_title_size => 250
-                 }
+self.cmdln_option_H = { :max_levels => 5,
+                        :r => nil,
+                        :find_dates_option_H => { },
+                        :default_century => '',
+                        :do_2digit_year_test => false,
+                        :max_title_size => 250
+                     }
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [options] [file]"
     option.on( "-l n", "--max-levels n", OptionParser::DecimalInteger, "Max number of group levels (default 5)" ) do |opt_arg|
-        @cmdln_option_H[ :max_levels ] = opt_arg
+        self.cmdln_option_H[ :max_levels ] = opt_arg
     end
     option.on( "--max-title-size n", OptionParser::DecimalInteger, "Warn if title-size over n" ) do |opt_arg|
-        @cmdln_option_H[ :max_title_size ] = opt_arg
+        self.cmdln_option_H[ :max_title_size ] = opt_arg
     end
     option.on( "--default_century n", OptionParser::DecimalInteger, "Default century for 2-digit years." ) do |opt_arg|
-        @cmdln_option_H[ :default_century ] = opt_arg
+        self.cmdln_option_H[ :default_century ] = opt_arg
     end  
     option.on( "-r n", OptionParser::DecimalInteger, "Stop after N input records" ) do |opt_arg|
-        @cmdln_option_H[ :r ] = opt_arg
+        self.cmdln_option_H[ :r ] = opt_arg
     end
     option.on( "--do_2digit_year_test", "When the --default_century option is '', warn if 2digit years found." ) do |opt_arg|
-        @cmdln_option_H[ :do_2digit_year_test ] = true
+        self.cmdln_option_H[ :do_2digit_year_test ] = true
     end
     option.on( "--find_dates_option_H x", "Option Hash passed to the Find_Dates_in_String class." ) do |opt_arg|
         begin
-            @cmdln_option_H[ :find_dates_option_H ] = eval( opt_arg )
+            self.cmdln_option_H[ :find_dates_option_H ] = eval( opt_arg )
         rescue Exception => msg
             SE.puts ""
             SE.puts msg
@@ -61,27 +69,27 @@ OptionParser.new do |option|
         exit
     end
 end.parse!  # Bang because ARGV is altered
-@cmdln_option_H[ :max_levels ] -= 1                   # :max_levels is zero relative.
-@cmdln_option_H[ :max_levels ] = 1 if ( @cmdln_option_H[ :max_levels ] < 1 )
+self.cmdln_option_H[ :max_levels ] -= 1                   # :max_levels is zero relative.
+self.cmdln_option_H[ :max_levels ] = 1 if ( self.cmdln_option_H[ :max_levels ] < 1 )
 
 
-@find_dates_with_4digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :remove_from_end },
-                                                             :pattern_name_RES => '.',
-                                                             :date_string_composition => :dates_in_text,
-                                                             :yyyy_min_value => '1800',
-                                                           }.merge( @cmdln_option_H[ :find_dates_option_H ] ) )
+self.find_dates_with_4digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :remove_from_end },
+                                                                  :pattern_name_RES => '.',
+                                                                  :date_string_composition => :dates_in_text,
+                                                                  :yyyy_min_value => '1800',
+                                                                }.merge( self.cmdln_option_H[ :find_dates_option_H ] ) )
 
-@find_dates_with_2digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :keep },
-                                                             :pattern_name_RES => '.',
-                                                             :date_string_composition => :dates_in_text,
-                                                             :default_century => '1900',
-                                                           }.merge( @cmdln_option_H[ :find_dates_option_H ] ) )  \
-                                                           if ( @cmdln_option_H[ :default_century ].empty? )
+self.find_dates_with_2digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :keep },
+                                                                  :pattern_name_RES => '.',
+                                                                  :date_string_composition => :dates_in_text,
+                                                                  :default_century => '1900',
+                                                                }.merge( self.cmdln_option_H[ :find_dates_option_H ] ) )  \
+                                                                if ( self.cmdln_option_H[ :default_century ].empty? )
                                                             
-@min_date = ""
-@max_date = ""
-@note_cnt = 0
-@pending_output_record_H = {}
+self.min_date = ""
+self.max_date = ""
+self.note_cnt = 0
+self.pending_output_record_H = {}
 prepend_A = []
 group_sort_text_A = []      # This is for the series, subseries, and recordgrp stuff.
 
@@ -136,7 +144,7 @@ def scrape_off_notes( input_record )
             note.strip!
             note.gsub!( /\s\s+/, ' ')
             note.sub!( /./,&:upcase )
-            @note_cnt += 1
+            self.note_cnt += 1
             note_A.push( note )
         end
     end
@@ -145,31 +153,31 @@ end
 
 def scrape_off_dates( input_record )
     from_thru_date_A_A = [ ]
-    input_record = @find_dates_with_4digit_years_O.do_find( input_record )
-    @find_dates_with_4digit_years_O.good__date_clump_S__A.each do | date_clump_S |
+    input_record = self.find_dates_with_4digit_years_O.do_find( input_record )
+    self.find_dates_with_4digit_years_O.good__date_clump_S__A.each do | date_clump_S |
         from_thru_date_A = [ ]
         from_thru_date_A << date_clump_S.from_date
-        if ( @min_date == "" or @min_date > date_clump_S.from_date ) then
-            @min_date = date_clump_S.from_date
+        if ( self.min_date == "" or self.min_date > date_clump_S.from_date ) then
+            self.min_date = date_clump_S.from_date
         end
-        if ( @max_date == "" or @max_date < date_clump_S.from_date ) then
-            @max_date = date_clump_S.from_date
+        if ( self.max_date == "" or self.max_date < date_clump_S.from_date ) then
+            self.max_date = date_clump_S.from_date
         end
         if ( date_clump_S.thru_date.not_blank? ) then
             from_thru_date_A << date_clump_S.thru_date 
-            if ( @min_date == "" or @min_date > date_clump_S.thru_date ) then
-                @min_date = date_clump_S.thru_date
+            if ( self.min_date == "" or self.min_date > date_clump_S.thru_date ) then
+                self.min_date = date_clump_S.thru_date
             end
-            if ( @max_date == "" or @max_date < date_clump_S.thru_date ) then
-                @max_date = date_clump_S.thru_date
+            if ( self.max_date == "" or self.max_date < date_clump_S.thru_date ) then
+                self.max_date = date_clump_S.thru_date
             end
         end
         from_thru_date_A_A << from_thru_date_A
     end
-    if ( @cmdln_option_H[ :default_century ].empty? and @cmdln_option_H[ :do_2digit_year_test ] ) then
-        @find_dates_with_2digit_years_O.do_find( input_record )
-        @find_dates_with_2digit_years_O.good__date_clump_S__A.each do | date_clump_S |  
-            len = @find_dates_with_2digit_years_O.good__date_clump_S__A.length
+    if ( self.cmdln_option_H[ :default_century ].empty? and self.cmdln_option_H[ :do_2digit_year_test ] ) then
+        self.find_dates_with_2digit_years_O.do_find( input_record )
+        self.find_dates_with_2digit_years_O.good__date_clump_S__A.each do | date_clump_S |  
+            len = self.find_dates_with_2digit_years_O.good__date_clump_S__A.length
             from_thru_date= date_clump_S.from_date
             if ( date_clump_S.thru_date.not_blank? ) then
                 from_thru_date += ' - ' + date_clump_S.thru_date 
@@ -183,8 +191,8 @@ def scrape_off_dates( input_record )
 end
 
 def write_pending_record_H( next_output_record_H )
-    if ( @pending_output_record_H.not_empty? ) then
-        output_record_J = @pending_output_record_H.to_json
+    if ( self.pending_output_record_H.not_empty? ) then
+        output_record_J = self.pending_output_record_H.to_json
         if ( output_record_J.match( /~~/ )) then
             SE.puts "#{SE.lineno}: Found '~~' in output_record_J, '~~' are used for program logic so probably shouldn't be here!"
             SE.q {[ 'output_record_J' ]}
@@ -192,7 +200,7 @@ def write_pending_record_H( next_output_record_H )
         end
         puts output_record_J
     end
-    @pending_output_record_H = next_output_record_H.merge( {} )
+    self.pending_output_record_H = next_output_record_H.merge( {} )
 end
 
 def change__SpecificThing_period__to__tildy_SpecificThing_tildy( stringer )
@@ -218,7 +226,7 @@ end
 shelf_id = nil 
 ARGF.each_line do |input_record|
 
-    if ( @cmdln_option_H[ :r ] and $. > @cmdln_option_H[ :r ] ) then 
+    if ( self.cmdln_option_H[ :r ] and $. > self.cmdln_option_H[ :r ] ) then 
         break
     end
 
@@ -255,8 +263,8 @@ ARGF.each_line do |input_record|
 
     case true
     when command.downcase.in?( K.fmtr_indent.downcase, K.fmtr_end_group.downcase )
-        if ( @pending_output_record_H.empty? ) then
-            SE.puts "#{SE.lineno}: Got a '#{K.fmtr_indent}' record but @pending_output_record_H is empty."
+        if ( self.pending_output_record_H.empty? ) then
+            SE.puts "#{SE.lineno}: Got a '#{K.fmtr_indent}' record but self.pending_output_record_H is empty."
             SE.q { 'input_record' }
             raise
         end
@@ -280,16 +288,16 @@ ARGF.each_line do |input_record|
                 raise    
             end
         end
-        arr1_A = @pending_output_record_H[ K.fmtr_forced_indent ]
+        arr1_A = self.pending_output_record_H[ K.fmtr_forced_indent ]
         if ( arr1_A.is_a?( Array ) and ( arr1_A.empty? or arr1_A.first.downcase == indent_direction.downcase ) ) then
-            @pending_output_record_H[ K.fmtr_forced_indent ].push( indent_direction )
+            self.pending_output_record_H[ K.fmtr_forced_indent ].push( indent_direction )
         else
             SE.puts "#{SE.lineno}: NOT: arr1_A.is_a?( Array ) and ( arr1_A.empty? or arr1_A.first == input_record_word_A[ 0 ] )"
             SE.q { [ 'input_record_word_A[ 0 ]', 'arr1_A' ] }
             raise
         end
 
-        SE.q {[ '@pending_output_record_H' ]}  if ( $DEBUG )
+        SE.q {[ 'self.pending_output_record_H' ]}  if ( $DEBUG )
         next 
         
     when command.downcase.in?( K.fmtr_prepend.downcase, K.fmtr_prefix.downcase )
@@ -405,7 +413,7 @@ ARGF.each_line do |input_record|
             sentence = sentence_A.pop( 1 )[ 0 ]   # pop with an argument returns an array, [0] says return the 1st element
             arr1_A.unshift( sentence )
             break if ( sentence_A.empty? )
-            break if ( sentence_A.maxindex < @cmdln_option_H[ :max_levels ] )   # At least 1 sentence should in the record text field,
+            break if ( sentence_A.maxindex < self.cmdln_option_H[ :max_levels ] )   # At least 1 sentence should in the record text field,
                                                                                 # which is why this 'if' is at the END of the loop.
         end
         record_values_A[ K.fmtr_record_values__text_idx ] = arr1_A.join( '. ' )
@@ -426,7 +434,7 @@ ARGF.each_line do |input_record|
         output_record_H[ K.fmtr_record_indent_keys ] = indent_keys_A       
         
         title = output_record_H[ K.fmtr_record_indent_keys ].join('. ') + ' ' + record_values_A[ K.fmtr_record_values__text_idx ]
-        if ( title.length > @cmdln_option_H[ :max_title_size ] ) then
+        if ( title.length > self.cmdln_option_H[ :max_title_size ] ) then
             SE.puts "#{SE.lineno}: Warning: Title size #{title.length} '#{title}'"
             SE.puts ""
         end
@@ -446,11 +454,11 @@ end
 write_pending_record_H( {} )
 
 SE.puts "======================================================================="
-SE.puts "Minimum date:  '#{@min_date}'"
-SE.puts "Maxmimum date: '#{@max_date}'"
-SE.puts "Notes created: '#{@note_cnt}'"
+SE.puts "Minimum date:  '#{self.min_date}'"
+SE.puts "Maxmimum date: '#{self.max_date}'"
+SE.puts "Notes created: '#{self.note_cnt}'"
 SE.puts "Count of date patterns found:"
-SE.puts @find_dates_with_4digit_years_O.pattern_cnt_H.ai
+SE.puts self.find_dates_with_4digit_years_O.pattern_cnt_H.ai
 SE.puts ""
 
 if ( prepend_A.length > 0 ) then
