@@ -14,17 +14,17 @@ Abbreviations,  AO = archival object(Everything's an AO, but there's also uri "a
 =end
 
 require 'class.Hash.extend.rb'
-class Buffer_Base
 
+class Buffer_Base
+    
     def initialize(  )
-        @record_H = Hash.new( )
+        @record_H = Hash__where__store_calls_writer.new( self.method( 'record_H=') )
         @cant_change_A = [ ]
         @cant_change_A << K.jsonmodel_type 
         @cant_change_A << K.persistent_id
     end
-    attr_reader :cant_change_A
-    #  Shouldn't be an attr_reader :record_H here.
-         
+    attr_reader :cant_change_A, :record_H
+    
     def hash_comp_key_type( h_before, h_after )
 #       SE.puts "Before: #{h_before}"
 #       SE.puts "After:  #{h_after}"
@@ -45,6 +45,11 @@ class Buffer_Base
     private :hash_comp_key_type
     
     def record_H=( set_values_H )
+        if ( set_values_H.is_not_a?( Hash ) ) then
+            SE.puts "#{SE.lineno}: ======================================"
+            SE.puts "I was expecting set_values_H to be a HASH, instead it's a '#{set_values_H.class}'"
+            raise
+        end
         set_values_H.each do |k, v|
             if (k.in?( self.cant_change_A )) then
                 SE.puts "#{SE.lineno}: ======================================"
@@ -56,12 +61,12 @@ class Buffer_Base
 #       SE.pp "pre_change_record_H:", pre_change_record_H
         @record_H = @record_H.deep_merge( set_values_H )  
 #       SE.pp "@record_H:", @record_H
-        h = hash_comp_key_type( pre_change_record_H, record_H )
-        if ( h != {} )
+        h = hash_comp_key_type( pre_change_record_H, @record_H )
+        if ( h.not_empty? )
             SE.puts "#{SE.lineno}: ======================================"
             SE.puts "Invalid (new?, mistyped?) hash key: #{h}"
             SE.pp "pre_change_record_H:", pre_change_record_H
-            SE.pp "post_change_record_H:", record_H
+            SE.pp "post_change_record_H:", @record_H
             raise
         end
         
@@ -69,12 +74,12 @@ class Buffer_Base
             SE.puts "#{SE.lineno}: ======================================"
             SE.puts "Invalid (new?, mistyped?) hash key: #{set_values_H}"
             SE.pp "pre_change_record_H:", pre_change_record_H
-            SE.pp "post_change_record_H:", record_H
+            SE.pp "post_change_record_H:", @record_H
             raise
         end
         return @record_H
-    end
-   
+    end        
+    
 end
 
 

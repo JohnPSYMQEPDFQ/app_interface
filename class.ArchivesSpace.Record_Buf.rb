@@ -21,8 +21,7 @@ class Record_Buf < Buffer_Base
         @cant_change_A << K.uri
         @http_calls_O = p1_aspace_O.http_calls_O
     end
-    attr_reader :record_H, :http_calls_O
-    #  Shouldn't be an attr_writer :record_H here.
+    attr_reader :http_calls_O
     
     def jsonmodel_filter__what_to_keep( jsonmodel_type )
         if ( jsonmodel_type == nil or jsonmodel_type == '' )

@@ -1,3 +1,22 @@
+class Hash__where__store_calls_writer < Hash
+#
+#       See 'class.Archivesspace.Buffer_Base.rb for example
+
+    def initialize( my_attr_writer )
+#       SE.puts my_attr_writer
+        @my_attr_writer = my_attr_writer
+        super
+    end
+    def []=( *argv )    # This is aliased to 'store', hense the name of the class.
+#       SE.puts "#{SE.lineno}: #{argv}"
+#       SE.ap_stack
+        h = [ argv ].to_h
+#       SE.q {[ 'h' ]}
+        @my_attr_writer.call( h )
+    end
+end
+
+
 class Hash
 
     def has_no_key?( key )

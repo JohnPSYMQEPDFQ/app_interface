@@ -22,7 +22,6 @@ class Record_Format < Buffer_Base
 #           SE.puts "#{SE.lineno}: unknown jsonmodel_type: #{jsonmodel_type}"        
         end
     end
-    attr_reader :record_H
     
     def archival_object
         h = {   
@@ -77,7 +76,8 @@ class Record_Format < Buffer_Base
         h = {
               K.label => K.undefined, 
               K.date_type => K.single, 
-              K.begin => K.undefined 
+              K.begin => K.undefined,
+              K.expression => ''
             }
         @record_H.merge!( h )
         return h
@@ -88,7 +88,8 @@ class Record_Format < Buffer_Base
                 K.label => K.undefined, 
                 K.date_type => K.inclusive, 
                 K.begin => K.undefined, 
-                K.end => K.undefined
+                K.end => K.undefined,
+                K.expression => ''
              }
         @record_H.merge!( h )
         return h

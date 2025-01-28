@@ -68,14 +68,15 @@ module SE
     end
 
     def SE.pp_stack()
-        $stderr.puts PP.pp(SE.stack, '')
+        $stderr.puts PP.pp(SE.stack( 1 ), '')
     end
     def SE.ap_stack()
-        SE.ap( SE.stack )
+        SE.ap( SE.stack( 1 ) )
     end
-    def SE.stack()
+    def SE.stack( starting_with_element = 0 )
         a = []
-        caller.each do |e|
+        caller.each_with_index do | e, i |
+            next if ( i < starting_with_element )
             a << e.sub(/^.*\//,"").sub(/:in .* in /,":in ").gsub(/[`']/,"")
         end
         return a
