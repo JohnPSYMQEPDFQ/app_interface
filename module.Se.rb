@@ -1,4 +1,3 @@
-require 'pp'
 require 'awesome_print'
 
 module SE
@@ -10,12 +9,6 @@ module SE
     def SE.print(*params)
         params.each do |e|
             $stderr.print e
-        end
-    end
-    def SE.pp(*params)
-        SE.puts "#{SE.lineno(1)}:"
-        params.each do |e|
-            $stderr.puts PP.pp(e, '')
         end
     end
     def SE.ap(*params)
@@ -53,33 +46,67 @@ module SE
 
     def SE.pov( p1_O )  # Print Object's Variables
         SE.puts "#{SE.lineno(1)}:#{p1_O.class.name} Variables:"
-        p1_O.instance_variables.map{|var| SE.puts [ var, p1_O.instance_variable_get( var ) ].join( "=" )}
+        SE.q {'p1_O.instance_variables.map{ |var| [ var, p1_O.instance_variable_get( var ) ].join( "=" )}' }
     end
     def SE.pom( p1_O )  # Print Object's Methods
         SE.puts "#{SE.lineno(1)}:#{p1_O.class.name} Methods:"
-        SE.puts ( p1_O.methods - Object.methods ).map{|x| x = "#{p1_O.class.name} #{x}"}.sort
+        SE.q {'( p1_O.methods - Object.methods ).map{ | m | m = "#{p1_O.class.name}::#{m}"}.sort' }
     end
     def SE.lineno( e = 0 )
-        s = caller[e].sub(/^.*\//,"").sub(/:in .* in /,":in ").gsub(/[`']/,"")
+        s = caller[ e ].sub(/^.*\//,"").sub(/:in .* in /,":in ").gsub(/[`']/,"")
         if ( defined?( $. ) and $. and $. > 0 ) then
             s += " $.=#{$.}"
         end
         return s
     end
 
-    def SE.pp_stack()
-        $stderr.puts PP.pp(SE.stack( 1 ), '')
+    def SE.my_source_code_path
+        arr = caller
+        path = arr.shift
+        path.sub!( /`.+'/, '' ) 
+        method = $&
+        path.sub!( /:\d+:in.*$/, '' ) 
+        arr.each do | e |
+            if ( e.include?( method ) ) then
+                path = e.sub( /:\d+:in.*$/, '' )             
+                break
+            end
+        end   
+        return path
     end
+    def SE.my_source_code_filename
+        SE.my_source_code_path.sub( /.*\//, '' )
+    end
+
     def SE.ap_stack()
         SE.ap( SE.stack( 1 ) )
     end
-    def SE.stack( starting_with_element = 0 )
-        a = []
-        caller.each_with_index do | e, i |
-            next if ( i < starting_with_element )
-            a << e.sub(/^.*\//,"").sub(/:in .* in /,":in ").gsub(/[`']/,"")
+    def SE.stack( p1 = 0 )
+        param_regexp = nil
+        param_string = nil
+        param_rng = 0 .. 1000000
+        case true
+        when ( p1.is_a?( Integer ) ) 
+            param_rng = p1 .. 1000000
+        when ( p1.is_a?( Range ) )
+            param_rng = p1
+        when ( p1.is_a?( String ) )
+            param_string = p1
+        when ( p1.is_a?( Regexp ) )
+            param_regexp = p1
+        else
+            SE.puts "#{SE.lineno}: ERROR: unexpected param1 class type of '#{p1.class}'"
         end
-        return a
+        arr = []
+        caller.each_with_index do | e, idx |
+            next if ( not param_rng === idx )
+            next if ( param_regexp and not e.match( param_regexp ) )
+            next if ( param_string and not e.include?( param_string ) )
+            stringer = e.sub(/^.*\//,"").sub(/:in .* in /,":in ").gsub(/[`']/,"") 
+            arr << stringer 
+        end
+        return arr[ 0 ] if ( arr.length == 1 )
+        return arr
     end    
     
     def SE.debug_on_the_range( thing_to_test, debug_range )

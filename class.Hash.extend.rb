@@ -1,10 +1,25 @@
+require 'class.Object.extend.rb' 
+require 'module.SE.rb'
+
 class Hash__where__store_calls_writer < Hash
 #
 #       See 'class.Archivesspace.Buffer_Base.rb for example
 
-    def initialize( my_attr_writer )
-#       SE.puts my_attr_writer
-        @my_attr_writer = my_attr_writer
+    def initialize( *argv )   
+        attr_writer_Method = argv.shift
+        if ( attr_writer_Method.is_not_a?( Method ) ) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "Param 1 is not a 'Method', it's a '#{attr_writer_Method.class}'"
+            raise
+        end
+        if ( attr_writer_Method.original_name[ -1 ] != '=' ) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "Param 1 'method name'(#{attr_writer_Method.original_name}) doesn't end with an '=' sign."
+            SE.q {[ attr_writer_Method ]}
+            raise
+        end
+#       SE.puts attr_writer_Method
+        @attr_writer_Method = attr_writer_Method
         super
     end
     def []=( *argv )    # This is aliased to 'store', hense the name of the class.
@@ -12,7 +27,7 @@ class Hash__where__store_calls_writer < Hash
 #       SE.ap_stack
         h = [ argv ].to_h
 #       SE.q {[ 'h' ]}
-        @my_attr_writer.call( h )
+        @attr_writer_Method.call( h )
     end
 end
 

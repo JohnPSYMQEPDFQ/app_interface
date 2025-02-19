@@ -119,12 +119,12 @@ class TC_Record_Buf < Record_Buf
             raise
         end
         @record_H = super( filter_record_B ) 
-#       SE.pp "#{SE.lineno}: @record_H:", @record_H
+#       SE.q {[ '@record_H' ]}
         return self
     end
 
     def store( )
-    #   SE.pp "@record_H:", @record_H 
+    #   SE.q {[ '@record_H' ]}
         if ( @tc_O.res_O == nil ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "@tc_O.res_O == nil"
@@ -135,14 +135,14 @@ class TC_Record_Buf < Record_Buf
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "#{SE.lineno}: I was expecting a @record_H[K.type] value";
             SE.puts "@uri = #{@uri}"
-            SE.pp "@record_H:", @record_H
+            SE.q {[ '@record_H' ]}
             raise
         end
         if (!(  @record_H[K.indicator] and @record_H[K.indicator] != K.undefined )) then 
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "#{SE.lineno}: I was expecting a @record_H[K.indicator] value";
             SE.puts "@uri = #{@uri}"
-            SE.pp "@record_H:", @record_H
+            SE.q {[ '@record_H' ]}
             raise
         end
         if ( @record_H[K.resource][K.ref] != @tc_O.res_O.uri ) then

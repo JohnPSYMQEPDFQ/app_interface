@@ -7,7 +7,7 @@ require 'class.Object.extend.rb'
 require 'class.String.extend.rb'
 require 'module.SE.rb'
 require 'module.ArchivesSpace.Konstants.rb'
-require 'class.Find_Dates_in_String.rb'
+#require 'class.Find_Dates_in_String.rb'
 require 'tempfile'
 
 =begin 
@@ -245,7 +245,7 @@ self.cmdln_option_H = { :r => 999999999,
                         :output_file_prefix => '',
                         :d => false,
                         :sort => false,
-                        :default_century => '',
+                        :default_century_pivot_ccyymmdd => '',
                         :max_title_size => 150,
                         :column_use_H => {},
                        }
@@ -265,8 +265,8 @@ OptionParser.new do |option|
         self.cmdln_option_H[ :output_file_prefix ] = opt_arg
     end
 
-    option.on( "--default-century n", OptionParser::DecimalInteger, "Default century for 2-digit years." ) do
-        self.cmdln_option_H[ :default_century ] = opt_arg
+    option.on( "--default-century n", OptionParser::DecimalInteger, "Default century pivot date for 2-digit years." ) do
+        self.cmdln_option_H[ :default_century_pivot_ccyymmdd ] = opt_arg
     end  
     
     option.on( "--columns=NAME[:use][,NAME:use]...", "Order and use of the columns") do |opt_arg|

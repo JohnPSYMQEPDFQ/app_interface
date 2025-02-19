@@ -9,14 +9,6 @@ class Object
         return ! self.empty?
     end
     
-        
-    def blank?( )
-        return self.to_s.strip.empty?
-    end
-    def not_blank?( )
-        return ! self.to_s.strip.empty?
-    end
-
     def is_not_a?( p1 )
         return ! self.is_a?( p1 )
     end

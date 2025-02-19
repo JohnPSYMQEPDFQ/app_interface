@@ -58,23 +58,23 @@ class Buffer_Base
             end
         end
         pre_change_record_H = Hash.new.merge( @record_H )
-#       SE.pp "pre_change_record_H:", pre_change_record_H
+#       SE.q {'pre_change_record_H'}
         @record_H = @record_H.deep_merge( set_values_H )  
-#       SE.pp "@record_H:", @record_H
+#       SE.q {[ '@record_H' ]}
         h = hash_comp_key_type( pre_change_record_H, @record_H )
         if ( h.not_empty? )
             SE.puts "#{SE.lineno}: ======================================"
             SE.puts "Invalid (new?, mistyped?) hash key: #{h}"
-            SE.pp "pre_change_record_H:", pre_change_record_H
-            SE.pp "post_change_record_H:", @record_H
+            SE.q {'pre_change_record_H'}
+            SE.q {[ '@record_H' ]}
             raise
         end
         
         if ( pre_change_record_H.keys != @record_H.keys ) then
             SE.puts "#{SE.lineno}: ======================================"
             SE.puts "Invalid (new?, mistyped?) hash key: #{set_values_H}"
-            SE.pp "pre_change_record_H:", pre_change_record_H
-            SE.pp "post_change_record_H:", @record_H
+            SE.q {'pre_change_record_H'}
+            SE.q {[ '@record_H' ]}
             raise
         end
         return @record_H

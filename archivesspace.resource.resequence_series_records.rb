@@ -101,7 +101,7 @@ series_uri_A.each do | uri |
         stringer = "Subseries"
     else
         SE.puts "#{SE.lineno}: I shouldn't be here..."
-        SE.pp ao_buf_O.record_H[ K.level ]
+        SE.q {[ 'ao_buf_O.record_H[ K.level ]' ]}
         raise
     end
     new_title = stringer + " " + sequence_A.join( '.' ) + ": " + a1[ a1.maxindex ] 

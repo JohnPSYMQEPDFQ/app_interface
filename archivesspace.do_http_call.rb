@@ -48,7 +48,7 @@ if ( not http_O.respond_to?( method )) then
     exit
 end
 stringer = ARGV[ 1 ] + ""
-stringer.delete_prefix!( api_uri_base )
+stringer.delete_prefix!( aspace_O.api_uri_base )
 a1 = stringer.split( '?' ).map( &:to_s ).map( &:strip )  
 uri = a1[ 0 ]
 if ( a1.maxindex < 1 ) then

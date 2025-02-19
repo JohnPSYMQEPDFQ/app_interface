@@ -83,7 +83,7 @@ class Record_Grouping_Indent
         SE.puts "Group record count:        #{self.group_rec_cnt}"
         SE.puts "File record count:         #{self.file_rec_cnt}"
         SE.puts "Total record count:        #{self.total_rec_cnt}"
-#       SE.pp_stack
+#       SE.ap_stack
     end
 
     def add_1_to_total_rec_cnt

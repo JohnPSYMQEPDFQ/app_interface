@@ -224,7 +224,7 @@ record_level_cnt = Hash.new( 0 )  # h.default works too...
 last_AO_uri_created = ""
 if ( parent_ref_stack_A.maxindex != 0 ) then
     SE.puts "#{SE.lineno}: Was expecting parent_ref_stack_A.maxindex to be 0"
-    SE.pp "parent_ref_stack_A=", parent_ref_stack_A
+    SE.q {[ 'parent_ref_stack_A' ]}
     raise
 end
 
@@ -273,8 +273,8 @@ for argv in ARGV do
                 if ( parent_ref_stack_A.maxindex != 0 ) then
                     SE.puts "#{SE.lineno}: Hit 'new_parent' record, but parent_ref_stack_A.maxindex != 0"
                     SE.puts "The formatter should insure the indent level is at 0 for a 'new_parent' record."
-                    SE.pp "parent_ref_stack_A:", parent_ref_stack_A
-                    SE.pp "#{$.}: input_record_H:", input_record_H
+                    SE.q {[ 'parent_ref_stack_A' ]}
+                    SE.q {[ 'input_record_H' ]}
                     raise
                 end                
                 parent_ref_stack_A[ 0 ] = res_Q_O.uri_of( input_record_H[ K.fmtr_record ][ K.title ] )
@@ -283,7 +283,7 @@ for argv in ARGV do
             end
 
             ao_buf_O = Archival_Object.new( res_buf_O ).new_buffer.create( record_level )
-#           SE.pp ao_buf_O.record_H
+#           SE.q {'ao_buf_O.record_H'}
             if ( ao_buf_O.record_H[ K.resource ][ K.ref ] == parent_ref_stack_A[ parent_ref_stack_A.maxindex ] ) then
                 ao_buf_O.record_H = { K.parent => '' }
             else
@@ -312,7 +312,7 @@ for argv in ARGV do
                     tc_buf_O.record_H = { K.indicator => indicator }
                     tc_buf_O.store
                     tc_uri_H__by_type_and_indicator[ unique_TC_key ] = tc_buf_O.uri
- #                  SE.pp "#{SE.lineno}: tc_uri_H__by_type_and_indicator:", tc_uri_H__by_type_and_indicator
+#                   SE.q {'tc_uri_H__by_type_and_indicator'}
                 end
 
                 it_frag_O = Record_Format.new( :instance_type )
@@ -328,17 +328,17 @@ for argv in ARGV do
                 ao_buf_O.record_H = { K.instances => [ it_frag_O.record_H ] }
             end
 
-#           SE.pp ao_buf_O.record_H
+#           SE.q {'ao_buf_O.record_H'}
             ao_buf_O.store
             last_AO_uri_created = ao_buf_O.uri
             next
         end
         SE.puts "#{SE.lineno}: I should't be here!"
-        SE.pp "#{$.}: input_record_H:", input_record_H
+        SE.q {'input_record_H'}
         raise
     end
 end
-#SE.pp "tc_uri_H__by_type_and_indicator:", tc_uri_H__by_type_and_indicator 
+#SE.q {'tc_uri_H__by_type_and_indicator'}
 SE.puts "#{SE.lineno}: net indent count = #{net_indent_cnt}"
 SE.puts "record counts:", record_level_cnt.ai
 

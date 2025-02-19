@@ -43,7 +43,7 @@ class Http_Calls
         response_O = http.request( Net::HTTP::Get.new( uri.request_uri, headers ))
     #   SE.pov( response )
     #   SE.pom( response )
-    #   SE.pp response.to_H   # This defaults to printing the headers
+    #   SE.q {'response.to_H'}   # This defaults to printing the headers
     #   response.each_header do |key, value|
     #       SE.puts "#{key} => #{value}"
     #   end
@@ -97,7 +97,7 @@ class Http_Calls
             raise
         end
         response_body = JSON.parse( response_O.body )
-    #   SE.pp "response_body", response_body
+    #   SE.q {'response_body'}
         return response_body;
     end 
     

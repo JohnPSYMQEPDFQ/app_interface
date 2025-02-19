@@ -46,9 +46,11 @@ class ASpace
                 raise
             end
         else
-            if ( ENV.has_key?( env_var_aspace_user ) and ENV[ env_var_aspace_user ].not_blank? ) then
+            if ( ENV.has_key?( env_var_aspace_user ) and ENV[ env_var_aspace_user ].blank? ) then
                 SE.puts "#{SE.lineno}: ENV[ '#{env_var_aspace_user}' ] is set, but ENV[ '#{env_var_aspace_uri_base}' ] isn't."
                 raise
+            else
+                SE.puts "#{SE.lineno}: No database login as ENV[ '#{env_var_aspace_user}' ] and ENV[ '#{env_var_aspace_uri_base}' ] aren't set."
             end
         end
 #       SE.puts "================ In Aspace:initialize @session=#{@session}"
@@ -132,7 +134,7 @@ class ASpace
                     date_formatted += stringer + ', '
                 else
                     SE.puts "#{SE.lineno}: Bad day '#{stringer}'"
-                    SE.q {[ 'from_yyyyDmmDdd' ]}
+                    SE.q {[ 'yyyyDmmDdd' ]}
                     raise
                 end
             end

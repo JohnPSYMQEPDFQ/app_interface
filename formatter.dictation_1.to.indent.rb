@@ -26,7 +26,7 @@ myself_name = File.basename( $0 )
 self.cmdln_option_H = { :max_levels => 5,
                         :r => nil,
                         :find_dates_option_H => { },
-                        :default_century => '',
+                        :default_century_pivot_ccyymmdd => '',
                         :do_2digit_year_test => false,
                         :max_title_size => 250
                      }
@@ -38,13 +38,13 @@ OptionParser.new do |option|
     option.on( "--max-title-size n", OptionParser::DecimalInteger, "Warn if title-size over n" ) do |opt_arg|
         self.cmdln_option_H[ :max_title_size ] = opt_arg
     end
-    option.on( "--default_century n", OptionParser::DecimalInteger, "Default century for 2-digit years." ) do |opt_arg|
-        self.cmdln_option_H[ :default_century ] = opt_arg
+    option.on( "--default_century_pivot_ccyymmdd n", OptionParser::DecimalInteger, "Default century pivot date for 2-digit years." ) do |opt_arg|
+        self.cmdln_option_H[ :default_century_pivot_ccyymmdd ] = opt_arg
     end  
     option.on( "-r n", OptionParser::DecimalInteger, "Stop after N input records" ) do |opt_arg|
         self.cmdln_option_H[ :r ] = opt_arg
     end
-    option.on( "--do_2digit_year_test", "When the --default_century option is '', warn if 2digit years found." ) do |opt_arg|
+    option.on( "--do_2digit_year_test", "When the --default_century_pivot_ccyymmdd option is '', warn if 2digit years found." ) do |opt_arg|
         self.cmdln_option_H[ :do_2digit_year_test ] = true
     end
     option.on( "--find_dates_option_H x", "Option Hash passed to the Find_Dates_in_String class." ) do |opt_arg|
@@ -65,7 +65,7 @@ OptionParser.new do |option|
         SE.puts Find_Dates_in_String.new( ).option_H.ai
         SE.puts ""
         SE.puts "Note that:  The --find_dates_option_H numeric values have to be quoted (no integers), eg."
-        SE.puts "            #{myself_name} --find_date_option_H '{ :default_century => \"20\" }' file"
+        SE.puts "            #{myself_name} --find_date_option_H '{ :default_century_pivot_ccyymmdd => \"20\" }' file"
         exit
     end
 end.parse!  # Bang because ARGV is altered
@@ -76,15 +76,15 @@ self.cmdln_option_H[ :max_levels ] = 1 if ( self.cmdln_option_H[ :max_levels ] <
 self.find_dates_with_4digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :remove_from_end },
                                                                   :pattern_name_RES => '.',
                                                                   :date_string_composition => :dates_in_text,
-                                                                  :yyyy_min_value => '1800',
+                                                                  :yyyymmdd_min_value => '1800',
                                                                 }.merge( self.cmdln_option_H[ :find_dates_option_H ] ) )
 
 self.find_dates_with_2digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :keep },
                                                                   :pattern_name_RES => '.',
                                                                   :date_string_composition => :dates_in_text,
-                                                                  :default_century => '1900',
+                                                                  :default_century_pivot_ccyymmdd => '1900',
                                                                 }.merge( self.cmdln_option_H[ :find_dates_option_H ] ) )  \
-                                                                if ( self.cmdln_option_H[ :default_century ].empty? )
+                                                                if ( self.cmdln_option_H[ :default_century_pivot_ccyymmdd ].empty? )
                                                             
 self.min_date = ""
 self.max_date = ""
@@ -174,7 +174,7 @@ def scrape_off_dates( input_record )
         end
         from_thru_date_A_A << from_thru_date_A
     end
-    if ( self.cmdln_option_H[ :default_century ].empty? and self.cmdln_option_H[ :do_2digit_year_test ] ) then
+    if ( self.cmdln_option_H[ :default_century_pivot_ccyymmdd ].empty? and self.cmdln_option_H[ :do_2digit_year_test ] ) then
         self.find_dates_with_2digit_years_O.do_find( input_record )
         self.find_dates_with_2digit_years_O.good__date_clump_S__A.each do | date_clump_S |  
             len = self.find_dates_with_2digit_years_O.good__date_clump_S__A.length

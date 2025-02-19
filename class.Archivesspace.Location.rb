@@ -80,24 +80,24 @@ class Location_Record_Buf < Record_Buf
             raise
         end
         @record_H = super( filter_record_B ) 
-#       SE.pp "#{SE.lineno}: @record_H:", @record_H
+#       SE.q {[ '@record_H' ]}
         return self
     end
 
     def store( )
-    #   SE.pp "@record_H:", @record_H 
+    #   SE.q {[ '@record_H' ]}
         if (!(  @record_H[K.building] and @record_H[K.building] != '')) then 
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "#{SE.lineno}: I was expecting a @record_H[K.building] value";
             SE.puts "@uri = #{@uri}"
-            SE.pp "@record_H:", @record_H
+            SE.q {[ '@record_H' ]}
             raise
         end
         if (!(  @record_H[K.classification] and @record_H[K.classification] != K.undefined )) then 
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "#{SE.lineno}: I was expecting a @record_H[K.classification] value";
             SE.puts "@uri = #{@uri}"
-            SE.pp "@record_H:", @record_H
+            SE.q {[ '@record_H' ]}
             raise
         end
         if ( @uri == nil ) then
