@@ -1,48 +1,147 @@
 require 'Date'                       # This messes-up CSV.
 require 'class.Date.extend.rb'
+require 'class.Hash.extend.rb'
 require 'class.Array.extend.rb'
 require 'class.Object.extend.rb'
 require 'class.String.extend.rb'
 require 'module.SE.rb'
 require 'module.ArchivesSpace.Konstants.rb'
 
+class Separator_Punctuation
+    public  attr_reader :all_punct_chars, :usable_text_punct_chars
+    private attr_writer :all_punct_chars, :usable_text_punct_chars
+    def initialize
+        self.all_punct_chars = '~!@#$%^&*()_+`-={}[]:";\'<>?,.\\|'    
+        self.usable_text_punct_chars = all_punct_chars + ''
+    end
+    def reserve_punctuation_chars( separator_RE )
+        if ( separator_RE.is_not_a?( Regexp ) ) then
+            SE.puts "#{SE.lineno}: I was expecting param1 to be a 'Regexp', instead it's a '#{separator_RE.class}'"
+            raise
+        end
+        if ( not all_punct_chars.match?( separator_RE ) ) then
+            SE.puts "#{SE.lineno}: No punctuation characters found for param '#{separator_RE.to_s}'"
+            raise
+        end
+        all_punct_chars_temp = all_punct_chars + ''
+        arr = [ ]
+        loop do
+            match_O = usable_text_punct_chars.match( separator_RE )
+            if ( match_O ) then
+                arr << match_O[ 0 ]
+                usable_text_punct_chars[ match_O[ 0 ] ] = ''
+                all_punct_chars_temp[ match_O[ 0 ] ] = ''
+            else
+                match_O = all_punct_chars_temp.match( separator_RE )
+                if ( match_O ) then
+                    SE.puts "#{SE.lineno}: Punctuation character: #{$&} in param1 '#{separator_RE.to_s}' is already used."
+                    raise
+                end
+                break
+            end
+        end
+        if ( arr.length == 0 ) then
+            SE.puts "#{SE.lineno}: I shouldn't be here:" 
+            SE.q {[ 'arr' ]}
+            raise
+        end
+        return arr.join( '' )
+    end
+end
+
+class Date_clump_uid
+    public  attr_reader :pattern_RES, :pattern_RE, :pattern_length,
+                        :prefix, :suffix, :digit_length, :uid_length
+    private attr_writer :pattern_RES, :pattern_RE, :pattern_length,
+                        :prefix, :suffix, :digit_length, :uid_length
+
     
+    def initialize( separation_punctuation_O )
+        date_clump_punct_chars = separation_punctuation_O.reserve_punctuation_chars( /[<>]/ )
+        self.prefix            = " #{date_clump_punct_chars[0]}DATE_CLUMP_#:"        # The leading and
+        self.suffix            = "#{date_clump_punct_chars[1]} "                     # trailing space is important!  
+        self.digit_length      = '10'
+        self.pattern_RES       = prefix + "[0-9]{#{digit_length}}" + suffix
+        self.pattern_RE        = /#{pattern_RES}/
+        self.uid_length        = string_of_num( 0 ).length
+    end
+    
+    def string_of_num( num )
+        return prefix + "%0#{digit_length}d" % num + suffix       
+    end
+    
+    def num_from_uid( uid )
+        if ( uid.length == uid_length and 
+             uid[  0, prefix.length ] == prefix and 
+             uid[ -2, suffix.length ] == suffix ) then
+            return uid[ prefix.length, 10 ].to_i
+        else
+            SE.puts "#{SE.lineno}: NOT ( uid.length == #{uid_length} and" 
+            SE.puts "#{SE.lineno}:       uid[  0, #{prefix.length} ] == #{prefix} and"
+            SE.puts "#{SE.lineno}:       uid[ -2, #{suffix.length} ] == #{suffix} )"
+            SE.q {[ 'uid' ]}
+            raise
+        end
+    end
+end
+   
 class Find_Dates_in_String    
     public  attr_reader :option_H, :date_pattern_RES_S__A, :pattern_cnt_H,
-                        :thru_date_separator_RES, :thru_date_begin_delim_RES, :thru_date_end_delim_RES, :begin_delim_RES, :end_delim_RES, 
-                        :possible_date_C, :date_clump_C, :date_match_C, :ymd_C, :date_clump_S,
-                        :date_clump_uid_prefix, :date_clump_uid_suffix, :date_clump_uid_digit_length, :date_clump_uid_string_RES,
-                        :date_clump_S__A, :good__date_clump_S__A, :bad__date_clump_S__A 
+                        :date_text_separator_RES, :thru_date_separator_RES, :thru_date_begin_delim_RES, :thru_date_end_delim_RES, 
+                        :begin_delim_RES, :end_delim_RES, 
+                        :separation_punctuation_O, :date_clump_uid_O,
+                        :possible_date_C, :date_clump_C, :date_match_C, :ymd_C,
+                        :date_clump_S__A, :good__date_clump_S__A, :bad__date_clump_S__A, :output_data_uid_H
     private attr_writer :option_H, :date_pattern_RES_S__A, :pattern_cnt_H,
-                        :thru_date_separator_RES, :thru_date_begin_delim_RES, :thru_date_end_delim_RES, :begin_delim_RES, :end_delim_RES,
-                        :possible_date_C, :date_clump_C, :date_match_C, :ymd_C, :date_clump_S,
-                        :date_clump_uid_prefix, :date_clump_uid_suffix, :date_clump_uid_digit_length, :date_clump_uid_string_RES,
-                        :date_clump_S__A, :good__date_clump_S__A, :bad__date_clump_S__A 
+                        :date_text_separator_RES, :thru_date_separator_RES, :thru_date_begin_delim_RES, :thru_date_end_delim_RES, 
+                        :begin_delim_RES, :end_delim_RES,
+                        :separation_punctuation_O, :date_clump_uid_O,
+                        :possible_date_C, :date_clump_C, :date_match_C, :ymd_C,
+                        :date_clump_S__A, :good__date_clump_S__A, :bad__date_clump_S__A, :output_data_uid_H
                         
-    def initialize( param_option_H = {})    
-        binding.pry if ( respond_to? :pry )        
+    def initialize( param_option_H = {} )    
+        binding.pry if ( respond_to? :pry )       
+        
+        self.separation_punctuation_O = Separator_Punctuation.new               
+        self.date_clump_uid_O = Date_clump_uid.new( separation_punctuation_O )
+        
         set_options( param_option_H )
 
-#       dash_RES                    = "\\s{0,2}-\\s{0,2}"
-        slash_dash_RES              = "\\s{0,2}(?:-|/){1}\\s{0,2}"          # Note the \\ because it's a double quoted string.
-        space_dash_RES              = "\\s{0,2}(?:\\s|-){1}\\s{0,2}"
-        space_dash_slash_RES        = "\\s{0,2}(?:\\s|-|/){1}\\s{0,2}"
-        comma_RES                   = "\\s{0,2},\\s{0,2}"
-        space_comma_RES             = "\\s{0,2}(?:\\s|,){1}\\s{0,2}"
-        space_RES                   = "\\s{0,3}" 
-
-        n_nn_RES                    = "(?:#{K.day_RES}|#{K.numeric_month_RES})" 
-        year_RES                    = ( option_H[ :default_century_pivot_ccyymmdd ].nil? ) ? "#{K.year4_RES}" : "(#{K.year2_RES}|#{K.year4_RES})"  
+        usable_text_punct_RES           = Regexp::escape( separation_punctuation_O.usable_text_punct_chars )  # THIS NEEDS TO WRAPPED: [#{usable_text_punct_RES}]                            
+#       dash_RES                        = "\\s{0,2}-\\s{0,2}"
+        slash_dash_RES                  = "\\s{0,2}(?:-|/){1}\\s{0,2}"          # Note the \\ because it's a double quoted string.
+        space_dash_RES                  = "\\s{0,2}(?:\\s|-){1}\\s{0,2}"
+#       space_dash_slash_RES            = "\\s{0,2}(?:\\s|-|/){1}\\s{0,2}"
+        comma_RES                       = "\\s{0,2},\\s{0,2}"
+        space_comma_RES                 = "\\s{0,2}(?:\\s|,){1}\\s{0,2}"
+        space_RES                       = "\\s{0,3}" 
+        n_nn_RES                        = "(?:#{K.day_RES}|#{K.numeric_month_RES})" 
+        year_RES                        = ( option_H[ :default_century_pivot_ccyymmdd ].nil? ) ? "#{K.year4_RES}" : "(#{K.year2_RES}|#{K.year4_RES})"  
                                                                             # For possible year positions
                                                                             # If no default year, only look for 4 digit years.
 
+        self.date_text_separator_RES    = "(?:\\s*(?:#{option_H[ :date_text_separators ]})\\s*){1}"
         self.thru_date_separator_RES    = "(?:\\s{0,2}(?:#{option_H[ :thru_date_separators ]})\\s{0,2}){1}"
         self.thru_date_begin_delim_RES  = "^\\s*"
-        self.thru_date_end_delim_RES    = "\\s*(?:\\W|\\Z){1}"             # The \\W will match any separators
-#                                                         
-#        The only-date or from-date, can't START with [-/], which is what [^-/\\w] does (\w includes '_' which should be ok)
-        self.begin_delim_RES            = "(?:(?:\\A|\\s+|[^-/\\w]|\\s*#{option_H[ :date_text_separators ]}\\s*))"    #
-        self.end_delim_RES              = "\\s*(?:#{thru_date_separator_RES}|\\W|\\Z){1}"     # The \\W will match any separators
+        self.thru_date_end_delim_RES    = "\\s*(?:[ #{usable_text_punct_RES}]|\\Z){1}"   
+#                NOTE: The single space after the [ <<<(here, at the beginning)
+#                      is NOT the same as "\\s*(?:[#{usable_text_punct_RES} ]|\\Z){1}"                            
+#                                    -or- "\\s*(?:[#{usable_text_punct_RES}]| |\\Z){1}"   
+#                But I don't know why!           
+                 
+#               NOTE: 'only-dates' or 'from-dates' can't START with '-'.
+#               NOTE: \G is required when using a 'match( regexp, starting_point )'.  \A or ^ means from the start of the string
+#                     whereas \G means from the start of the match!   
+        self.begin_delim_RES            = "(?:\\G|\\s+|[ #{usable_text_punct_RES}]|#{date_text_separator_RES})"    
+#                        NOTE: The single space after the [ <<<(here, at the beginning)
+#                              is NOT the same as "\\s*(?:[#{usable_text_punct_RES} ]|\\Z){1}"                            
+#                                            -or- "\\s*(?:[#{usable_text_punct_RES}]| |\\Z){1}"   
+#                        But I don't know why!      
+        self.end_delim_RES              = "\\s*(?:#{thru_date_separator_RES}|[ #{usable_text_punct_RES}]|\\Z){1}"  
+#                                           NOTE: The single space after the [ <<<(here, at the beginning)
+#                                                 is NOT the same as "\\s*(?:[#{usable_text_punct_RES} ]|\\Z){1}"                            
+#                                                               -or- "\\s*(?:[#{usable_text_punct_RES}]| |\\Z){1}"   
+#                                           But I don't know why!      
 
         date_pattern_RES_S = Struct.new( :pattern_name, :pattern_RES )      # The :pattern_name and length are computed and added later.
                                                                             # Literal spaces in the pattern are removed.  Spaces are just
@@ -89,11 +188,17 @@ class Find_Dates_in_String
 
                                         #   fmt009__ = Dates in 'dd [-/] MMM [-/] yyyy' or ' yyyy [-/] MMM [-/] dd' format
 
+#       initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
+#               "(?<fmt009__nn_MMM_nn>  (?:" +    
+#                   "   (?: (?<nn_1st_M>#{n_nn_RES})#{space_dash_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
+#                   "|  (?: (?<nn_1st_M>#{n_nn_RES})#{space_dash_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{year_RES}))" +
+#                   "|  (?: (?<nn_1st_M>#{year_RES})#{space_dash_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
+#               "  ) )" )
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt009__nn_MMM_nn>  (?:" +    
-                    "   (?: (?<nn_1st_M>#{n_nn_RES})#{space_dash_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
-                    "|  (?: (?<nn_1st_M>#{n_nn_RES})#{space_dash_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{year_RES}))" +
-                    "|  (?: (?<nn_1st_M>#{year_RES})#{space_dash_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
+                    "   (?: (?<nn_1st_M>#{n_nn_RES})#{slash_dash_RES} (?<month_M>#{K.alpha_month_RES})#{slash_dash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
+                    "|  (?: (?<nn_1st_M>#{n_nn_RES})#{slash_dash_RES} (?<month_M>#{K.alpha_month_RES})#{slash_dash_RES} (?<nn_3rd_M>#{year_RES}))" +
+                    "|  (?: (?<nn_1st_M>#{year_RES})#{slash_dash_RES} (?<month_M>#{K.alpha_month_RES})#{slash_dash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
                 "  ) )" )
 
 
@@ -168,13 +273,14 @@ class Find_Dates_in_String
                                            :match_O,
                                          )
                                               
-        self.date_clump_C = Struct.new( :full_match_string_everything,
-                                        :full_match_string_adjusted,
-                                        :date_match_string_special_trim,
+        self.date_clump_C = Struct.new( :full_match_string__everything,
+                                        :full_match_string__begin_delim__lstrip,
+                                        :date_match_string,
+                                        :full_match_string__end_delim__rstrip,
                                         :uid,                 
-                                        :initial_beginning_offset_of_the_full_match_string,
-                                        :adjusted_beginning_offset_of_the_full_match_string, 
-                                        :beginning_offset_of_the_date_match_string,
+                                        :full_match_string__everything__beginning_offset,
+                                        :full_match_string__begin_delim__lstrip__adj_offset, 
+                                        :date_match_string__beginning_offset,
                                         :date_match_S__A,
                                         :morality,
                                         :error_msg,
@@ -183,9 +289,9 @@ class Find_Dates_in_String
                                                 def judge_date( judgement, input_error_msg, print = true )
                                                     SE.puts input_error_msg if ( print )
                                                     SE.puts ""              if ( print )
-                                                    self.error_msg       = ""    if ( error_msg == nil )
-                                                    self.error_msg      += "  "  if ( error_msg != "")
-                                                    self.error_msg      += input_error_msg
+                                                    self.error_msg  = ""    if ( error_msg == nil )
+                                                    self.error_msg += "  "  if ( error_msg != "")
+                                                    self.error_msg += input_error_msg
                                                     return if ( judgement == nil )
                                                     if ( morality == nil ) then
                                                         self.morality = judgement
@@ -201,9 +307,19 @@ class Find_Dates_in_String
                                                     return
                                                 end
                                                 def from
+                                                    if ( date_match_S__A.length > 2 ) then
+                                                        SE.puts "#{SE.lineno}: I shouldn't be here: date_clump_S.length > 2"
+                                                        SE.q { 'date_match_S' }
+                                                        raise
+                                                    end
                                                     return date_match_S__A[ 0 ]
                                                 end
                                                 def thru
+                                                    if ( date_match_S__A.length > 2 ) then
+                                                        SE.puts "#{SE.lineno}: I shouldn't be here: date_clump_S.length > 2"
+                                                        SE.q { 'date_match_S' }
+                                                        raise
+                                                    end
                                                     return date_match_S__A[ 1 ]
                                                 end      
                                                 def from_date
@@ -212,9 +328,8 @@ class Find_Dates_in_String
                                                         SE.puts "#{SE.lineno}: I shouldn't be here: date_clump_S without a from date"
                                                         SE.q { 'date_match_S' }
                                                         raise
-                                                    else
-                                                        return date_match_S.as_date
                                                     end
+                                                    return date_match_S.as_date
                                                 end
                                                 def thru_date
                                                     date_match_S = thru
@@ -223,10 +338,27 @@ class Find_Dates_in_String
                                                     else
                                                         return date_match_S.as_date
                                                     end
-                                                end    
-                                         
+                                                end 
+                                                def from_and_thru_date_joined
+                                                    stringer  = from_date
+                                                    stringer += ' - ' + thru_date if ( thru_date.not_blank? )
+                                                    SE.q {[ 'stringer' ]}
+                                                    return stringer
+                                                end
+                                                def full_match_string__with_original_dates
+                                                    stringer  = full_match_string__begin_delim__lstrip
+                                                    stringer += date_match_string
+                                                    stringer += full_match_string__end_delim__rstrip
+                                                    return stringer
+                                                end 
+                                                def full_match_string__with_as_dates
+                                                    stringer  = full_match_string__begin_delim__lstrip
+                                                    stringer += from_and_thru_date_joined
+                                                    stringer += full_match_string__end_delim__rstrip
+                                                    return stringer
+                                                end                                                      
                                             end
-        
+
         self.date_match_C = Struct.new( :match_O,
                                         :pattern_name,
                                         :regexp,
@@ -256,11 +388,9 @@ class Find_Dates_in_String
                                         end
                                 
         self.ymd_C = Struct.new( :year, :month, :day )
-             
-        self.date_clump_uid_prefix       = ' <DATE_CLUMP_#:'        # The leading and
-        self.date_clump_uid_suffix       = '> '                     # trailing space is important!  
-        self.date_clump_uid_digit_length = '10'
-        self.date_clump_uid_string_RES   = date_clump_uid_prefix + "[0-9]{#{date_clump_uid_digit_length}}" + date_clump_uid_suffix
+                  
+        self.output_data_uid_H = {}
+        
     end    
     
     
@@ -349,32 +479,30 @@ class Find_Dates_in_String
                     ary = []
                     option_H[ option_H_key ].each do | separator |
                         separator.strip!
-                        ary << Regexp::escape( separator )
+                        ary << separator
                     end
                     option_H[ option_H_key ] = ary.join("|") 
                 when option_H[ option_H_key ].is_a?( String )
-                    option_H[ option_H_key ] = Regexp::escape( option_H[ option_H_key ] )
+                    # keep going...
                 else
                     SE.puts "#{SE.lineno}: Expected '#{option_H_key}' to be of type Array or String not '#{option_H[ option_H_key ].class}'"
-                    SE.puts "#{SE.lineno}: If more than one is needed, pass them in as an array.  The default is: '-| to | through '."
+                    SE.puts "#{SE.lineno}: If an array, it will be join with a '|'. The default is: '[-]| to | through '."
                     SE.q { 'param_option_H' }
                     raise
-                end            
+                end  
+                separation_punctuation_O.reserve_punctuation_chars( /#{option_H[ option_H_key ]}/ )
             when :date_text_separators
                 if ( option_H[ option_H_key ].is_a?( Symbol ) ) then
                     if ( option_H[ option_H_key ] == :none ) then
                         option_H[ :date_text_separators ] = 255.chr                        #  Use 255.chr \xFF for none
                     else
                         SE.puts "#{SE.lineno}: param_option_H[ :date_text_separators ] should be :none, or [xyz] (where xyz = some separators)."
+                        SE.puts "#{SE.lineno}: The default is '[\|]| and '"
                         SE.q { 'param_option_H' }
                         raise
                     end
                 else
-                    if ( not ( option_H[ option_H_key ].length > 1 and option_H[ option_H_key ] =~ /\[\W\]+/ ) ) then
-                        SE.puts "#{SE.lineno}: param_option_H[ :date_text_separators ] should be :none, or [xyz] (where xyz = some separators)."
-                        SE.q { 'param_option_H' }
-                        raise
-                    end
+                    separation_punctuation_O.reserve_punctuation_chars( /#{option_H[ option_H_key ]}/ )
                 end
             when :pattern_name_RES
                 if ( not option_H[ option_H_key ].is_a?( String ) ) then
@@ -463,7 +591,7 @@ class Find_Dates_in_String
                 SE.puts "#{SE.lineno}: invalid param_option_H option: '#{option_H_key}'"
                 SE.q { 'option_H' }
                 SE.puts ''
-                SE.puts "Here are thr 'Find_Dates_in_String' allowed options, with default values:"
+                SE.puts "Here are the 'Find_Dates_in_String' allowed options, with default values:"
                 SE.ap Find_Dates_in_String.new( ).option_H
                 raise
             end
@@ -482,10 +610,12 @@ class Find_Dates_in_String
             option_H[ :morality_replace_option ][ :bad ] = :keep
         end
         if ( not option_H.key?( :thru_date_separators ) ) then
-            option_H[ :thru_date_separators ] = '-|/| to | through '
+            option_H[ :thru_date_separators ] = '[-]| to | through '
+            separation_punctuation_O.reserve_punctuation_chars( /#{option_H[ :thru_date_separators ]}/ )
         end
         if ( not option_H.key?( :date_text_separators ) ) then
-            option_H[ :date_text_separators ] = '[|]| and '           
+            option_H[ :date_text_separators ] = '[\|]| and '  
+            separation_punctuation_O.reserve_punctuation_chars( /#{option_H[ :date_text_separators ]}/ )            
         end
         if ( not option_H.key?( :pattern_name_RES ) )
         then
@@ -523,27 +653,7 @@ class Find_Dates_in_String
         end
         return strptime_O
     end
-    
-    def new_date_clump_uid_string( num )
-        return date_clump_uid_prefix + "%0#{date_clump_uid_digit_length}d" % num + date_clump_uid_suffix       
-    end
-    def date_clump_uid_string_length()
-        return new_date_clump_uid_string( 0 ).length
-    end
-    def date_clump_uid_num( string )
-        if ( string.length == date_clump_uid_string_length and 
-             string[  0, date_clump_uid_prefix.length ] == date_clump_uid_prefix and 
-             string[ -2, date_clump_uid_suffix.length ] == date_clump_uid_suffix ) then
-            return string[ date_clump_uid_prefix.length, 10 ].to_i
-        else
-            SE.puts "#{SE.lineno}: NOT ( string.length == #{date_clump_uid_string_length} and" 
-            SE.puts "#{SE.lineno}:       string[  0, #{date_clump_uid_prefix.length} ] == #{date_clump_uid_prefix} and"
-            SE.puts "#{SE.lineno}:       string[ -2, #{date_clump_uid_suffix.length} ] == #{date_clump_uid_suffix} )"
-            SE.q {[ 'string' ]}
-            raise
-        end
-    end
-       
+           
     def get_tree_of__possible_date_S__A_A( input_string, initial_offset, looking_for_a_thru_date = false, level = 0 )
         tree_of__possible_date_S__A_A = [ ]
         if ( level > 10 ) then
@@ -552,19 +662,20 @@ class Find_Dates_in_String
             raise
         end
         date_pattern_RES_S__A.each do | date_pattern_RES_S |
+            pattern_name = date_pattern_RES_S.pattern_name
             if ( looking_for_a_thru_date ) then
                 regexp = %r{(?<begin_M>#{thru_date_begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?<end_M>#{thru_date_end_delim_RES})}xi
             else
-                regexp = %r{(?<begin_M>#{begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?=([^\>]|$))(?<end_M>#{end_delim_RES})}xi
-#                                                                                
-#                           The lookahead '(?=([^\>]|$))' keeps the pattern from seeing the NNNN> of the date-clump literals
-#                           and turning the NNNN into a year (with the '>' acting as a separator matched on \W).                   
+                regexp = %r{(?<begin_M>#{begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?<end_M>#{end_delim_RES})}xi               
             end
             scan_begin_offset = initial_offset + 0
-            loop do
+            ld = SE::Loop_detector.new( 100 )
+            loop do   
+                ld.loop
                 break if ( scan_begin_offset >= input_string.maxoffset )
                 match_O = input_string.match( regexp, scan_begin_offset )
                 break if ( match_O == nil )
+              # SE.q {[ 'match_O' ]}
                 match_string = match_O.named_captures[ 'begin_M' ] +
                                match_O.named_captures[ 'date_M' ] +
                                match_O.named_captures[ 'end_M' ]
@@ -572,9 +683,9 @@ class Find_Dates_in_String
                 match_length = match_string.length
                 if ( match_O.named_captures[ 'end_M' ] =~ /#{thru_date_separator_RES}/ix ) then
                     result = get_tree_of__possible_date_S__A_A( input_string[ match_offset + match_length .. -1 ], 0, true, level + 1 )
-                    tree_of__possible_date_S__A_A << [ possible_date_C.new( date_pattern_RES_S.pattern_name, regexp, match_O ), result ]
+                    tree_of__possible_date_S__A_A << [ possible_date_C.new( pattern_name, regexp, match_O ), result ]
                 else
-                    tree_of__possible_date_S__A_A << [ possible_date_C.new( date_pattern_RES_S.pattern_name, regexp, match_O ), [ ] ]
+                    tree_of__possible_date_S__A_A << [ possible_date_C.new( pattern_name, regexp, match_O ), [ ] ]
                 end
                 scan_begin_offset = match_offset + match_length
             end
@@ -636,35 +747,129 @@ class Find_Dates_in_String
     end
     
     def before_change_validate( before_change_string, argv )
-      # SE.puts "==========================================================="    
-      # SE.q {[ 'SE.stack( SE.my_source_code_path )' ]}    
-      # SE.q {[ 'before_change_string' ]}
-      # SE.q {[ 'argv' ]}
-      # SE.q {[ 'date_clump_S.class' ]}
-      # SE.q {[ 'date_clump_S' ]}
-        if ( before_change_string.index( date_clump_S.uid ).nil? ) then
-            SE.puts "#{SE.lineno}: Unable to find uid '#{date_clump_S.uid}'"
+        if ( option_H[ :debug_options ].include?( :print_before )) then
+            SE.puts "==========================================================="    
+            SE.q {[ 'SE.stack( SE.my_source_code_path )' ]}    
             SE.q {[ 'before_change_string' ]}
             SE.q {[ 'argv' ]}
-            SE.q {[ 'date_clump_S' ]}
-            raise
+        end
+      # SE.q {[ 'date_clump_S.class' ]}
+      # SE.q {[ 'date_clump_S' ]}            
+        if ( argv.first.is_a?( String ) and argv.first.match( date_clump_uid_O.pattern_RE ) ) then
+            date_clump_uid__from_argv = $&
+            if  ( output_data_uid_H.has_no_key?( date_clump_uid__from_argv ) ) then
+                SE.puts "#{SE.lineno}: output_data_uid_H['#{date_clump_uid__from_argv}'] is missing."
+                SE.q {[ 'before_change_string' ]}
+                SE.q {[ 'argv' ]}
+                SE.q {[ 'output_data_uid_H' ]}
+                raise
+            end            
+            if ( before_change_string.index( date_clump_uid__from_argv ).nil? ) then
+                SE.puts "#{SE.lineno}: Unable to find uid '#{date_clump_uid__from_argv}' in 'before_change_string'"
+                SE.q {[ 'before_change_string' ]}
+                SE.q {[ 'argv' ]}
+                raise
+            end
+        end
+        if ( argv.last.is_a?( String) and argv.last.match( date_clump_uid_O.pattern_RE ) ) then
+            date_clump_uid__from_argv = $&
+            if  ( output_data_uid_H.has_key?( date_clump_uid__from_argv ) ) then
+                SE.puts "#{SE.lineno}: Found an already existing uid '#{date_clump_uid__from_argv}' in 'output_data_uid_H'"
+                SE.q {[ 'before_change_string' ]}
+                SE.q {[ 'argv' ]}
+                SE.q {[ 'output_data_uid_H[ date_clump_uid__from_argv ]' ]}
+                raise
+            end
+        end
+        output_data_uid_H.keys.each do | date_clump_uid | 
+            if ( before_change_string.index( date_clump_uid ).nil? ) then
+                SE.puts "#{SE.lineno}: Unable to find uid '#{date_clump_uid}' from 'output_data_uid_H' in 'before_change_string'"
+                SE.q {[ 'before_change_string' ]}
+                SE.q {[ 'argv' ]}
+                SE.q {[ 'date_clump_S__A[ date_clump_uid_O.num_from_uid( date_clump_uid__from_argv ) - 1 ]' ]} if ( date_clump_uid__from_argv )
+                SE.q {[ 'output_data_uid_H[ date_clump_uid ]' ]}
+                raise
+            end
         end
     end
     
     def after_change_validate( before_change_string, after_change_string, argv )  
-      # SE.puts "==========================================================="
-      # SE.q {[ 'SE.stack( SE.my_source_code_path )' ]}
-      # SE.q {[ 'before_change_string']}
-      # SE.q {[ 'after_change_string' ]}
-      # SE.q {[ 'argv' ]}
-        if ( after_change_string.match( /[^ ]#{date_clump_uid_prefix[ 1 .. -1 ]}/ ) or
-             after_change_string.match( /#{date_clump_uid_suffix[ -2 .. -2 ]}[^ ]/) or 
-             after_change_string.match( /#{date_clump_uid_suffix[ -2 .. -2 ]} #{date_clump_uid_prefix[ 1 .. -1 ]}/) ) then
-            SE.puts "#{SE.lineno}: Found a uid_prefix or suffix without its space '#{$&}'"
+        if ( option_H[ :debug_options ].include?( :print_after )) then
+            SE.puts "==========================================================="
+            SE.q {[ 'SE.stack( SE.my_source_code_path )' ]}
+            SE.q {[ 'before_change_string']}
+            SE.q {[ 'after_change_string' ]}
+            SE.q {[ 'argv' ]}
+        end
+        return if ( argv.is_a?( String ) )   #  This is the initial assign which doesn't need checking.
+        date_clump_uid__from_argv = nil
+        if ( argv.first.is_a?( String) and argv.first.match( date_clump_uid_O.pattern_RE ) ) then
+            date_clump_uid__from_argv = $&
+            if  ( output_data_uid_H.has_no_key?( date_clump_uid__from_argv ) ) then
+                SE.puts "#{SE.lineno}: output_data_uid_H['#{date_clump_uid__from_argv}'] is missing."
+                SE.q {[ 'before_change_string' ]}
+                SE.q {[ 'after_change_string' ]}
+                SE.q {[ 'argv' ]}
+                SE.q {[ 'output_data_uid_H' ]}
+                raise
+            end      
+          # SE.puts "#{SE.lineno}: Deleted '#{date_clump_uid__from_argv}'"
+            output_data_uid_H.delete( date_clump_uid__from_argv )
+        end
+        if ( argv.last.is_a?( String) and argv.last.match( date_clump_uid_O.pattern_RE ) ) then
+            date_clump_uid__from_argv = $&
+            if ( after_change_string.index( date_clump_uid__from_argv ).nil? ) then
+                SE.puts "#{SE.lineno}: Couldn't find the just added uid '#{date_clump_uid__from_argv}' in 'after_change_string'"
+                SE.q {[ 'before_change_string' ]}
+                SE.q {[ 'after_change_string' ]}
+                SE.q {[ 'argv' ]}
+                SE.q {[ 'output_data_uid_H' ]}
+                raise
+            end
+            date_clump_S = date_clump_S__A[ date_clump_uid_O.num_from_uid( date_clump_uid__from_argv ) - 1 ]  # The number is 1 relative
+            if ( not ( date_clump_S.not_nil? and date_clump_S.uid == date_clump_uid__from_argv ) ) then
+                SE.puts "#{SE.lineno}: Couldn't find the just added uid '#{date_clump_uid__from_argv}' in 'date_clump_S__A'"
+                SE.q {[ 'before_change_string' ]}
+                SE.q {[ 'after_change_string' ]}
+                SE.q {[ 'argv' ]}
+                SE.q {[ 'date_clump_S' ]}
+                SE.q {[ 'output_data_uid_H' ]}               
+                SE.q {[ 'date_clump_S__A' ]}
+                raise                
+            end
+            output_data_uid_H[ date_clump_uid__from_argv ] = date_clump_S
+          # SE.puts "#{SE.lineno}: Added '#{date_clump_uid__from_argv}'"            
+        end
+        
+        cnt = 0
+        output_data_uid_H.keys.each do | date_clump_uid | 
+            if ( after_change_string.index( date_clump_uid ).nil? ) then
+                SE.puts "#{SE.lineno}: Unable to find uid '#{date_clump_uid}' from 'output_data_uid_H' in 'after_change_string'"
+                SE.q {[ 'before_change_string' ]}
+                SE.q {[ 'after_change_string' ]}
+                SE.q {[ 'argv' ]}
+                SE.q {[ 'date_clump_S__A[ date_clump_uid_O.num_from_uid( date_clump_uid__from_argv ) - 1 ]' ]} if ( date_clump_uid__from_argv )
+                SE.q {[ 'output_data_uid_H[ date_clump_uid ]' ]}
+                raise
+            end
+            cnt += 1
+        end
+        if ( cnt != output_data_uid_H.keys.count ) then
+            SE.puts "#{SE.lineno}: Bad key count."
             SE.q {[ 'before_change_string' ]}
             SE.q {[ 'after_change_string' ]}
             SE.q {[ 'argv' ]}
-            SE.q {[ 'date_clump_S' ]}
+            SE.q {[ 'output_data_uid_H' ]}
+            raise
+        end
+        
+        if ( after_change_string.match( /(#{date_clump_uid_O.pattern_RES.rstrip}\s{0,1}#{date_clump_uid_O.pattern_RES.lstrip})/ ) ) then
+            SE.puts "#{SE.lineno}: Found 2 date_clumps squeezed together."
+            SE.q {[ '$&' ]}
+            SE.q {[ 'before_change_string' ]}
+            SE.q {[ 'after_change_string' ]}
+            SE.q {[ 'argv' ]}
+            SE.q {[ 'date_clump_S__A[ date_clump_uid_O.num_from_uid( date_clump_uid__from_argv ) - 1 ]' ]} if ( date_clump_uid__from_argv )
             raise
         end
     end
@@ -673,14 +878,18 @@ class Find_Dates_in_String
         self.date_clump_S__A = [ ]
         self.good__date_clump_S__A = [ ]
         self.bad__date_clump_S__A = [ ]
-        output_data_O = String_with_before_after_STORE_and_ASSIGN_methods.new( before_change_method: nil, 
-                                                                               after_change_method: method( :after_change_validate )  )
+        output_data_O = String_with_before_after_STORE_and_ASSIGN_methods.new( after_change_method: method( :after_change_validate )  )
+        output_data_with_all_dates_removed_O = String_with_before_after_STORE_and_ASSIGN_methods.new( )
+#       output_data_with_all_dates_removed_O.before_change_method = method( :before_change_validate )    # Can't be active at the same
+#       output_data_with_all_dates_removed_O.after_change_method  = method( :after_change_validate )     # time as above due to the
+                                                                                                         # the Hash in the validation 
+                                                                                                         # function.                                                                             
 
         output_data_O.string = param_input_string + ''   # Make a new string, not a pointer.
         ld = SE::Loop_detector.new( 100 )
         loop do   
             ld.loop
-            if ( option_H[ :debug_options ].include?( :print_output_data_O_string )) then
+            if ( option_H[ :debug_options ].include?( :print_output_data )) then
                 SE.puts ""
                 SE.q { 'output_data_O.string' }
             end     
@@ -689,49 +898,60 @@ class Find_Dates_in_String
             date_match_S__A = get_the_longest_date( output_data_O.string )
             break if ( date_match_S__A.empty? )
             
-            self.date_clump_S = date_clump_C.new( full_match_string_everything: "",
-                                                  full_match_string_adjusted: "", 
-                                                  date_match_string_special_trim: "",
-                                                  date_match_S__A: date_match_S__A,
+            date_clump_S = date_clump_C.new( full_match_string__everything: "",
+                                             full_match_string__begin_delim__lstrip: "", 
+                                             date_match_string: "",
+                                             full_match_string__end_delim__rstrip: "",
+                                             date_match_S__A: date_match_S__A,
                                             )
             date_clump_S__A << date_clump_S
             
             date_clump_S.date_match_S__A.each_with_index do | date_match_S, date_match_idx |
                                
-                date_match_less_leading_and_trailing_delims = ''
-                full_match_less_leading_whitespace_and_trailing_delim = ''
-                full_match_string_everything = ''
-                if ( date_match_idx == 0 )
-                    date_clump_S.uid                                                  = new_date_clump_uid_string( date_clump_S__A.length )                    
-                    date_clump_S.beginning_offset_of_the_date_match_string            = date_match_S.match_O.offset( :date_M )[0]  
-                    date_match_less_leading_and_trailing_delims                      += date_match_S.piece( 1 )
+                date_match_string = ''
+                full_match_string__begin_delim__lstrip = ''
+                full_match_string__end_delim__rstrip = ''
+                full_match_string__everything = ''
+#                    First date or only date
+                if ( date_match_idx == 0 ) 
+                    date_clump_S.uid                                                   = date_clump_uid_O.string_of_num( date_clump_S__A.length )                    
+                    date_clump_S.date_match_string__beginning_offset                   = date_match_S.match_O.offset( :date_M )[0]  
+                    date_match_string                                                 += date_match_S.piece( 1 )
                     
-                    stringer                                                          = date_match_S.piece( 0 ).lstrip
+                    stringer                                                           = date_match_S.piece( 0 ).lstrip
                     offset_adj = date_match_S.piece( 0 ).length - stringer.length
-                    date_clump_S.initial_beginning_offset_of_the_full_match_string    = date_match_S.match_O.offset( :begin_M )[0]
-                    date_clump_S.adjusted_beginning_offset_of_the_full_match_string   = date_match_S.match_O.offset( :begin_M )[0] + offset_adj
-                    full_match_less_leading_whitespace_and_trailing_delim             += stringer
-                    full_match_less_leading_whitespace_and_trailing_delim             += date_match_S.piece( 1 )
+                    date_clump_S.full_match_string__everything__beginning_offset       = date_match_S.match_O.offset( :begin_M )[0]
+                    date_clump_S.full_match_string__begin_delim__lstrip__adj_offset    = date_match_S.match_O.offset( :begin_M )[0] + offset_adj
+                    full_match_string__begin_delim__lstrip                             = stringer
+#                        First date
                     if ( date_match_idx < date_clump_S.date_match_S__A.maxindex ) then
-                        date_match_less_leading_and_trailing_delims                   += date_match_S.piece( 2 )
-                        full_match_less_leading_whitespace_and_trailing_delim         += date_match_S.piece( 2 )
+                        date_match_string                                             += date_match_S.piece( 2 )
+#                        Only date
+                    else
+                        full_match_string__end_delim__rstrip                           = date_match_S.piece( 2 ).rstrip
                     end
-                    full_match_string_everything                                      += date_match_S.all_pieces
+                    full_match_string__everything                                     += date_match_S.all_pieces
                 end
+#                   Middle dates (NOT the first or last)
                 if ( date_match_idx > 0 and date_match_idx < date_clump_S.date_match_S__A.maxindex ) then
-                    date_match_less_leading_and_trailing_delims                       += date_match_S.all_pieces
-                    full_match_less_leading_whitespace_and_trailing_delim             += date_match_S.all_pieces
-                    full_match_string_everything                                      += date_match_S.all_pieces
-                end               
+                    date_match_string                                                 += date_match_S.all_pieces
+                    full_match_string__everything                                     += date_match_S.all_pieces
+                end 
+#                   Last date                
                 if ( date_match_idx > 0 and date_match_idx == date_clump_S.date_match_S__A.maxindex ) then
-                    date_match_less_leading_and_trailing_delims                       += date_match_S.pieces( 0 .. 1 )
-                    full_match_less_leading_whitespace_and_trailing_delim             += date_match_S.pieces( 0 .. 1 )
-                    full_match_string_everything                                      += date_match_S.all_pieces
+                    date_match_string                                                 += date_match_S.pieces( 0 .. 1 )
+                    stringer                                                           = date_match_S.piece( 2 ).rstrip
+                    if ( not ( stringer.length > 1 and stringer.match( /#{end_delim_RES}/ ) and
+                                                       full_match_string__begin_delim__lstrip[ 0, 1 ].match( /#{begin_delim_RES}/ ) ) ) then
+                        full_match_string__end_delim__rstrip                           = stringer
+                    end                         
+                    full_match_string__everything                                     += date_match_S.all_pieces
                 end
                     
-                date_clump_S.date_match_string_special_trim     += date_match_less_leading_and_trailing_delims  
-                date_clump_S.full_match_string_adjusted         += full_match_less_leading_whitespace_and_trailing_delim
-                date_clump_S.full_match_string_everything       += full_match_string_everything
+                date_clump_S.date_match_string                                        += date_match_string  
+                date_clump_S.full_match_string__begin_delim__lstrip                   += full_match_string__begin_delim__lstrip
+                date_clump_S.full_match_string__end_delim__rstrip                     += full_match_string__end_delim__rstrip
+                date_clump_S.full_match_string__everything                            += full_match_string__everything
                 pattern_cnt_H[ date_match_S.pattern_name ] += 1
  
                 date_match_S.ymd_S = ymd_C.new( ) 
@@ -807,15 +1027,11 @@ class Find_Dates_in_String
             end 
 
 #           SE.q {[ 'date_clump_S' ]}                     
-#           output_data_O.string[ date_clump_S.beginning_offset_of_the_date_match_string, 
-#                                 date_clump_S.date_match_string_special_trim.length ] = date_clump_S.uid
-            output_data_O.string[ date_clump_S.adjusted_beginning_offset_of_the_full_match_string, 
-                                  date_clump_S.full_match_string_adjusted.length ] = date_clump_S.uid
-            # if ( test for overlap of text
-                # SE.q { [ 'date_clump_S.full_match_string_adjusted.length', 'date_clump_S' ] }
-                # SE.q { [ 'pre_output_data_O.string[ date_clump_S.beginning_offset_of_the_date_match_string, date_clump_S.full_match_string_adjusted.length ]']}
-                # raise
-            # end
+#           output_data_O.string[ date_clump_S.date_match_string__beginning_offset, 
+#                                 date_clump_S.date_match_string.length ] = date_clump_S.uid
+            output_data_O.string[ date_clump_S.full_match_string__begin_delim__lstrip__adj_offset, 
+                                  date_clump_S.full_match_string__with_original_dates.length ] = date_clump_S.uid
+                      
         end
 
         date_clump_S__A.each do | date_clump_S |
@@ -1009,26 +1225,19 @@ class Find_Dates_in_String
         end
 
         output_data_O.before_change_method = method( :before_change_validate ) 
-        output_data_with_all_dates_removed_O = String_with_before_after_STORE_and_ASSIGN_methods.new( before_change_method: method( :before_change_validate ), 
-                                                                                                      after_change_method: method( :after_change_validate )  )
         output_data_with_all_dates_removed_O.string = output_data_O.string + ''
+        
         date_clump_S__A.each do | date_clump_S |
 #           self.date_clump_S = date_clump_S   # so the string validation routines can see it?  No idea why the validation routine works...
 #           SE.q {[ 'date_clump_S.class' ]}
             replace_option = option_H[ :morality_replace_option ][ date_clump_S.morality ]
             case replace_option
             when :keep                
-                output_data_O.string[ date_clump_S.uid ]                        = date_clump_S.full_match_string_adjusted
+                output_data_O.string[ date_clump_S.uid ]                        = date_clump_S.full_match_string__with_original_dates
                 output_data_with_all_dates_removed_O.string[ date_clump_S.uid ] = ""
                                 
             when :replace                
-#               arr = []
-#               date_clump_S.date_match_S__A.each do | date_match_S |
-#                   arr.push( date_match_S.as_date )
-#               end
-#               output_data_O.string[ date_clump_S.uid ] = arr.join( ' - ' )
-#>>>>>>>    The code above is equal to the following line.  
-                output_data_O.string[ date_clump_S.uid ] = date_clump_S.date_match_S__A.map{ | date_match_S | date_match_S.as_date }.join( ' - ' )
+                output_data_O.string[ date_clump_S.uid ]                        = date_clump_S.full_match_string__with_as_dates
                 output_data_with_all_dates_removed_O.string[ date_clump_S.uid ] = ""
 
             when :remove_from_end
@@ -1047,15 +1256,20 @@ class Find_Dates_in_String
         end
         if ( option_H[ :morality_replace_option ][ :good ] == :remove_from_end ) then
             loop do
-                output_data_O.string.sub!( /([\.,;])\s*\Z/, '' )
-                break if ( not output_data_O.string.sub!( /#{date_clump_uid_string_RES}\s*\Z/, '' ) )
+                output_data_O.string.sub!( /(?=([^\>\<]))#{thru_date_end_delim_RES}\s*$/, ' ' )  #  There need to be at least one space at the end!
+                if ( output_data_O.string.match( /(#{date_clump_uid_O.pattern_RES})\s*$/ ) ) then
+                    date_clump_uid = $&                   
+                    output_data_O.string[ date_clump_uid ] = ''
+                    output_data_O.string.sub!( /(?=([^\>\<]))#{begin_delim_RES}\s*$/, ' ' )  #  There need to be at least one space at the end!
+                else
+                    break
+                end
             end
-            while ( output_data_O.string.match( /#{date_clump_uid_string_RES}/ ) ) 
-                date_clump_uid_string = $&
-                self.date_clump_S = date_clump_S__A[ date_clump_uid_num( date_clump_uid_string ) - 1 ]  # The number is 1 relative                      
-                output_data_O.string[ date_clump_uid_string ] = date_clump_S.full_match_string_adjusted
+            while ( output_data_O.string.match( date_clump_uid_O.pattern_RE ) ) 
+                date_clump_uid = $&
+                date_clump_S = date_clump_S__A[ date_clump_uid_O.num_from_uid( date_clump_uid ) - 1 ]  # The number is 1 relative                      
+                output_data_O.string[ date_clump_uid ] = date_clump_S.full_match_string__with_original_dates
             end
-            
         end
 
         date_clump_S__A.each do | date_clump_S |

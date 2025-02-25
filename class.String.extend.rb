@@ -21,110 +21,92 @@ class String
     
 end
 
-class String_with_before_after_STORE_and_ASSIGN_methods 
+class String_with_before_after_STORE_and_ASSIGN_methods
 #
 #   See below for an example
 #
     class String_with_before_after_STORE_methods < String
-     
+
 #           store is an alias for []=
-     
-        def initialize( before_change_method, after_change_method, argv )
-#           SE.puts "\n#{SE.lineno}: class='#{self.class}', before_change_method=#{before_change_method}, after_change_method=#{after_change_method}, arg='#{argv}'"
-            @before_change_method = before_change_method
-            @after_change_method = after_change_method
+
+        def initialize( my_creator, argv )
+            self.my_creator = my_creator
             if ( argv.nil? ) then
                 super(  )
             else
                 super( argv )
             end
         end
+        attr_accessor :my_creator
         def []=( *argv )
 #           SE.puts "\n#{SE.lineno}: class='#{self.class}', argv='#{argv}'"
-            @before_string = ( @before_change_method or @after_change_method ) ? self + '' : nil
-            @before_change_method.call( @before_string, argv ) if ( @before_change_method )
+            my_creator.before_string = ( my_creator.before_change_method or my_creator.after_change_method ) ? self + '' : nil
+            my_creator.before_change_method.call( my_creator.before_string, argv ) if ( my_creator.before_change_method )
             super
-            @after_change_method.call( @before_string, self, argv ) if ( @after_change_method )
+            my_creator.after_change_method.call( my_creator.before_string, self, argv ) if ( my_creator.after_change_method )
         end
-        attr_accessor :before_change_method, :after_change_method
     end
+
     def initialize( before_change_method: nil, after_change_method: nil  )
 #       SE.puts "\n#{SE.lineno}: class='#{self.class}', before_change_method=#{before_change_method}, after_change_method=#{after_change_method}"
-        @before_change_method = before_change_method 
-        @after_change_method = after_change_method 
+        self.before_change_method = before_change_method
+        self.after_change_method = after_change_method
     end
     attr_accessor :before_change_method, :after_change_method
     def string=( argv )
 #       SE.puts "\n#{SE.lineno}: class='#{self.class}', argv='#{argv}'"
-        @before_string = nil
-        @string = String_with_before_after_STORE_methods.new( @before_change_method, @after_change_method, argv )
-#       SE.puts "\n#{SE.lineno}: @string.class='#{@string.class}', @string[]='#{@string.method( :[]= )}'"
-        @after_change_method.call( @before_string, @string, argv ) if ( @after_change_method )
+        self.before_string = nil
+        @string = String_with_before_after_STORE_methods.new( self, argv )
+#       SE.puts "\n#{SE.lineno}: self.string.class='#{self.string.class}', self.string[]='#{self.string.method( :[]= )}'"
+        self.after_change_method.call( self.before_string, self.string, argv ) if ( self.after_change_method )
     end
-    attr_reader :string, :before_string  
+    attr_reader :string
+    attr_accessor :before_string
 end
 
-#    class Run
-#        def my_main
-#            
-#            vanilla_string = ''
-#            SE.puts "\n#{SE.lineno}: vanilla_string.class='#{vanilla_string.class}', vanilla_string[]='#{vanilla_string.method( :[]= )}'"
-#      
-#            test_class_obj = String_with_before_after_STORE_and_ASSIGN_methods.new(  )
-#            SE.puts "\n#{SE.lineno}: test_class_obj.class='#{test_class_obj.string.class}'"
-#            test_class_obj.before_change_method = self.method( :before_change_validate )
-#            test_class_obj.after_change_method = self.method( :after_change_validate )
-#            SE.puts "\n#{SE.lineno}: test_class_obj.class='#{test_class_obj.string.class}'"
-#            
-#            change_string( test_class_obj )
-#            
-#            test_class_obj = String_with_before_after_STORE_and_ASSIGN_methods.new( before_change_method: self.method( :before_change_validate ), after_change_method: self.method( :after_change_validate )  )
-#            SE.puts "\n#{SE.lineno}: test_class_obj.class='#{test_class_obj.string.class}'"
-#            
-#            change_string( test_class_obj )
-#            
-#            test_class_obj.before_change_method = self.method( :before_change_alternate )
-#            test_class_obj.after_change_method = self.method( :after_change_alternate )
-#            SE.puts "\n#{SE.lineno}: test_class_obj.class='#{test_class_obj.string.class}'"
-#            
-#            change_string( test_class_obj )
-#                   
-#            test_class_obj.before_change_method = nil
-#            test_class_obj.after_change_method = nil
-#            SE.puts "\n#{SE.lineno}: test_class_obj.class='#{test_class_obj.string.class}'"
-#            
-#            change_string( test_class_obj )
-#            
-#        end
-#             
-#        def change_string( test_class_obj )
-#            SE.q {[ 'test_class_obj' ]}
-#            test_class_obj.string = 'bozo'    
-#            SE.puts "test_class_obj.string = '#{test_class_obj.string}'"
-#            SE.puts "\n#{SE.lineno}: test_class_obj.string.class='#{test_class_obj.string.class}', test_class_obj.string[]='#{test_class_obj.string.method( :[]= )}'"
-#            
-#            test_class_obj.string[ 'bozo' ] = 'bonzo'
-#            SE.puts "test_class_obj.string = '#{test_class_obj.string}'"
-#            
-#            test_class_obj.string[ 3..4 ] = 'bon'
-#            SE.puts "test_class_obj.string = '#{test_class_obj.string}'"
-#            
-#            test_class_obj.s[ 4 ] = 'u'
-#            SE.puts "test_class_obj.string = '#{test_class_obj.string}'"
-#        end
-#        
-#        def before_change_validate( before_string, *argv )
-#            SE.puts "\n#{SE.lineno}: class='#{self.class}', before_string=#{before_string}, argv='#{argv}' PRE-VALIDATION"
-#        end
-#        def after_change_validate( before_string, after_string, *argv )
-#            SE.puts "\n#{SE.lineno}: class='#{self.class}', before_string=#{before_string}, after_string=#{after_string}, argv='#{argv}' POST-VALIDATION"
-#        end
-#        def before_change_alternate( after_string, *argv )
-#            SE.puts "\n#{SE.lineno}: class='#{self.class}', after_string=#{after_string}, argv='#{argv}' ALT-PRE-VALIDATION"
-#        end
-#        def after_change_alternate( before_string, after_string, *argv )
-#            SE.puts "\n#{SE.lineno}: class='#{self.class}', before_string=#{before_string}, after_string=#{after_string}, argv='#{argv}' ALT-POST-VALIDATION"
-#        end
-#    end
-#    
-#    Run.new.my_main
+#   class Run
+#       def my_main
+#   
+#           test_class_obj = String_with_before_after_STORE_and_ASSIGN_methods.new( before_change_method: nil,
+#                                                                                   after_change_method:  self.method( :after_change_validate )  )
+#           SE.puts "\n#{SE.lineno}: test_class_obj.inspect='#{test_class_obj.inspect}'"
+#   
+#           change_string( test_class_obj )
+#   
+#           test_class_obj.before_change_method = self.method( :before_change_validate )
+#           SE.puts "\n#{SE.lineno}: test_class_obj.inspect='#{test_class_obj.inspect}'"
+#   
+#           change_string( test_class_obj )
+#   
+#       end
+#   
+#       def change_string( test_class_obj )
+#           test_class_obj.string = 'bozo'
+#           SE.puts "test_class_obj.string = '#{test_class_obj.string}'"
+#           SE.puts "\n#{SE.lineno}: test_class_obj.string.class='#{test_class_obj.string.class}', test_class_obj.string[]='#{test_class_obj.string.method( :[]= )}'"
+#   
+#           test_class_obj.string[ 'bozo' ] = 'bonzo'
+#           SE.puts "test_class_obj.string = '#{test_class_obj.string}'"
+#   
+#           test_class_obj.string[ 3..4 ] = 'bon'
+#           SE.puts "test_class_obj.string = '#{test_class_obj.string}'"
+#   
+#           test_class_obj.string[ 4 ] = 'u'
+#           SE.puts "test_class_obj.string = '#{test_class_obj.string}'"
+#       end
+#   
+#       def before_change_validate( before_string, *argv )
+#           SE.puts "\n#{SE.lineno}: class='#{self.class}', before_string=#{before_string}, argv='#{argv}' PRE-VALIDATION"
+#       end
+#       def after_change_validate( before_string, after_string, *argv )
+#           SE.puts "\n#{SE.lineno}: class='#{self.class}', before_string=#{before_string}, after_string=#{after_string}, argv='#{argv}' POST-VALIDATION"
+#       end
+#       def before_change_alternate( after_string, *argv )
+#           SE.puts "\n#{SE.lineno}: class='#{self.class}', after_string=#{after_string}, argv='#{argv}' ALT-PRE-VALIDATION"
+#       end
+#       def after_change_alternate( before_string, after_string, *argv )
+#           SE.puts "\n#{SE.lineno}: class='#{self.class}', before_string=#{before_string}, after_string=#{after_string}, argv='#{argv}' ALT-POST-VALIDATION"
+#       end
+#   end
+#   
+#   Run.new.my_main

@@ -91,7 +91,7 @@ else
     a1 << "fmt013_b Sep-Oct 87"
     a1 << "fmt014_a 7-1-88 - 7/2/88"
     input_string =""
-    input_string += a1.join( " " ) 
+    input_string += a1.shuffle.join( " " )
     input_string += a1.map{ | e | e.sub(/^fmt\d\d\d_./, '') }.shuffle.join( " and " )
 end
 
