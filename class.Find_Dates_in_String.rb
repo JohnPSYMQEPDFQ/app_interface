@@ -51,22 +51,22 @@ end
 
 class Date_clump_uid
     public  attr_reader :pattern_RES, :pattern_RE, :pattern_length,
-                        :prefix, :suffix, :digit_length, :uid_length
+                        :prefix, :suffix, :digit_length, :uid_length, :date_clump_punct_chars
     private attr_writer :pattern_RES, :pattern_RE, :pattern_length,
-                        :prefix, :suffix, :digit_length, :uid_length
+                        :prefix, :suffix, :digit_length, :uid_length, :date_clump_punct_chars
 
     
     def initialize( separation_punctuation_O )
-        date_clump_punct_chars = separation_punctuation_O.reserve_punctuation_chars( /[<>]/ )
-        self.prefix            = " #{date_clump_punct_chars[0]}DATE_CLUMP_#:"        # The leading and
-        self.suffix            = "#{date_clump_punct_chars[1]} "                     # trailing space is important!  
-        self.digit_length      = '10'
-        self.pattern_RES       = prefix + "[0-9]{#{digit_length}}" + suffix
-        self.pattern_RE        = /#{pattern_RES}/
-        self.uid_length        = string_of_num( 0 ).length
+        self.date_clump_punct_chars = separation_punctuation_O.reserve_punctuation_chars( /[<>]/ )
+        self.prefix                 = " #{date_clump_punct_chars[0]}DATE_CLUMP_#:"        # The leading and
+        self.suffix                 = "#{date_clump_punct_chars[1]} "                     # trailing space is important!  
+        self.digit_length           = '10'
+        self.pattern_RES            = prefix + "[0-9]{#{digit_length}}" + suffix
+        self.pattern_RE             = /#{pattern_RES}/
+        self.uid_length             = uid_of_num( 0 ).length
     end
     
-    def string_of_num( num )
+    def uid_of_num( num )
         return prefix + "%0#{digit_length}d" % num + suffix       
     end
     
@@ -914,7 +914,7 @@ class Find_Dates_in_String
                 full_match_string__everything = ''
 #                    First date or only date
                 if ( date_match_idx == 0 ) 
-                    date_clump_S.uid                                                   = date_clump_uid_O.string_of_num( date_clump_S__A.length )                    
+                    date_clump_S.uid                                                   = date_clump_uid_O.uid_of_num( date_clump_S__A.length )                    
                     date_clump_S.date_match_string__beginning_offset                   = date_match_S.match_O.offset( :date_M )[0]  
                     date_match_string                                                 += date_match_S.piece( 1 )
                     
@@ -1255,12 +1255,13 @@ class Find_Dates_in_String
             end
         end
         if ( option_H[ :morality_replace_option ][ :good ] == :remove_from_end ) then
+            look_ahead_RES = "(?=([^#{date_clump_uid_O.date_clump_punct_chars[0]}#{date_clump_uid_O.date_clump_punct_chars[1]}]))"
             loop do
-                output_data_O.string.sub!( /(?=([^\>\<]))#{thru_date_end_delim_RES}\s*$/, ' ' )  #  There need to be at least one space at the end!
+                output_data_O.string.sub!( /#{look_ahead_RES}#{thru_date_end_delim_RES}\s*$/, ' ' )  #  There need to be at least one space at the end!
                 if ( output_data_O.string.match( /(#{date_clump_uid_O.pattern_RES})\s*$/ ) ) then
                     date_clump_uid = $&                   
                     output_data_O.string[ date_clump_uid ] = ''
-                    output_data_O.string.sub!( /(?=([^\>\<]))#{begin_delim_RES}\s*$/, ' ' )  #  There need to be at least one space at the end!
+                    output_data_O.string.sub!( /#{look_ahead_RES}#{begin_delim_RES}\s*$/, ' ' )  #  There need to be at least one space at the end!
                 else
                     break
                 end
