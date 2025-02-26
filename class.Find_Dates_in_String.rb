@@ -233,13 +233,13 @@ class Find_Dates_in_String
 
 #       Set the pattern_name and length
         initial__date_pattern_RES_S__A.each_index do | idx |
-            stringer = initial__date_pattern_RES_S__A[ idx ].pattern_RES.gsub( / /,'' )
+            stringer = initial__date_pattern_RES_S__A[ idx ].pattern_RES.gsub( /\s{4,} /,'   ' )  # get rid of the big literal spaces.
             pattern_name = stringer[ stringer.index( '<' ) + 1 .. stringer.index( '>' ) - 1 ]
             if ( not pattern_name.match?( /^fmt\d{3}__/ ) ) then
                 SE.puts "#{SE.lineno}: I shouldn't be here: pattern_name doesn't start with /fmtNNN__'#{pattern_name}'"
                 raise
             end
-            initial__date_pattern_RES_S__A[ idx ].pattern_RES  = stringer          # get rid of the literal spaces.
+            initial__date_pattern_RES_S__A[ idx ].pattern_RES  = stringer          
             initial__date_pattern_RES_S__A[ idx ].pattern_name = pattern_name
         end
 
