@@ -10,13 +10,16 @@ class String
         val = Integer( self, all_your_base_are_belong_to_us ) rescue nil
         return false if ( val == nil ) 
         return true
-    end   
+    end
+    def not_integer?( all_your_base_are_belong_to_us = 10 )
+        return ! self.integer?( all_your_base_are_belong_to_us = 10 )
+    end
         
     def blank?( )
         return self.to_s.strip.empty?
     end
     def not_blank?( )
-        return ! self.to_s.strip.empty?
+        return ! self.blank?
     end
     
 end

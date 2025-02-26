@@ -17,7 +17,7 @@ class Object
         args.flatten.include?( self )
     end
     def not_in?( *args )
-        return ! args.flatten.include?( self )
+        return ! self.in?( args )
     end
     
 end
