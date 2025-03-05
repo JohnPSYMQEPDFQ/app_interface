@@ -1,29 +1,29 @@
 require 'awesome_print'
 
 module SE
-    def SE.puts(*params)
+    def self.puts(*params)
         params.each do |e|
             $stderr.puts e
         end
     end
-    def SE.print(*params)
+    def self.print(*params)
         params.each do |e|
             $stderr.print e
         end
     end
-    def SE.ap(*params)
-        SE.puts "#{SE.lineno(1)}:"
+    def self.ap(*params)
+        self.puts "#{SE.lineno(1)}:"
         params.each do |e|
             $stderr.puts e.ai( ( $stderr.isatty ) ? {} : { :plain => true } )
         end
     end
-    def SE.p(*params)
+    def self.p(*params)
         params.each do |e|
             $stderr.puts e.inspect
         end
     end
     
-    def SE.q(*stuff, &block)
+    def self.q(*stuff, &block)
 
     # https://stackoverflow.com/a/3250188/13159909
     #
@@ -36,23 +36,23 @@ module SE
                 value = eval(expression.to_s, block.binding)
                 "#{expression} = #{value.ai( ( $stderr.isatty ) ? {} : { :plain => true } )}"
             end.join(', ')
-            $stderr.puts SE.lineno(1) + ": " + stringer
+            $stderr.puts self.lineno(1) + ": " + stringer
         else
             stuff.each do
-                |thing| SE.puts SE.lineno(3) + ": " + thing.ai( ( $stderr.isatty ) ? {} : { :plain => true } )
+                |thing| self.puts self.lineno(3) + ": " + thing.ai( ( $stderr.isatty ) ? {} : { :plain => true } )
             end
         end
     end
 
-    def SE.pov( p1_O )  # Print Object's Variables
-        SE.puts "#{SE.lineno(1)}:#{p1_O.class.name} Variables:"
-        SE.q {'p1_O.instance_variables.map{ |var| [ var, p1_O.instance_variable_get( var ) ].join( "=" )}' }
+    def self.pov( p1_O )  # Print Object's Variables
+        self.puts "#{SE.lineno(1)}:#{p1_O.class.name} Variables:"
+        self.q {'p1_O.instance_variables.map{ |var| [ var, p1_O.instance_variable_get( var ) ].join( "=" )}' }
     end
-    def SE.pom( p1_O )  # Print Object's Methods
-        SE.puts "#{SE.lineno(1)}:#{p1_O.class.name} Methods:"
-        SE.q {'( p1_O.methods - Object.methods ).map{ | m | m = "#{p1_O.class.name}::#{m}"}.sort' }
+    def self.pom( p1_O )  # Print Object's Methods
+        self.puts "#{SE.lineno(1)}:#{p1_O.class.name} Methods:"
+        self.q {'( p1_O.methods - Object.methods ).map{ | m | m = "#{p1_O.class.name}::#{m}"}.sort' }
     end
-    def SE.lineno( e = 0 )
+    def self.lineno( e = 0 )
         s = caller[ e ].sub(/^.*\//,"").sub(/:in .* in /,":in ").gsub(/[`']/,"")
         if ( defined?( $. ) and $. and $. > 0 ) then
             s += " $.=#{$.}"
@@ -60,7 +60,7 @@ module SE
         return s
     end
 
-    def SE.my_source_code_path
+    def self.my_source_code_path
         arr = caller
         path = arr.shift
         path.sub!( /`.+'/, '' ) 
@@ -74,14 +74,14 @@ module SE
         end   
         return path
     end
-    def SE.my_source_code_filename
-        SE.my_source_code_path.sub( /.*\//, '' )
+    def self.my_source_code_filename
+        self.my_source_code_path.sub( /.*\//, '' )
     end
 
-    def SE.ap_stack()
-        SE.ap( SE.stack( 1 ) )
+    def self.ap_stack()
+        self.ap( self.stack( 1 ) )
     end
-    def SE.stack( p1 = 0 )
+    def self.stack( p1 = 0 )
         param_regexp = nil
         param_string = nil
         param_rng = 0 .. 1000000
@@ -95,7 +95,7 @@ module SE
         when ( p1.is_a?( Regexp ) )
             param_regexp = p1
         else
-            SE.puts "#{SE.lineno}: ERROR: unexpected param1 class type of '#{p1.class}'"
+            self.puts "#{SE.lineno}: ERROR: unexpected param1 class type of '#{p1.class}'"
         end
         arr = []
         caller.each_with_index do | e, idx |
@@ -109,23 +109,23 @@ module SE
         return arr
     end    
     
-    def SE.debug_on_the_range( thing_to_test, debug_range )
+    def self.debug_on_the_range( thing_to_test, debug_range )
         if ( not debug_range.is_a?( Range )) then
-            SE.puts "#{SE.lineno}: Was expecting param2 to be a Range, instead it's a #{debug_range.class}"
+            self.puts "#{SE.lineno}: Was expecting param2 to be a Range, instead it's a #{debug_range.class}"
             raise
         end
 #       SE.q {[ 'thing_to_test', 'debug_range', 'debug_range === thing_to_test' ]}
         if ( $DEBUG ) then
             if ( not debug_range === thing_to_test ) then   # The range MUST be on the left of the ===  !!!
-                SE.puts "#{SE.lineno}: DEBUG off !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                self.puts "#{SE.lineno}: DEBUG off !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 $DEBUG = false
-                SE.ap_stack
+                self.ap_stack
             end
         else
             if ( debug_range === thing_to_test  ) then
-                SE.puts "#{SE.lineno}: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                self.puts "#{SE.lineno}: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 $DEBUG = true
-                SE.ap_stack
+                self.ap_stack
             end
         end
     end
@@ -142,9 +142,9 @@ module SE
                 raise "LOOP DETECTOR: Abort ( loops=#{self.loop_cnt}, limit=#{self.loop_limit} )"
             end
             if ( self.loop_cnt >= self.loop_limit ) then
-                SE.puts "#{SE.lineno}: LOOP DETECTOR: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                self.puts "#{SE.lineno}: LOOP DETECTOR: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 $DEBUG = true
-                SE.ap_stack
+                self.ap_stack
             end
             self.loop_cnt += 1
         end
