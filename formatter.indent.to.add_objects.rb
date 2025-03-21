@@ -1,16 +1,6 @@
 =begin
 
-Abbreviations,  AO = archival object (Everything's an AO, but there's also uri "archive_objects". It's confusing...)
-                TC = top container
-                IT = instance type
-                AS = ArchivesSpace
-                _H = Hash
-                _A = Array
-                _O = Object
-               _0R = Zero Relative
-
 Usage: format_for_add_object.rb --help
-
 
 =end
 

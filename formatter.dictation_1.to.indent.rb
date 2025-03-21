@@ -69,8 +69,8 @@ OptionParser.new do |option|
         exit
     end
 end.parse!  # Bang because ARGV is altered
-self.cmdln_option_H[ :max_levels ] -= 1                   # :max_levels is zero relative.
-self.cmdln_option_H[ :max_levels ] = 1 if ( self.cmdln_option_H[ :max_levels ] < 1 )
+self.cmdln_option_H[ :max_levels ] += -1                   # :max_levels is zero relative.
+self.cmdln_option_H[ :max_levels ]  = 1 if ( self.cmdln_option_H[ :max_levels ] < 1 )
 
 
 self.find_dates_with_4digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :remove_from_end },

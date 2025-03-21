@@ -40,13 +40,13 @@ class String_with_before_after_STORE_and_ASSIGN_methods
                 super( argv )
             end
         end
-        attr_accessor :my_creator
+        private attr_accessor :my_creator
         def []=( *argv )
 #           SE.puts "\n#{SE.lineno}: class='#{self.class}', argv='#{argv}'"
             my_creator.before_string = ( my_creator.before_change_method or my_creator.after_change_method ) ? self + '' : nil
-            my_creator.before_change_method.call( my_creator.before_string, argv ) if ( my_creator.before_change_method )
+            my_creator.before_change_method.call( my_creator, my_creator.before_string, argv ) if ( my_creator.before_change_method )
             super
-            my_creator.after_change_method.call( my_creator.before_string, self, argv ) if ( my_creator.after_change_method )
+            my_creator.after_change_method.call( my_creator, my_creator.before_string, self + '', argv ) if ( my_creator.after_change_method )
         end
     end
 
@@ -61,9 +61,9 @@ class String_with_before_after_STORE_and_ASSIGN_methods
         self.before_string = nil
         @string = String_with_before_after_STORE_methods.new( self, argv )
 #       SE.puts "\n#{SE.lineno}: self.string.class='#{self.string.class}', self.string[]='#{self.string.method( :[]= )}'"
-        self.after_change_method.call( self.before_string, self.string, argv ) if ( self.after_change_method )
+        self.after_change_method.call( self, self.before_string, self.string + '', argv ) if ( self.after_change_method )
     end
-    attr_reader :string
+    attr_reader   :string
     attr_accessor :before_string
 end
 

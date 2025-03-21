@@ -1,3 +1,24 @@
+=begin
+
+Variable Abbreviations:
+        AO = Archival Object ( Resources are an AO too, but they have their own structure. )
+        AS = ArchivesSpace
+        IT = Instance Type
+        TC = Top Container
+        SC = Sub-Container
+        _H = Hash
+        _J = Json string
+        _RES = Regular Expression String, e.g: find_bozo_RES = '\s+bozo\s+'
+        _RE  = Regular Expression, e.g.: find_bozo_RE = /#{find_bozo_RES}/
+        _A = Array
+        _O = Object
+        _Q = Query
+        _C = Class of Struct
+        _S = Structure of _C 
+        __ = reads as: 'in a(n)', e.g.: record_H__A = 'record' Hash "in an" Array.
+
+=end
+
 require 'Date'                       # This messes-up CSV.
 require 'class.Date.extend.rb'
 require 'class.Hash.extend.rb'
@@ -22,12 +43,10 @@ require 'class.Find_Dates_in_String.module.Date_Clumps_classify_by_good_and_bad_
 class Find_Dates_in_String    
     public  attr_reader :original_text,
                         :separation_punctuation_O, :date_clump_uid_O,
-                        :output_data_O, :output_data_with_all_dates_removed_O,
-                        :output_data_uid_H
+                        :output_data_O, :output_data_with_all_dates_removed_O
     private attr_writer :original_text,
                         :separation_punctuation_O, :date_clump_uid_O,
-                        :output_data_O, :output_data_with_all_dates_removed_O,
-                        :output_data_uid_H
+                        :output_data_O, :output_data_with_all_dates_removed_O
 
     include Set_Options
     include Date_Regexp_variables     
@@ -46,14 +65,24 @@ class Find_Dates_in_String
         
         set_options( param__option_H )
         
-        self.output_data_uid_H = {}        
 #
 #       A module having a method named 'initialize' will be called IF the class 'initialize' method calls 'super'.  BUT,
-#       if there are more than one modules, only the last one included will be have its 'initialize' method called!   
+#       if there is more than one module, only the last one included will have its 'initialize' method called !   
 #       To get around that, do the following code in a class's 'initialize' to run any included module's method having
 #       a method named '[MODULE_NAME]__initialize'.   
 #                   
-        self.singleton_class.included_modules.map { | mn | "#{mn}__initialize".downcase.to_sym }.filter_map { | mcim | self.send( mcim ) if self.respond_to?( mcim ) }
+#       self.singleton_class.included_modules.map { | mn | "#{mn}__initialize".downcase.to_sym }.filter_map { | mcim | self.send( mcim ) if self.respond_to?( mcim ) }
+
+#       BUT!!!  It turns out, there IS a way to call each module's 'initialize' method using the following code,
+#       which I got from here: https://web.archive.org/web/20160325173756/http://stdout.koraktor.de/blog/2010/10/13/ruby-calling-super-constructors-from-multiple-included-modules/
+#       However, to make it more "automatic", I added a loop for each method, testing for the existence of
+#       __method__ (which is the currently executing method, which is :initialize).   
+
+        self.singleton_class.included_modules.each do | mod |
+#               next if ( not mod.respond_to?( __method__, true ) )   <<<<<  This didn't work.  It returned true for Kernal 
+                next if ( not mod.private_instance_methods.member?( __method__ ) )
+                mod.instance_method( __method__ ).bind( self ).call
+        end
        
     end    
 
@@ -67,21 +96,32 @@ class Find_Dates_in_String
     end           
     
     def do_find( param__original_text )
+    
+    #   NOTE:   "def self.initialize" will initialize module variables, NOT the instance variables of the class
+    #           the module is included in !!!!!!  See the comment in 'Find_Dates_in_String::initialize' for how
+    #           to call a module's "def initialize".  BUT, the "def initialize" is called ONLY at
+    #           instance initialize!!!  If the module is supposed to initialize some variables FOR the module
+    #           each time a method is called in the class, I decided to name a module method the same name
+    #           as the instance method and call it like is being done for "def initialize".
+        self.singleton_class.included_modules.each do | mod |
+                next if ( not mod.method_defined?( __method__ ) )   
+                mod.instance_method( __method__ ).bind( self ).call
+        end
+        
         self.original_text = param__original_text 
 
-        self.output_data_O = String_with_before_after_STORE_and_ASSIGN_methods.new( after_change_method: method( :after_change_validate )  )
-        self.output_data_with_all_dates_removed_O = String_with_before_after_STORE_and_ASSIGN_methods.new( )
-#       output_data_with_all_dates_removed_O.before_change_method = method( :before_change_validate )    # Can't be active at the same
-#       output_data_with_all_dates_removed_O.after_change_method  = method( :after_change_validate )     # time as above due to the
-                                                                                                         # the Hash in the validation 
-                                                                                                         # function.                  
-        output_data_O.string = original_text + ''   # Make a new string, not a pointer.           
-        
+        self.output_data_O = String_with_before_after_STORE_and_ASSIGN_methods.new( after_change_method: method( :after_change_validate )  )         
+             output_data_O.string = original_text + ''   # Make a new string, not a pointer.           
+                
         date_clumps_parse_text_dates( )
         date_clumps_judge_each_clump( )
-      
+                        
         output_data_O.before_change_method = method( :before_change_validate ) 
-        output_data_with_all_dates_removed_O.string = output_data_O.string + ''
+
+        self.output_data_with_all_dates_removed_O = String_with_before_after_STORE_and_ASSIGN_methods.new( )   
+             output_data_with_all_dates_removed_O.before_change_method = method( :before_change_validate ) 
+             output_data_with_all_dates_removed_O.after_change_method  = method( :after_change_validate )            
+             output_data_with_all_dates_removed_O.string               = output_data_O.string + ''
        
         date_clumps_convert_back_to_text_dates( )
         date_clumps_classify_by_good_and_bad_morality( )

@@ -1,3 +1,24 @@
+=begin
+
+Variable Abbreviations:
+        AO = Archival Object ( Resources are an AO too, but they have their own structure. )
+        AS = ArchivesSpace
+        IT = Instance Type
+        TC = Top Container
+        SC = Sub-Container
+        _H = Hash
+        _J = Json string
+        _RES = Regular Expression String, e.g: find_bozo_RES = '\s+bozo\s+'
+        _RE  = Regular Expression, e.g.: find_bozo_RE = /#{find_bozo_RES}/
+        _A = Array
+        _O = Object
+        _Q = Query
+        _C = Class of Struct
+        _S = Structure of _C 
+        __ = reads as: 'in a(n)', e.g.: record_H__A = 'record' Hash "in an" Array.
+
+=end
+
 module K
     def K.alpha_month_RES
         stringer = '(january|february|march|april|may|june|july|august|september|october|november|december' +

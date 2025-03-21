@@ -176,7 +176,7 @@ def put_column( indent_spaces, column_idx = 0, title_length = 0 )
                     next
                 else
                     if ( prematch.blank? ) then                         # If true: the Box is the 1st thing in the sub-column
-                        self.current_box_folder = ''                          # which we'll guess to mean to reset the current_box_folder
+                        self.current_box_folder = ''                    # which we'll guess to mean to reset the current_box_folder
                     end
                 end
             end

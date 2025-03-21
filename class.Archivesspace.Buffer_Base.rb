@@ -1,15 +1,21 @@
 =begin
 
-Abbreviations,  AO = archival object(Everything's an AO, but there's also uri "archive_objects". It's confusing...)
-                AS = ArchivesSpace
-                IT = instance type
-                TC = top container
-                SC = Sub-container
-                _H = Hash
-                _A = Array
-                _I = Index(of Array)
-                _O = Object
-               _0R = Zero Relative
+Variable Abbreviations:
+        AO = Archival Object ( Resources are an AO too, but they have their own structure. )
+        AS = ArchivesSpace
+        IT = Instance Type
+        TC = Top Container
+        SC = Sub-Container
+        _H = Hash
+        _J = Json string
+        _RES = Regular Expression String, e.g: find_bozo_RES = '\s+bozo\s+'
+        _RE  = Regular Expression, e.g.: find_bozo_RE = /#{find_bozo_RES}/
+        _A = Array
+        _O = Object
+        _Q = Query
+        _C = Class of Struct
+        _S = Structure of _C 
+        __ = reads as: 'in a(n)', e.g.: record_H__A = 'record' Hash "in an" Array.
 
 =end
 

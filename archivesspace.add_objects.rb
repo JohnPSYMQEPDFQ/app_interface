@@ -1,18 +1,5 @@
 =begin
 
-Abbreviations,  AO = archival object (Everything's an AO, but there's also uri "archive_objects". It's confusing...)
-                AS = ArchivesSpace
-                IT = instance type
-                TC = top container
-                SC = Sub-container
-                _H = Hash
-                _J = Json string
-                _A = Array
-                _O = Object
-                _Q = Query
-                _S = Structure
-               _0R = Zero Relative
-
 
 Usage:  this_program.rb --res-num n [other options] FILE
         this_program.rb --help
@@ -118,8 +105,9 @@ binding.pry if ( respond_to? :pry )
 myself_name = File.basename( $0 )
 
 cmdln_option = { :rep_num => 2  ,
-                 :res_num => nil  ,
-                 :ao_num => nil  ,
+                 :res_num => nil,
+                 :res_title => nil,
+                 :ao_num => nil,
                  :ao_title => nil ,
                  :reuse_TCs => false ,
                  :update => false ,
@@ -132,6 +120,9 @@ OptionParser.new do |option|
     end
     option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
         cmdln_option[ :res_num ] = opt_arg
+    end
+    option.on( "--res-title x", "Resource Title ( optional, but must match the suppled Resource number.)" ) do |opt_arg|
+        cmdln_option[ :res_title ] = opt_arg
     end
     option.on( "--ao-num n", OptionParser::DecimalInteger, "Initial parent AO URI number ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
         cmdln_option[ :ao_num ] = opt_arg
@@ -170,15 +161,20 @@ end
 
 aspace_O = ASpace.new
 aspace_O.allow_updates=cmdln_option[ :update ] 
-#SE.pom(aspace_O)
-#SE.pov(aspace_O)
+
 rep_O = Repository.new( aspace_O, cmdln_option[ :rep_num ] )
-#SE.pom(rep_O)
-#SE.pov(rep_O)
+
 res_O = Resource.new( rep_O, cmdln_option[ :res_num ] )
 res_buf_O = res_O.new_buffer.read
-#SE.pom(res_buf_O)
-#SE.pov(res_buf_O)
+
+if ( cmdln_option[ :res_title ].not_nil? ) then
+    if ( cmdln_option[ :res_title ] != res_buf_O.record_H[ K.title ] ) then
+        SE.puts "#{SE.lineno}: The --res-title value must match the title of --res-num #{cmdln_option[ :res_num ]}. They don't:"
+        SE.q {[ 'cmdln_option[ :res_title ]' ]}
+        SE.q {[ 'res_buf_O.record_H[ K.title ]' ]}
+        raise
+    end
+end
 
 parent_ref_stack_A = [ ]
 if ( cmdln_option[ :ao_num ] ) then
@@ -283,7 +279,7 @@ for argv in ARGV do
             end
 
             ao_buf_O = Archival_Object.new( res_buf_O ).new_buffer.create( record_level )
-#           SE.q {'ao_buf_O.record_H'}
+          # SE.q {'ao_buf_O.record_H'}
             if ( ao_buf_O.record_H[ K.resource ][ K.ref ] == parent_ref_stack_A[ parent_ref_stack_A.maxindex ] ) then
                 ao_buf_O.record_H = { K.parent => '' }
             else
@@ -312,7 +308,7 @@ for argv in ARGV do
                     tc_buf_O.record_H = { K.indicator => indicator }
                     tc_buf_O.store
                     tc_uri_H__by_type_and_indicator[ unique_TC_key ] = tc_buf_O.uri
-#                   SE.q {'tc_uri_H__by_type_and_indicator'}
+              # SE.q {'tc_uri_H__by_type_and_indicator'}
                 end
 
                 it_frag_O = Record_Format.new( :instance_type )
@@ -328,7 +324,7 @@ for argv in ARGV do
                 ao_buf_O.record_H = { K.instances => [ it_frag_O.record_H ] }
             end
 
-#           SE.q {'ao_buf_O.record_H'}
+          # SE.q {'ao_buf_O.record_H'}
             ao_buf_O.store
             last_AO_uri_created = ao_buf_O.uri
             next

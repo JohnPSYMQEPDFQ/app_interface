@@ -1,19 +1,5 @@
 =begin
 
-Abbreviations,  AO = archival object (Everything's an AO, but there's also uri "archive_objects". It's confusing...)
-                AS = ArchivesSpace
-                IT = instance type
-                TC = top container
-                SC = Sub-container
-                _H = Hash
-                _J = Json string
-                _A = Array
-                _I = Index(of Array)
-                _O = Object
-                _Q = Query
-               _0R = Zero Relative
-
-
 Usage:  this_program.rb --ead TITLE [other options] FILE
         this_program.rb --help
 

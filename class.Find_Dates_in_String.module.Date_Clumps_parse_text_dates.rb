@@ -6,15 +6,15 @@ module Date_Clumps_parse_text_dates
     private attr_writer :date_clump_C, :possible_date_C, :date_match_C, :ymd_C,
                         :date_clump_S__A
     
-
-    def date_clumps_parse_text_dates__initialize( )   
-#
-#       A module having a method named 'initialize' will be called IF the class 'initialize' method calls 'super'.  BUT,
-#       if there are more than one modules, only the last one included will be have its 'initialize' method called!   
-#       To get around that, do the following code in a class's 'initialize' to run any included module's method having
-#       a method named '[MODULE_NAME]__initialize'.   
-#           self.singleton_class.included_modules.map { | mn | "#{mn}__initialize".downcase.to_sym }.filter_map { | mcim | self.send( mcim ) if self.respond_to?( mcim ) }
-#    
+    #   NOTE:   "def self.initialize" will initialize module variables, NOT the instance variables of the class
+    #           the module is included in !!!!!!  See the comment in 'Find_Dates_in_String::initialize' for how
+    #           to call a module's "def initialize".  BUT, the "def initialize" is called ONLY at
+    #           instance initialize!!!  If the module is supposed to initialize some variables FOR the module
+    #           each time a method is called in the class, I decided to name a module method the same name
+    #           as the instance method and call it like is being done for "def initialize".
+    #           See the :do_find method in "class.Find_Dates_in_String.rb".
+    def do_find( )   
+  
         self.date_clump_S__A = [ ]
         self.date_clump_C = Struct.new( :full_match_string__everything,
                                         :full_match_string__begin_delim__lstrip,

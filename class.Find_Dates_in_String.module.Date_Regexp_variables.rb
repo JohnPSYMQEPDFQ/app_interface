@@ -11,14 +11,14 @@ module Date_Regexp_variables
                         :begin_delim_RES, :end_delim_RES
 
 
-    def date_regexp_variables__initialize
-#
-#       A module having a method named 'initialize' will be called IF the class 'initialize' method calls 'super'.  BUT,
-#       if there are more than one modules, only the last one included will be have its 'initialize' method called!   
-#       To get around that, do the following code in a class's 'initialize' to run any included module's method having
-#       a method named '[MODULE_NAME]__initialize'.   
-#           self.singleton_class.included_modules.map { | mn | "#{mn}__initialize".downcase.to_sym }.filter_map { | mcim | self.send( mcim ) if self.respond_to?( mcim ) }
-#
+    #   NOTE:   "def self.initialize" will initialize module variables, NOT the instance variables of the class
+    #           the module is included in !!!!!!  See the comment in 'Find_Dates_in_String::initialize' for how
+    #           to call a module's "def initialize".  BUT, the "def initialize" is called ONLY at
+    #           instance initialize!!!  If the module is supposed to initialize some variables FOR the module
+    #           each time a method is called in the class, I decided to name a module method the same name
+    #           as the instance method and call it like is being done for "def initialize".
+    #           See the :do_find method in "class.Find_Dates_in_String.rb".
+    def initialize
 
         usable_text_punct_RES           = Regexp::escape( separation_punctuation_O.usable_text_punct_chars )  # THIS NEEDS TO WRAPPED: [#{usable_text_punct_RES}]                            
 #       dash_RES                        = "\\s{0,2}-\\s{0,2}"

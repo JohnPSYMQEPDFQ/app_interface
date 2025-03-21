@@ -69,7 +69,7 @@ elsif ( $stdin.stat.pipe? ) then
     input_string = ARGF.each_line.to_a.join( ' ' ).chomp
 else
     SE.puts "No test string found on command line, maybe something like:"
-    SE.puts "1939 Feb. 18-Dec. 2, 1939 / 1940 May 25-Sep. 29, 1940"
+    SE.puts "'1939 Feb. 18-Dec. 2, 1939 and 1940 May 25-Sep. 29, 1940'"
     SE.puts "Here is the default test..."
     a1 = []
     a1 << "fmt002_a 1980 through 1990"
@@ -121,6 +121,7 @@ find_dates_O = Find_Dates_in_String.new( {  :morality_replace_option => { :good 
 SE.q {[ 'find_dates_O.option_H' ]}                                                  
                                            
 output_string = find_dates_O.do_find( input_string )
+#utput_string = find_dates_O.do_find( input_string )      # This tests if two calls to :do_file is broken.
 
 
 SE.puts "----------------------------------"
