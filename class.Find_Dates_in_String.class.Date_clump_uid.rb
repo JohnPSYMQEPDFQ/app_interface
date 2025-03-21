@@ -11,7 +11,7 @@ class Date_clump_uid
         self.date_clump_punct_chars = separation_punctuation_O.reserve_punctuation_chars( /[<>]/ )
         self.prefix                 = " #{date_clump_punct_chars[ 0 ]}DATE_CLUMP_#:"        # The leading and
         self.suffix                 = "#{date_clump_punct_chars[ 1 ]} "                     # trailing space is important!  
-        self.digit_length           = '10'
+        self.digit_length           = 10
         self.pattern_RES            = prefix + "[0-9]{#{digit_length}}" + suffix
         self.pattern_RE             = /#{pattern_RES}/
         self.uid_length             = uid_of_num( 0 ).length
@@ -25,7 +25,7 @@ class Date_clump_uid
         if ( uid.length == uid_length and 
              uid[  0, prefix.length ] == prefix and 
              uid[ -2, suffix.length ] == suffix ) then
-            return uid[ prefix.length, 10 ].to_i
+            return uid[ prefix.length, digit_length ].to_i
         else
             SE.puts "#{SE.lineno}: NOT ( uid.length == #{uid_length} and" 
             SE.puts "#{SE.lineno}:       uid[  0, #{prefix.length} ] == #{prefix} and"
