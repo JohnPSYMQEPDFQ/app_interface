@@ -97,7 +97,7 @@ def csrm_collection( repository_uri:,
 
             "notes" =>  [   {   "content"           =>  [ "Statewide Museum Collection Center, #{filing_location}" ],
                                 "jsonmodel_type"    =>  "note_singlepart",
-                                "publish"           =>  false,
+                                "publish"           =>  true,
                                 "type"              =>  "physloc"
                                 },  # Index 0
                             {   "content"           =>  [ "PLACE HOLDER !!!!!!!!!!" ], 
@@ -227,7 +227,7 @@ if ( cmdln_option_H[ :inmagic ] ) then
             when 'Filing Location'.downcase
                 filing_location = inmagic_value
             when 'Historical Info'.downcase
-                historical_info = inmagic_value.split( '|' ).map( &:strip ).join( "\n\n" )
+                historical_info = inmagic_value
             when 'MS Number'.downcase
                 if ( cmdln_option_H[ :ead_id ].nil? ) then
                     ead_id = "InMagic MS #{inmagic_value}"
@@ -251,13 +251,13 @@ if ( cmdln_option_H[ :inmagic ] ) then
                     end
                 end
             when 'Provenance'.downcase
-                provenance = inmagic_value.split( '|' ).map( &:strip ).join( "\n\n" )         
+                provenance = inmagic_value         
             when 'Record ID number'.downcase
                 # Not used
             when 'Scope and content'.downcase
-                scope_and_content = inmagic_value.split( '|' ).map( &:strip ).join( "\n\n" ) 
+                scope_and_content = inmagic_value
             when 'Series Summary'.downcase
-                series_summary = inmagic_value.split( '|' ).map( &:strip ).join( "\n\n" )
+                series_summary = inmagic_value
             else
                 manual_process_columns_H[ inmagic_column ] = inmagic_value
             end
@@ -299,10 +299,11 @@ csrm_collection_H = csrm_collection( repository_uri: rep_O.uri,
 resource_buf_O = Resource.new( rep_O ).new_buffer.create
 resource_buf_O.load( csrm_collection_H )
 
-# SE.q {[ 'resource_buf_O.record_H' ]}
-new_resource = resource_buf_O.store
+#SE.q {[ 'resource_buf_O.record_H' ]}
+new_resource_num = resource_buf_O.store
 puts ""
-puts "New resource created: #{new_resource}"
+puts "New resource number: #{new_resource_num}"
+puts "               name: #{collection_name}"   
 puts ""
 if ( manual_process_columns_H.not_empty? ) then
     SE.q { [ 'manual_process_columns_H' ] }

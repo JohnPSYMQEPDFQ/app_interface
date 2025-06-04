@@ -1,5 +1,11 @@
 
 class Object
+   
+    def deep_copy( )
+        return Marshal.load( Marshal.dump( self ) )
+    end
+    alias_method :copy_by_value, :deep_copy
+    alias_method :cbv, :deep_copy
 
     def not_nil?
         return ! self.nil?

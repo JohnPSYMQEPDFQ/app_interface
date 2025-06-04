@@ -143,11 +143,11 @@ class AO_Record_Buf < Record_Buf
         end
         if ( @record_H.has_key?(K.parent)) then
             if ( @record_H[K.parent].respond_to?(:to_H) and @record_H[K.parent].has_key?(K.ref)) then
-                if ( !(  @record_H[K.parent][K.ref] =~ %r"^#{@ao_O.res_O.rep_O.uri}/(archival_objects|resources)" \
-                      or (  @record_H[K.parent][K.ref] == "NO UPDATE MODE" and ! @ao_O.res_O.rep_O.aspace_O.allow_updates )))
+                if ( ! (  @record_H[K.parent][K.ref].match?( %r"^#{@ao_O.res_O.rep_O.uri}/(archival_objects|resources)" ) or
+                       (  @record_H[K.parent][K.ref] == "NO UPDATE MODE" and ! @ao_O.res_O.rep_O.aspace_O.allow_updates )))
                     SE.puts "#{SE.lineno}: =========================================="
-                    SE.puts "@record_H[K.parent][K.ref] =~ |#{@ao_O.res_O.rep_O.uri}/(archival_objects|resources)|"
-                    SE.puts "@record_H[K.parent][K.ref] = #{@record_H[K.parent][K.ref]}"
+                    SE.puts "@record_H[K.parent][K.ref]: '#{@ao_O.res_O.rep_O.uri}/(archival_objects|resources)'"
+                    SE.puts "@record_H[K.parent][K.ref]: '#{@record_H[K.parent][K.ref]}'"
                     SE.ap "@record_H:", @record_H
                     raise
                 end

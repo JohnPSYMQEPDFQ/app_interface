@@ -31,36 +31,38 @@ class Record_Grouping_Indent
         @record_print_method = record_print_method
         @indent_print_method = indent_print_method
         if (stack_size_0R < 1) then
-            SE.puts "#{SE.lineno}: param3, must be 1 or greater (and, it's 0-relative remember...)."
+            SE.puts "#{SE.lineno}: stack_size_0R, must be 1 or greater (and, it's 0-relative remember...)."
             raise
         end
         @record_stack_size_0R = stack_size_0R
         @record_H__stack_A = []
         if (! indent_keys_prefixes_A.empty?) then
-            if (! indent_keys_prefixes_A[0].is_a?(Array)) then
-                SE.puts "#{SE.lineno}: param4, must be an array of arrays" +
+            if (! indent_keys_prefixes_A[ 0 ].is_a?(Array)) then
+                SE.puts "#{SE.lineno}: indent_keys_prefixes_A, must be an array of arrays" +
                         " (eg. [ [ '/', 0] ] -or- [ [ '/', 0 ], [ 'x', 3 ] ]"
                 raise
             end
         end
-        @indent_key_stack_A = indent_keys_prefixes_A
-        if ( @indent_key_stack_A.empty? or @indent_key_stack_A[0][0] != '/' ) then
-            @indent_key_stack_A.unshift( [ '/', 0 ])
+        @indent_key_stack_A_A = indent_keys_prefixes_A
+        if ( @indent_key_stack_A_A.empty? or @indent_key_stack_A_A[ 0 ][ 0 ] != '/' ) then
+            @indent_key_stack_A_A.unshift( [ '/', 0 ])
         end
-        @indent_key_prefixes_A = @indent_key_stack_A.transpose[0]
+        @indent_key_prefixes_A = @indent_key_stack_A_A.transpose[ 0 ]
         @calculated_indent_right_rec_cnt = 0
         @forced_indent_right_rec_cnt = 0
         @calculated_indent_left_rec_cnt = 0
         @forced_indent_left_rec_cnt = 0
+        @current_calculated_indent_level = 0
         @group_rec_cnt = 0
         @file_rec_cnt = 0
         @total_rec_cnt = 0
     end
     private_class_method :new
     private attr_accessor :record_print_method, :indent_print_method, :record_stack_size_0R, :record_H__stack_A,
-                          :indent_key_stack_A, :indent_key_prefixes_A, :first_record_indent_keys_A, :highest_matched_indent_key_idx_A,
+                          :indent_key_stack_A_A, :indent_key_prefixes_A, :first_record_indent_keys_A, :highest_matched_indent_key_idx_A,
                           :calculated_indent_right_rec_cnt, :forced_indent_right_rec_cnt,
                           :calculated_indent_left_rec_cnt, :forced_indent_left_rec_cnt,
+                          :current_calculated_indent_level,
                           :group_rec_cnt, :file_rec_cnt, :total_rec_cnt
 
     def flush
@@ -72,22 +74,36 @@ class Record_Grouping_Indent
             self.add_record( {} )
         end
         
-        if ( self.indent_key_stack_A.maxindex >= 1 ) then
-            SE.puts "Entries left in self.indent_key_stack_A at end: #{self.indent_key_stack_A[1 .. -1].column( 0 ).join(',')}"
-            Se.q {[ 'self.record_H__stack_A' ]}
-            raise 
+        if ( self.indent_key_stack_A_A.maxindex >= 1 ) then
+            SE.puts "Entries left in self.indent_key_stack_A_A at end: #{self.indent_key_stack_A_A[1 .. -1].column( 0 ).join(',')}"
+            SE.q {[ 'self.record_H__stack_A' ]}
+#           raise 
         end
         
         SE.puts "Right record count:        #{self.calculated_indent_right_rec_cnt}"       
         SE.puts "            forced:        #{self.forced_indent_right_rec_cnt}"  if ( self.forced_indent_right_rec_cnt > 0 )
         SE.puts "Left record count:         #{self.calculated_indent_left_rec_cnt}"
-        SE.puts "            forced:        #{self.forced_indent_left_rec_cnt}"  if ( self.forced_indent_left_rec_cnt > 0 )        
+        SE.puts "            forced:        #{self.forced_indent_left_rec_cnt}"  if ( self.forced_indent_left_rec_cnt > 0 )  
+        SE.puts "Calculated indent level:   #{self.current_calculated_indent_level}" if ( self.current_calculated_indent_level != 0 )
         SE.puts "****** Left/Right UNEQUAL" if ( ( self.calculated_indent_right_rec_cnt + self.forced_indent_right_rec_cnt ) != 
                                                  ( self.calculated_indent_left_rec_cnt  + self.forced_indent_left_rec_cnt  ) )
         SE.puts "Group record count:        #{self.group_rec_cnt}"
         SE.puts "File record count:         #{self.file_rec_cnt}"
         SE.puts "Total record count:        #{self.total_rec_cnt}"
 #       SE.ap_stack
+    end
+    
+    def adj_calculated_indent_level( num, indent_key_stack_A_A_maxindex )
+        self.current_calculated_indent_level += num
+        if ( self.current_calculated_indent_level != indent_key_stack_A_A_maxindex ) then
+            SE.puts "#{SE.lineno}: self.current_calculated_indent_level != indent_key_stack_A_A_maxindex"
+            SE.q{[ 'self.current_calculated_indent_level', 'indent_key_stack_A_A_maxindex' ]}
+            raise
+        end
+        if ( self.current_calculated_indent_level < 0 ) then
+            SE.puts "#{SE.lineno}: self.current_calculated_indent_level < 0!"
+            raise
+        end
     end
 
     def add_1_to_total_rec_cnt
@@ -110,7 +126,7 @@ class Record_Grouping_Indent
                 raise
             end
             output_record_H = {}
-            output_record_H[ K.fmtr_indent ] = [ K.fmtr_left, '' ]
+            output_record_H[ K.fmtr_indent ] = [ K.fmtr_left, K.fmtr_forced_indent ]
             puts output_record_H.to_json 
             SE.puts "#{SE.lineno}: FORCED INDENT LEFT ****** #{record_H}"   if ( $DEBUG )
             self.forced_indent_left_rec_cnt += 1
@@ -121,26 +137,31 @@ class Record_Grouping_Indent
     def calculated_indent_left( call_type )
         ld = SE::Loop_detector.new
         SE.q {[ 'self.record_H__stack_A.maxindex' ]}  if ( $DEBUG )
-        SE.q {[ 'self.indent_key_stack_A.maxindex','self.indent_key_stack_A' ]}  if ( $DEBUG )
-        indent_key_I = self.indent_key_stack_A.maxindex; loop do
+        SE.q {[ 'self.indent_key_stack_A_A.maxindex','self.indent_key_stack_A_A' ]}  if ( $DEBUG )
+        SE.q {[ 'self.first_record_indent_keys_A.maxindex','self.first_record_indent_keys_A' ]}  if ( $DEBUG )
+        indent_key_I = self.indent_key_stack_A_A.maxindex; loop do
             ld.loop
             break if ( indent_key_I <= 0 )  # The top/first entry is never popped.  
             SE.q {[ 'indent_key_I', 'self.first_record_indent_keys_A.maxindex' ]} if ( $DEBUG )
-            SE.q {[ 'self.indent_key_stack_A[ indent_key_I ][ 0 ]' ]} if ( $DEBUG ) 
-            if (   indent_key_I > self.first_record_indent_keys_A.maxindex or
-                   self.indent_key_stack_A[ indent_key_I ][ 0 ].downcase != self.first_record_indent_keys_A[ indent_key_I ].downcase or
-                   (   self.record_H__stack_A.maxindex < 0 and call_type == :special_last_record_call ) ) then
-                SE.q {[ 'self.first_record_indent_keys_A[ indent_key_I ]' ]} if ( $DEBUG )
-                a1 = self.indent_key_stack_A.pop( 1 )[ 0 ]
-                SE.q {[ 'self.indent_key_stack_A', 'self.indent_key_stack_A.maxindex' ]}  if ( $DEBUG )
+            SE.q {[ 'self.indent_key_stack_A_A[ indent_key_I ][ 0 ]' ]} if ( $DEBUG ) 
+            stringer = self.indent_key_stack_A_A.column( 0 )[ 0 .. indent_key_I ].join.downcase
+            SE.q {[ 'stringer' ]}  if ( $DEBUG )
+            if (   indent_key_I > self.first_record_indent_keys_A.maxindex or 
+                   stringer != self.first_record_indent_keys_A[ 0 .. indent_key_I ].join.downcase or
+                   (   self.record_H__stack_A.maxindex < 0 and call_type == :special_last_record_call ) 
+                ) then
+                SE.q {[ 'self.first_record_indent_keys_A[ 0 .. indent_key_I ].join.downcase' ]} if ( $DEBUG )
+                a1 = self.indent_key_stack_A_A.pop( 1 )[ 0 ]
+                SE.q {[ 'self.indent_key_stack_A_A', 'self.indent_key_stack_A_A.maxindex' ]}  if ( $DEBUG )
                 output_record_H = {}
                 output_record_H[ K.fmtr_indent ] = [ K.fmtr_left, a1[ 0 ] ]
                 puts output_record_H.to_json 
                 SE.puts "#{SE.lineno}: CALCULATED INDENT LEFT *****************"  if ( $DEBUG )
                 self.calculated_indent_left_rec_cnt += 1
+                adj_calculated_indent_level( -1, self.indent_key_stack_A_A.maxindex )
                 add_1_to_total_rec_cnt
             else
-                SE.q {[ 'self.first_record_indent_keys_A[ indent_key_I ]' ]}  if ( $DEBUG )
+                SE.q {[ 'self.first_record_indent_keys_A[ 0 .. indent_key_I ].join.downcase' ]}  if ( $DEBUG )                
             end
             indent_key_I -= 1
         end
@@ -156,7 +177,7 @@ class Record_Grouping_Indent
                 raise
             end
             output_record_H = {}
-            output_record_H[ K.fmtr_indent ] = [ K.fmtr_right, '' ]
+            output_record_H[ K.fmtr_indent ] = [ K.fmtr_right, K.fmtr_forced_indent ]
             puts output_record_H.to_json
             SE.puts "#{SE.lineno}: FORCED INDENT RIGHT ****** #{record_H}"   if ( $DEBUG )
             self.forced_indent_right_rec_cnt += 1
@@ -165,40 +186,35 @@ class Record_Grouping_Indent
     end
     
     def calculated_indent_right
-        SE.q {[ 'self.indent_key_stack_A' ]}  if ( $DEBUG )
+        SE.q {[ 'self.indent_key_stack_A_A' ]}  if ( $DEBUG )
         ld = SE::Loop_detector.new
         indent_key_I = -1; loop do 
             ld.loop
             indent_key_I += 1
             SE.q {[ 'indent_key_I', 'self.highest_matched_indent_key_idx_A.maxindex', 'self.highest_matched_indent_key_idx_A.min',
-                    'self.indent_key_stack_A.maxindex', 'self.first_record_indent_keys_A.maxindex' ]}  if ( $DEBUG )
+                    'self.indent_key_stack_A_A.maxindex', 'self.first_record_indent_keys_A.maxindex' ]}  if ( $DEBUG )
             if ( self.highest_matched_indent_key_idx_A.maxindex >= 0 and indent_key_I > self.highest_matched_indent_key_idx_A.min ) then
                 break
             end
 
-            SE.q {[ 'self.indent_key_stack_A.maxindex' ]}  if ($DEBUG)
-            next  if  (  indent_key_I <= self.indent_key_stack_A.maxindex and
-                         self.indent_key_stack_A[ indent_key_I ][ 0 ].downcase == self.first_record_indent_keys_A[ indent_key_I ].downcase ) 
+            SE.q {[ 'self.indent_key_stack_A_A.maxindex' ]}  if ($DEBUG)
+            next  if  (  indent_key_I <= self.indent_key_stack_A_A.maxindex and
+                         self.indent_key_stack_A_A[ indent_key_I ][ 0 ].downcase == self.first_record_indent_keys_A[ indent_key_I ].downcase ) 
                          
-            if ( indent_key_I > self.indent_key_stack_A.maxindex )
+            if ( indent_key_I > self.indent_key_stack_A_A.maxindex )
             then
                 if ( indent_key_I > self.first_record_indent_keys_A.maxindex ) then
                     SE.puts "indent_key_I > self.first_record_indent_keys_A.maxindex"
-                    SE.q {[ 'indent_key_I', 'self.first_record_indent_keys_A', 'self.indent_key_stack_A' ]}
+                    SE.q {[ 'indent_key_I', 'self.first_record_indent_keys_A', 'self.indent_key_stack_A_A' ]}
                     raise "Abort"
                 end
-                if  ( self.first_record_indent_keys_A[ indent_key_I ].length < K.min_length_for_indent_key ) then
-                    SE.puts "#{SE.lineno}: Record group '#{self.first_record_indent_keys_A[ indent_key_I ]}' skipped" + 
-                            "due to being less than length 'K.min_length_for_indent_key'."
-                    next
-                end 
                 if  ( self.first_record_indent_keys_A[ indent_key_I ].in?( K.skip_these_values_for_indent_key_A ) ) then
-                    SE.puts "#{SE.lineno}: Record group '#{self.first_record_indent_keys_A[ indent_key_I ]}' skipped." +
+                    SE.puts "#{SE.lineno}: Record group '#{self.first_record_indent_keys_A[ indent_key_I ]}' skipped " +
                             "due to being in 'K.skip_these_values_for_indent_key_A}'."
                     next
                 end                    
-                self.indent_key_stack_A.push( [ self.first_record_indent_keys_A[ indent_key_I ], 0 ] )  # Pushes the value and a 0 
-                SE.q {[ 'self.indent_key_stack_A[ indent_key_I ]' ]}   if ( $DEBUG )
+                self.indent_key_stack_A_A.push( [ self.first_record_indent_keys_A[ indent_key_I ], 0 ] )  # Pushes the value and a 0 
+                SE.q {[ 'self.indent_key_stack_A_A[ indent_key_I ]' ]}   if ( $DEBUG )
             end
             
             if ( indent_key_I <= 0 ) then
@@ -206,29 +222,30 @@ class Record_Grouping_Indent
                 next
             end
             
-            SE.q {[ 'indent_key_I', 'self.indent_key_stack_A' ]}  if ( $DEBUG )
-            self.indent_key_stack_A[ indent_key_I - 1 ][ 1 ] += 1
+            SE.q {[ 'indent_key_I', 'self.indent_key_stack_A_A' ]}  if ( $DEBUG )
+            self.indent_key_stack_A_A[ indent_key_I - 1 ][ 1 ] += 1
             idx = -1; group_number_A = [ ]; loop do
                 idx += 1
-                break if ( idx >= indent_key_I or idx > self.indent_key_stack_A.maxindex )
-                group_number_A << self.indent_key_stack_A[ idx ][ 1 ]   # Group numbers: n.n.n.etc...
+                break if ( idx >= indent_key_I or idx > self.indent_key_stack_A_A.maxindex )
+                group_number_A << self.indent_key_stack_A_A[ idx ][ 1 ]   # Group numbers: n.n.n.etc...
             end 
             
             idx = 0; group_title_A = [ ]; loop do
                 idx += 1
-                break if ( idx > indent_key_I or idx > self.indent_key_stack_A.maxindex )
-                group_title_A << self.indent_key_stack_A[ idx ][ 0 ]
+                break if ( idx > indent_key_I or idx > self.indent_key_stack_A_A.maxindex )
+                group_title_A << self.indent_key_stack_A_A[ idx ][ 0 ]
             end
 
-            self.indent_print_method.call( group_number_A, group_title_A )
+            self.indent_print_method.call( self.current_calculated_indent_level, group_number_A.deep_copy, group_title_A.deep_copy )
             self.group_rec_cnt += 1
             add_1_to_total_rec_cnt
 
             output_record_H={}
-            output_record_H[ K.fmtr_indent ] = [ K.fmtr_right, "GROUPING #{group_number_A.join( "." )}: #{group_title_A.join( ". " )}, indent_key_I=#{indent_key_I}" ]
+            output_record_H[ K.fmtr_indent ] = [ K.fmtr_right, "GROUP: #{group_title_A.join( ' ' ).sub( /[[:punct:]]\s*$/, '')}, indent_key_I=#{indent_key_I}" ]
             puts output_record_H.to_json
             SE.puts "#{SE.lineno}: CALCULATED INDENT RIGHT #{output_record_H[ K.fmtr_indent ]} *****************"  if ( $DEBUG )
             self.calculated_indent_right_rec_cnt += 1
+            adj_calculated_indent_level( 1, self.indent_key_stack_A_A.maxindex )
             add_1_to_total_rec_cnt
         end 
     end
@@ -239,7 +256,7 @@ class Record_Grouping_Indent
             self.record_H__stack_A.push( p1_new_record_H ) 
         end
         
-        SE.q {[ 'self.record_stack_size_0R', 'self.record_H__stack_A', 'self.indent_key_stack_A' ]}  if ( $DEBUG )
+        SE.q {[ 'self.record_stack_size_0R', 'self.record_H__stack_A', 'self.indent_key_stack_A_A' ]}  if ( $DEBUG )
         if ( self.record_H__stack_A.maxindex < self.record_stack_size_0R ) then
             self.first_record_indent_keys_A = [ ]
             SE.q {[ 'self.first_record_indent_keys_A' ]}  if ( $DEBUG )
@@ -270,7 +287,7 @@ class Record_Grouping_Indent
             SE.q {[ 'self.highest_matched_indent_key_idx_A' ]}   if ( $DEBUG )
         end
         
-        calculated_indent_left( :usual_call_before_printing_detail_line )
+        calculated_indent_left( :regular_non_end_of_file_call )
 
         if ( p1_new_record_H.not_empty? and self.highest_matched_indent_key_idx_A.not_empty? ) then
             matched_indent_key_indexes_are_in_desc_order = ( self.highest_matched_indent_key_idx_A.each_cons( 2 ).all?{|left, right| left >= right} )
@@ -281,12 +298,12 @@ class Record_Grouping_Indent
         end
         
         SE.puts "#{SE.lineno}: FILE RECORD: #{first_record_H}"  if ( $DEBUG )
-        self.record_print_method.call( first_record_H )
+        self.record_print_method.call( self.current_calculated_indent_level, self.record_H__stack_A.deep_copy, first_record_H )
         self.file_rec_cnt += 1
         add_1_to_total_rec_cnt
         
         if ( self.record_H__stack_A.maxindex < 0 ) then
-            calculated_indent_left( :special_last_record_call)
+            calculated_indent_left( :special_last_record_call )  # Flush out any left indents at last record.
         end
 
         forced_indent_left( first_record_H )
@@ -337,13 +354,13 @@ def put_indent( level_number_A, level_title_A )
         raise
     when 0
         output_record_H[ K.fmtr_record ][ K.level ] = K.series
-        output_record_H[ K.fmtr_record ][ K.title ] = "Series #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.title ] = "Series #{level_number_A.join( ' ' )}: #{level_title_A.join( ' ' )}" 
     when 1
         output_record_H[ K.fmtr_record ][ K.level ] = K.subseries
-        output_record_H[ K.fmtr_record ][ K.title ] = "Subseries #{level_number_A.join( "." )}: #{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.title ] = "Subseries #{level_number_A.join( ' ' )}: #{level_title_A.join( ' ' )}" 
     else     
         output_record_H[ K.fmtr_record ][ K.level ] = K.recordgrp
-        output_record_H[ K.fmtr_record ][ K.title ] = "#{level_title_A.join( ". " )}" 
+        output_record_H[ K.fmtr_record ][ K.title ] = "#{level_title_A.join( ' ' )}" 
     end
     puts output_record_H.to_json      # <<<< Write the indent record
 end
@@ -358,9 +375,9 @@ def put_record( stack_record_H )
     output_record_H={}
     output_record_H[ K.fmtr_record ] = {}
     output_record_H[ K.fmtr_record ][ K.level ] = stack_record_H[ K.level ]
-    stringer = stack_record__indent_keys_A[ 0..( stack_record__indent_keys_A.maxindex ) ].join( ". " ) +
+    stringer = stack_record__indent_keys_A[ 0..( stack_record__indent_keys_A.maxindex ) ].join( ' ' ) +
                ". " +
-               stack_record__values_A[ 0..( stack_record__values_A.maxindex - 1 ) ].join( " " )
+               stack_record__values_A[ 0..( stack_record__values_A.maxindex - 1 ) ].join( ' 'up )
     output_record_H[ K.fmtr_record ][ K.title ] = stringer.strip.gsub( /\.$/,'' )
 
     puts output_record_H.to_json    # <<<< Write the data record

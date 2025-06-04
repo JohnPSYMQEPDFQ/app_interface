@@ -31,22 +31,22 @@ module Date_Clumps_classify_by_good_and_bad_morality
             end
         end
         if ( option_H[ :sort ] ) then
-#               Doesn't work:  good__date_clump_S__A = good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.from_date ] }  
-#               Does work:     good__date_clump_S__A = self.good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.from_date ] }
+#               Doesn't work:  good__date_clump_S__A = good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.as_from_date ] }  
+#               Does work:     good__date_clump_S__A = self.good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.as_from_date ] }
 #                       -or 
-#                              good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.from_date ] }
+#                              good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.as_from_date ] }
 #               No idea why...
-            good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.from_date ] }
+            good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.as_from_date ] }
             prev_date = ''
             good__date_clump_S__A.each_with_index do | date_clump_S, idx |
-                if ( date_clump_S.from_date < prev_date ) then
-                    SE.puts "#{SE.lineno}: Warning: Dates overlap! good from-date '#{date_clump_S.from_date} at element #{idx} "+
+                if ( date_clump_S.as_from_date < prev_date ) then
+                    SE.puts "#{SE.lineno}: Warning: Dates overlap! good from-date '#{date_clump_S.as_from_date} at element #{idx} "+
                             "< previous date #{prev_date}, there may be others."
                     SE.puts original_text
                     SE.puts ''
                     break
                 end
-                prev_date = ( date_clump_S.thru_date.blank? ) ? date_clump_S.from_date : date_clump_S.thru_date
+                prev_date = ( date_clump_S.as_thru_date.blank? ) ? date_clump_S.as_from_date : date_clump_S.as_thru_date
             end
         end
     end

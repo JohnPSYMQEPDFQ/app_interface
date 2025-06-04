@@ -128,7 +128,7 @@ class Find_Dates_in_String
 
         case option_H[ :date_string_composition ]
         when :dates_in_text
-            if (output_data_with_all_dates_removed_O.string =~ %r~#{K.alpha_month_RES}( |/|-)~i ) then
+            if (output_data_with_all_dates_removed_O.string.match?( %r~#{K.alpha_month_RES}( |/|-)~i ) ) then
                 SE.puts "#{SE.lineno}: Warning possible unmatched date '#{$~}' in '#{output_data_with_all_dates_removed_O.string}'"
                 SE.puts ''
             end

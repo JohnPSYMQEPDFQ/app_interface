@@ -1,3 +1,5 @@
+#!run_ruby.sh
+
 require 'pp'
 require 'awesome_print'
 require 'optparse'

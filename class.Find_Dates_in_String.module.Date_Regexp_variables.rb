@@ -4,11 +4,11 @@ module Date_Regexp_variables
 
     public  attr_reader :date_pattern_RES_S__A, :pattern_cnt_H,
                         :date_text_separator_RES, :thru_date_separator_RES, :thru_date_begin_delim_RES, :thru_date_end_delim_RES, 
-                        :begin_delim_RES, :end_delim_RES
+                        :begin_delim_RES, :end_delim_RES, :date_modifier_RES
 
     private attr_writer :date_pattern_RES_S__A, :pattern_cnt_H,
                         :date_text_separator_RES, :thru_date_separator_RES, :thru_date_begin_delim_RES, :thru_date_end_delim_RES, 
-                        :begin_delim_RES, :end_delim_RES
+                        :begin_delim_RES, :end_delim_RES, :date_modifier_RES
 
 
     #   NOTE:   "def self.initialize" will initialize module variables, NOT the instance variables of the class
@@ -23,7 +23,8 @@ module Date_Regexp_variables
         usable_text_punct_RES           = Regexp::escape( separation_punctuation_O.usable_text_punct_chars )  # THIS NEEDS TO WRAPPED: [#{usable_text_punct_RES}]                            
 #       dash_RES                        = "\\s{0,2}-\\s{0,2}"
         slash_dash_RES                  = "\\s{0,2}(?:-|/){1}\\s{0,2}"          # Note the \\ because it's a double quoted string.
-        space_dash_RES                  = "\\s{0,2}(?:\\s|-){1}\\s{0,2}"
+#       space_dash_RES                  = "\\s{0,2}(?:\\s|-){1}\\s{0,2}"
+        space_dash_comma_RES            = "\\s{0,2}(?:\\s|-|,){1}\\s{0,2}"
 #       space_dash_slash_RES            = "\\s{0,2}(?:\\s|-|/){1}\\s{0,2}"
         comma_RES                       = "\\s{0,2},\\s{0,2}"
         space_comma_RES                 = "\\s{0,2}(?:\\s|,){1}\\s{0,2}"
@@ -55,6 +56,11 @@ module Date_Regexp_variables
 #                                                 is NOT the same as "\\s*(?:[#{usable_text_punct_RES} ]|\\Z){1}"                            
 #                                                               -or- "\\s*(?:[#{usable_text_punct_RES}]| |\\Z){1}"   
 #                                           But I don't know why!      
+        self.date_modifier_RES          = "(?<date_modifier>((bulk|circa|ca[.])(\\s+|[ #{usable_text_punct_RES}]|#{date_text_separator_RES}))+)?"   
+#                           NOTE: The single space after the [ <<<(here, at the beginning)
+#                                 is NOT the same as "\\s*(?:[#{usable_text_punct_RES} ]|\\Z){1}"                            
+#                                               -or- "\\s*(?:[#{usable_text_punct_RES}]| |\\Z){1}"   
+#                           But I don't know why!           
 
         date_pattern_RES_S = Struct.new( :pattern_name, :pattern_RES )      # The :pattern_name and length are computed and added later.
                                                                             # Literal spaces in the pattern are removed.  Spaces are just
@@ -78,34 +84,34 @@ module Date_Regexp_variables
                                         #   fmt005__ = Dates in 'MMM yyyy' or 'MMM-yyyy' format
                                         
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt005__MMM_yyyy>       (?<month_M>#{K.alpha_month_RES})#{space_dash_RES}     (?<year_M>#{year_RES}))" )
+                "(?<fmt005__MMM_yyyy>       (?<month_M>#{K.alpha_month_RES})#{space_dash_comma_RES}  (?<year_M>#{year_RES}))" )
                 
                 
                                         #   fmt006__ = Dates in 'mm yyyy' or 'mm-yyyy' format
                                         
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt006__mm_yyyy>        (?<month_M>#{K.numeric_month_RES})#{slash_dash_RES}   (?<year_M>#{year_RES}))" )
+                "(?<fmt006__mm_yyyy>        (?<month_M>#{K.numeric_month_RES})#{slash_dash_RES}      (?<year_M>#{year_RES}))" )
 
          
                                         #   fmt007__ = Dates in 'yyyy MMM' or 'yyyy-MMM' format
                                         
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt007__yyyy_MMM>       (?<year_M>#{year_RES})#{space_dash_RES}    (?<month_M>#{K.alpha_month_RES}))" )
+                "(?<fmt007__yyyy_MMM>       (?<year_M>#{year_RES})#{space_dash_comma_RES}            (?<month_M>#{K.alpha_month_RES}))" )
 
          
                                         #   fmt008__ = Dates in 'yyyy mm' or 'yyyy-mm' format
                                         
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt008__yyyy_mm>        (?<year_M>#{year_RES})#{slash_dash_RES}    (?<month_M>#{K.numeric_month_RES}))" )
+                "(?<fmt008__yyyy_mm>        (?<year_M>#{year_RES})#{slash_dash_RES}                  (?<month_M>#{K.numeric_month_RES}))" )
 
 
                                         #   fmt009__ = Dates in 'dd [-/] MMM [-/] yyyy' or ' yyyy [-/] MMM [-/] dd' format
 
 #       initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
 #               "(?<fmt009__nn_MMM_nn>  (?:" +    
-#                   "   (?: (?<nn_1st_M>#{n_nn_RES})#{space_dash_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
-#                   "|  (?: (?<nn_1st_M>#{n_nn_RES})#{space_dash_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{year_RES}))" +
-#                   "|  (?: (?<nn_1st_M>#{year_RES})#{space_dash_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_slash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
+#                   "   (?: (?<nn_1st_M>#{n_nn_RES})#{space_dash_comma_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_comma_slash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
+#                   "|  (?: (?<nn_1st_M>#{n_nn_RES})#{space_dash_comma_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_comma_slash_RES} (?<nn_3rd_M>#{year_RES}))" +
+#                   "|  (?: (?<nn_1st_M>#{year_RES})#{space_dash_comma_slash_RES} (?<month_M>#{K.alpha_month_RES})#{space_dash_comma_slash_RES} (?<nn_3rd_M>#{n_nn_RES}))" +
 #               "  ) )" )
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt009__nn_MMM_nn>  (?:" +    
@@ -126,13 +132,13 @@ module Date_Regexp_variables
                                          
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt012__MMM_dd_MMM_dd_yyyy> (?<month_M>#{K.alpha_month_RES})#{space_RES}             (?<day_M>#{n_nn_RES})"+
-              "#{thru_date_separator_RES}      (?<thru_month_M>#{K.alpha_month_RES})#{space_comma_RES}  (?<thru_day_M>#{n_nn_RES})#{comma_RES}(?<year_M>#{year_RES}))" )
+                "#{thru_date_separator_RES}     (?<thru_month_M>#{K.alpha_month_RES})#{space_comma_RES}  (?<thru_day_M>#{n_nn_RES})#{comma_RES}(?<year_M>#{year_RES}))" )
 
                                         #   fmt013__ = Dates in 'MMM-MMMM yy[yy] format (hybid double) Note there's NO COMMA after the month
 
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
-                "(?<fmt013__MMM_MMM_yyyy>       (?<month_M>#{K.alpha_month_RES})#{space_RES}"+
-              "#{thru_date_separator_RES}       (?<thru_month_M>#{K.alpha_month_RES})#{space_RES}                                              (?<year_M>#{year_RES}))" )
+                "(?<fmt013__MMM_MMM_yyyy>        (?<month_M>#{K.alpha_month_RES})#{space_RES}"+
+                "#{thru_date_separator_RES}      (?<thru_month_M>#{K.alpha_month_RES})#{space_RES}                                              (?<year_M>#{year_RES}))" )
 
 
                                         #   fmt014__ = All numeric dates 'nn [-/] nn [-/] nn ' format,  the 1st and 3rd positions could be 1 or 4 digets (days or years)
@@ -140,7 +146,6 @@ module Date_Regexp_variables
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt014__nn_nn_nn>   (?:" +
                     "   (?: (?<nn_1st_M>#{n_nn_RES})#{slash_dash_RES}  (?<nn_2nd_M>#{n_nn_RES})#{slash_dash_RES}   (?<nn_3rd_M>#{year_RES}))" +
-#                   "|  (?: (?<nn_1st_M>#{n_nn_RES})#{slash_dash_RES}  (?<nn_2nd_M>#{n_nn_RES})#{slash_dash_RES}   (?<nn_3rd_M>#{year_RES}))" +
                     "|  (?: (?<nn_1st_M>#{year_RES})#{slash_dash_RES}  (?<nn_2nd_M>#{n_nn_RES})#{slash_dash_RES}   (?<nn_3rd_M>#{n_nn_RES}))" +
                 "  ) )" )
 

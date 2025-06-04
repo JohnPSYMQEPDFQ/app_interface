@@ -280,6 +280,15 @@ for argv in ARGV do
 
             ao_buf_O = Archival_Object.new( res_buf_O ).new_buffer.create( record_level )
           # SE.q {'ao_buf_O.record_H'}
+            if ( record_level == K.otherlevel ) then
+                if ( input_record_H[ K.fmtr_record ].has_key?( K.other_level ) ) then
+                    ao_buf_O.record_H = { K.other_level => input_record_H[ K.fmtr_record ][ K.other_level ] }
+                else
+                    SE.puts "#{SE.lineno}: Hit a 'otherlevel' record with no ' K.fmtr_record ][ K.other_level ]' value."
+                    SE.q {[ 'input_record_H' ]}
+                    raise                    
+                end
+            end
             if ( ao_buf_O.record_H[ K.resource ][ K.ref ] == parent_ref_stack_A[ parent_ref_stack_A.maxindex ] ) then
                 ao_buf_O.record_H = { K.parent => '' }
             else
@@ -299,29 +308,33 @@ for argv in ARGV do
             end
             if ( input_record_H[ K.fmtr_record ].key?( K.fmtr_container ) and 
                  input_record_H[ K.fmtr_record ][ K.fmtr_container ].not_empty? ) then
-                type      = "#{input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.type ]}"
-                indicator = "#{input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.indicator ]}"
-                unique_TC_key  = "#{type}#{indicator}"
-                if ( tc_uri_H__by_type_and_indicator.has_no_key?( unique_TC_key ) ) then
-                    tc_buf_O = Top_Container.new( res_buf_O ).new_buffer.create
-                    tc_buf_O.record_H = { K.type => type }
-                    tc_buf_O.record_H = { K.indicator => indicator }
-                    tc_buf_O.store
-                    tc_uri_H__by_type_and_indicator[ unique_TC_key ] = tc_buf_O.uri
-              # SE.q {'tc_uri_H__by_type_and_indicator'}
-                end
+                ao_buf_O.record_H[ K.instances ] = [ ] 
+                SE.puts "#{SE.lineno}: More than one TC" if ( input_record_H[ K.fmtr_record ][ K.fmtr_container ].length > 1 )
+                input_record_H[ K.fmtr_record ][ K.fmtr_container ].each do | container_H |
+                    type           = container_H[ K.type ]
+                    indicator      = container_H[ K.indicator ]
+                    unique_TC_key  = "#{type}#{indicator}"
+                    if ( tc_uri_H__by_type_and_indicator.has_no_key?( unique_TC_key ) ) then
+                        tc_buf_O = Top_Container.new( res_buf_O ).new_buffer.create
+                        tc_buf_O.record_H = { K.type => type }
+                        tc_buf_O.record_H = { K.indicator => indicator }
+                        tc_buf_O.store
+                        tc_uri_H__by_type_and_indicator[ unique_TC_key ] = tc_buf_O.uri
+                      # SE.q {'tc_uri_H__by_type_and_indicator'}
+                    end
 
-                it_frag_O = Record_Format.new( :instance_type )
-                it_frag_O.record_H = { K.instance_type => K.mixed_materials}
-                it_frag_O.record_H = { K.sub_container => { K.top_container => { K.ref => tc_uri_H__by_type_and_indicator[ unique_TC_key ] }}}
-                it_frag_O.record_H = { K.sub_container => { K.type_2 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.type_2 ] }}
-                it_frag_O.record_H = { K.sub_container => { K.indicator_2 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.indicator_2 ] }}
-                if ( input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.type_3 ].not_nil? ) then
-                    it_frag_O.record_H = { K.sub_container => { K.type_3 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.type_3 ] }}
-                    it_frag_O.record_H = { K.sub_container => { K.indicator_3 => input_record_H[ K.fmtr_record ][ K.fmtr_container ][ K.indicator_3 ] }}
-                end
+                    it_frag_O = Record_Format.new( :instance_type )
+                    it_frag_O.record_H = { K.instance_type => K.mixed_materials}
+                    it_frag_O.record_H = { K.sub_container => { K.top_container => { K.ref => tc_uri_H__by_type_and_indicator[ unique_TC_key ] }}}
+                    it_frag_O.record_H = { K.sub_container => { K.type_2 => container_H[ K.type_2 ] }}
+                    it_frag_O.record_H = { K.sub_container => { K.indicator_2 => container_H[ K.indicator_2 ] }}
+                    if ( container_H[ K.type_3 ].not_nil? ) then
+                        it_frag_O.record_H = { K.sub_container => { K.type_3 => container_H[ K.type_3 ] }}
+                        it_frag_O.record_H = { K.sub_container => { K.indicator_3 => container_H[ K.indicator_3 ] }}
+                    end
 
-                ao_buf_O.record_H = { K.instances => [ it_frag_O.record_H ] }
+                    ao_buf_O.record_H[ K.instances ].push( it_frag_O.record_H )
+                end
             end
 
           # SE.q {'ao_buf_O.record_H'}

@@ -84,7 +84,7 @@ module Date_Clumps_judge_each_clump
                         year = option_H[ :default_century_pivot_ccyymmdd ].year.to_s[ 0, 2 ] + year  # option_H[ :default_century_pivot_ccyymmdd ] is a strptime_O
                     else
                         if ( date_clump_S.from.strptime_O ) then
-                            year = date_clump_S.from_date[ 0, 2 ] + year                   # Take the century from the converted from_year, which is already in YYYY format
+                            year = date_clump_S.as_from_date[ 0, 2 ] + year                   # Take the century from the converted from_year, which is already in YYYY format
                         else
                             year = option_H[ :default_century_pivot_ccyymmdd ].year.to_s[ 0, 2 ] + year          
                         end
@@ -176,7 +176,7 @@ module Date_Clumps_judge_each_clump
             
             if ( date_clump_S.date_match_S__A.length == 2 and date_clump_S.from.strptime_O and date_clump_S.thru.strptime_O ) then
                 if (date_clump_S.from.strptime_O > date_clump_S.thru.strptime_O ) then
-                    stringer = "#{SE.lineno}: From date '#{date_clump_S.from_date}' > Thru date '#{date_clump_S.thru_date}'"
+                    stringer = "#{SE.lineno}: From date '#{date_clump_S.as_from_date}' > Thru date '#{date_clump_S.as_thru_date}'"
                     SE.puts "#{SE.lineno}: #{original_text}"
                     date_clump_S.judge_date( :bad, stringer )
                     next

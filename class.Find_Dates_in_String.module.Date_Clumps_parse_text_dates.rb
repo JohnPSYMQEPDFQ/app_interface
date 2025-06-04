@@ -25,6 +25,8 @@ module Date_Clumps_parse_text_dates
                                         :full_match_string__begin_delim__lstrip__adj_offset, 
                                         :date_match_string__beginning_offset,
                                         :date_match_S__A,
+                                        :circa,
+                                        :bulk,
                                         :morality,
                                         :error_msg,
                                         keyword_init: true
@@ -65,7 +67,7 @@ module Date_Clumps_parse_text_dates
                                                     end
                                                     return date_match_S__A[ 1 ]
                                                 end      
-                                                def from_date
+                                                def as_from_date
                                                     date_match_S = from
                                                     if ( date_match_S.nil? ) then
                                                         SE.puts "#{SE.lineno}: I shouldn't be here: date_clump_S without a from date"
@@ -74,7 +76,7 @@ module Date_Clumps_parse_text_dates
                                                     end
                                                     return date_match_S.as_date
                                                 end
-                                                def thru_date
+                                                def as_thru_date
                                                     date_match_S = thru
                                                     if ( date_match_S.nil? ) then
                                                         return ''
@@ -82,23 +84,12 @@ module Date_Clumps_parse_text_dates
                                                         return date_match_S.as_date
                                                     end
                                                 end 
-                                                def from_and_thru_date_joined
-                                                    stringer  = from_date
-                                                    stringer += ' - ' + thru_date if ( thru_date.not_blank? )
-                                                    return stringer
-                                                end
-                                                def full_match_string__with_original_dates
+                                                def full_match_string__with_original_dates_and_modifiers
                                                     stringer  = full_match_string__begin_delim__lstrip
                                                     stringer += date_match_string
                                                     stringer += full_match_string__end_delim__rstrip
                                                     return stringer
-                                                end 
-                                                def full_match_string__with_as_dates
-                                                    stringer  = full_match_string__begin_delim__lstrip
-                                                    stringer += from_and_thru_date_joined
-                                                    stringer += full_match_string__end_delim__rstrip
-                                                    return stringer
-                                                end                                                      
+                                                end          
                                             end
                                             
         self.possible_date_C = Struct.new( :pattern_name,
@@ -114,14 +105,24 @@ module Date_Clumps_parse_text_dates
                                         :strptime_O,
                                         :as_date,
                                       ) do
+                                            def circa
+                                                return false if ( match_O.named_captures[ 'date_modifier' ].nil? )
+                                                return true if (match_O.named_captures[ 'date_modifier' ].match?( /^(circa|ca[.])/i ) )
+                                                return false
+                                            end
+                                            def bulk
+                                                return false if ( match_O.named_captures[ 'date_modifier' ].nil? )
+                                                return true if (match_O.named_captures[ 'date_modifier' ].match?( /^bulk/i ) )
+                                                return false
+                                            end
                                             def all_pieces
                                                 return  match_O.named_captures[ 'begin_M' ] +
-                                                        match_O.named_captures[ 'date_M' ] +
+                                                        match_O.named_captures[ 'date_M' ] +    # Includes 'bulk' and 'circa'
                                                         match_O.named_captures[ 'end_M' ]
                                             end
                                             def piece( num )
                                                 piece_A = [ match_O.named_captures[ 'begin_M' ],
-                                                            match_O.named_captures[ 'date_M' ],
+                                                            match_O.named_captures[ 'date_M' ], # Includes 'bulk' and 'circa'
                                                             match_O.named_captures[ 'end_M' ],
                                                           ]
                                                 if ( num.is_a?( Integer )) then
@@ -152,7 +153,7 @@ module Date_Clumps_parse_text_dates
             if ( param__looking_for_a_thru_date ) then
                 regexp = %r{(?<begin_M>#{thru_date_begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?<end_M>#{thru_date_end_delim_RES})}xi
             else
-                regexp = %r{(?<begin_M>#{begin_delim_RES})(?<date_M>#{date_pattern_RES_S.pattern_RES})(?<end_M>#{end_delim_RES})}xi               
+                regexp = %r{(?<begin_M>#{begin_delim_RES})(?<date_M>#{date_modifier_RES}#{date_pattern_RES_S.pattern_RES})(?<end_M>#{end_delim_RES})}xi               
             end
             scan_begin_offset = param__initial_offset + 0
             ld = SE::Loop_detector.new( 100 )
@@ -161,6 +162,7 @@ module Date_Clumps_parse_text_dates
                 break if ( scan_begin_offset >= output_data_O.string.maxoffset )
                 match_O = output_data_O.string.match( regexp, scan_begin_offset )
                 break if ( match_O.nil? )
+              # SE.q {[ 'scan_begin_offset', 'output_data_O.string.maxoffset', 'output_data_O.string' ]}
               # SE.q {[ 'match_O' ]}
                 match_string      = match_O.named_captures[ 'begin_M' ] +
                                     match_O.named_captures[ 'date_M' ] +
@@ -168,7 +170,7 @@ module Date_Clumps_parse_text_dates
                 match_offset      = match_O.offset( :begin_M )[ 0 ]
                 match_length      = match_string.length
                 scan_begin_offset = match_offset + match_length
-                if ( match_O.named_captures[ 'end_M' ] =~ /#{thru_date_separator_RES}/ix ) then
+                if ( match_O.named_captures[ 'end_M' ].match?( /#{thru_date_separator_RES}/ix ) ) then
                     result = get_tree_of__possible_date_S__A_A( scan_begin_offset, true, param__level + 1 )
                     tree_of__possible_date_S__A_A << [ possible_date_C.new( pattern_name, regexp, match_O ), result ]
                 else
@@ -255,6 +257,8 @@ module Date_Clumps_parse_text_dates
                                              date_match_string: '',
                                              full_match_string__end_delim__rstrip: '',
                                              date_match_S__A: date_match_S__A,
+                                             circa: false,
+                                             bulk: false,
                                             )
             date_clump_S__A << date_clump_S
             
@@ -268,7 +272,9 @@ module Date_Clumps_parse_text_dates
                 if ( date_match_idx == 0 ) 
                     date_clump_S.uid                                                   = date_clump_uid_O.uid_of_num( date_clump_S__A.length )                    
                     date_clump_S.date_match_string__beginning_offset                   = date_match_S.match_O.offset( :date_M )[ 0 ]  
-                    date_match_string                                                 += date_match_S.piece( 1 )
+                    date_clump_S.circa                                                 = date_match_S.circa
+                    date_clump_S.bulk                                                  = date_match_S.bulk
+                    date_match_string                                                 += date_match_S.piece( 1 )   # includes 'bulk' and 'circa/ca'
                     
                     stringer                                                           = date_match_S.piece( 0 ).lstrip
                     offset_adj = date_match_S.piece( 0 ).length - stringer.length
@@ -380,7 +386,7 @@ module Date_Clumps_parse_text_dates
 
 #           SE.q {[ 'date_clump_S' ]}                     
             output_data_O.string[ date_clump_S.full_match_string__begin_delim__lstrip__adj_offset, 
-                                  date_clump_S.full_match_string__with_original_dates.length ] = date_clump_S.uid
+                                  date_clump_S.full_match_string__with_original_dates_and_modifiers.length ] = date_clump_S.uid
                       
         end
     end

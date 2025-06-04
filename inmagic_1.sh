@@ -1,26 +1,47 @@
 #!/usr/bin/bash
 
 myself_name=$(basename $0)
+shopt -s extglob
 
 function display_usage {
-    echo "Usage: ${myself_name} [-c 'columns'] [-d X ] [-D] [-s] file"
+    echo "Usage: ${myself_name} -b[next|prior] [-c 'columns'] [-d X ] [-D] [-s] file"
+    echo "       -b = The --box_only_line option passed to 'formatter.inmagic_to_dictation_1.rb' program."
+    echo "            This option is required."
     echo "       -c = The --columns option is passed to the 'formatter.inmagic_to_dictation_1.rb' program."
     echo "            Enclose the entire columns string in quotes which allows for spaces in the column names."
+    echo "            The column names are case sensitive!!"
     echo "       -d = The new delimiter for internal processing in 'formatter.inmagic_to_dictation_1.rb', default is '~'."
     echo "       -D = Skip the pwsh JSON script if the JSON file is present."
     echo "       -s = The --sort option is passed to the 'formatter.inmagic_to_dictation_1.rb' program." 
     echo "       Param 1 is the file to process." 
+    echo ""
+    echo "Example:"
+    echo "   inmagic_1.sh -b prior -c'Record Group Number:recordgrp,Series Name:series,Extent:seriesdate,Series Description:seriesnote,Box List:detail' file"
+    echo ""
 }
 
+#
+#   inmagic_1.sh -b xxxx -c'Series Name:series,Extent:seriesdate,Series Description:seriesnote,Box List:detail' MS_NNN.csv
+#
+#   
+box_only_line=''
 columns=""
 new_delimiter="~"
 run_json_script="1"
 sort_detail=""
-while getopts c:Ds cmdln_opt
+while getopts b:c:Ds cmdln_opt
 do
     case $cmdln_opt in
+    (b)     box_only_line="${OPTARG}"
+            if [[ "${box_only_line}" != @(next|prior) ]]
+            then
+                echo "The -b option argument should be 'next' or 'prior'"
+                exit 1
+            fi
+            ;;
     (c)     columns="'$OPTARG'"
-            series_name=""
+            recordgrp_column_name=""
+            series_column_name=""
             IFSSAVE="$IFS"
             IFS=,                           # <<<<< DANGER
             columns_A=( $OPTARG )
@@ -36,10 +57,15 @@ do
                 column_use=${column_use## }
                 column_use=${column_use%% }
 #               echo "column_name='${column_name}' column_use='${column_use}'"
+                if [[ ${column_use} == 'recordgrp' ]]
+                then
+                    recordgrp_column_name=${column_name}
+#                   break
+                fi
                 if [[ ${column_use} == 'series' ]]
                 then
-                    series_name=${column_name}
-                    break
+                    series_column_name=${column_name}
+#                   break
                 fi
             done
             IFS="${IFSSAVE}"                # <<<<< DANGER
@@ -54,6 +80,12 @@ do
     esac
 done
 shift $(expr $OPTIND - 1)
+if [[ -z "${box_only_line}" ]] 
+then
+    echo_2 "The -b option is required"
+    display_usage
+    exit 2
+fi
 if [[ -z "$1" ]] 
 then
     echo "No file parameter provided." 1>&2
@@ -74,8 +106,12 @@ fi
 filename="$1"
 filename_prefix="${myself_name%.*}.${filename%.*}"
 shopt -s nocaseglob     # Options are NOT inheried, and this is needed to glob files when the pattern contains upper cases.
-rm "${filename_prefix}".*
-touch "${filename_prefix}.err"
+rm -v ${filename_prefix:=VAR_NOT_SET}.err       # Don't remove .* because the -D option won't work.
+if [[ -n "${run_json_script}" ]]
+then
+    rm -v ${filename_prefix:=VAR_NOT_SET}.* 
+fi
+touch ${filename_prefix:=VAR_NOT_SET}.err
 
 function trap_0 {
     echo "Last rc=$?"
@@ -83,12 +119,12 @@ function trap_0 {
 } 1>&2
 trap 'trap_0' 0
 
-(
-    if [[ -z "${run_json_script}" && -e "${filename_prefix}.json.txt" ]] 
+(   
+    if [[ -z "${run_json_script}" && -s "${filename_prefix}.json" ]] 
     then
         echo ""
-        echo "The '${filename_prefix}.json.txt' file exists, skipping the 'csv-to-json' step."
-        ls -la "${filename_prefix}.json.txt"
+        echo "The '${filename_prefix}.json' file exists, skipping the 'csv-to-json' step."
+        ls -la "${filename_prefix}.json"
         echo ""
         echo ""
     else
@@ -97,22 +133,27 @@ trap 'trap_0' 0
             echo_2 "Output delimiter '${new_delimiter}' present in '${filename}' file, aborting..."
             exit 4
         fi
-       
+        sort_object="{[int]\$_.'Record ID number'}"
+        if [[ -n "${series_column_name}" ]]
+        then
+            sort_object="{\$value = (\$_.'${series_column_name}' -replace '\D', ''); if (\$value -eq '') { 0 } else { [int]\$value } }, ${sort_object}"
+        fi
+        if [[ -n "${recordgrp_column_name}" ]]
+        then
+            sort_object="{\$value = (\$_.'${recordgrp_column_name}' -replace '\D', ''); if (\$value -eq '') { 0 } else { [int]\$value } }, ${sort_object}"
+        fi
         (   echo "\$csv = import-csv -path '${filename}'"
-            if [[ -n "${series_name}" ]]
-            then
-                echo "\$csv = \$csv | sort '${series_name}'"
-            fi
-            echo "\$csv | convertto-json -compress | out-file '${filename_prefix}.json.compress.txt'"
-            echo "\$csv | convertto-json           | out-file '${filename_prefix}.json.txt'"
+            echo "\$csv = \$csv | sort '${recordgrp_column_name}', 'Record ID number'"
+            echo "\$csv = \$csv | Sort-Object ${sort_object}"
+            echo "\$csv | convertto-json -compress | out-file '${filename_prefix}.compressed.json'"
+            echo "\$csv | convertto-json           | out-file '${filename_prefix}.json'"
         ) | do_pwsh -x  
-        dos2unix "${filename_prefix}.json.compress.txt" 
+        dos2unix "${filename_prefix}.compressed.json" 
         [[ $? -gt 0 ]] && exit 5
     fi
-
-    (   set -x
-        eval run_ruby.sh formatter.inmagic.to.dictation_1.rb ${sort_detail} ${columns:+--columns }${columns} \
-                                                            --output_file_prefix "${filename%.*}"  "${filename_prefix}.json.compress.txt" 
+    (   
+        eval run_ruby.sh formatter.inmagic.to.dictation_1.rb --box_only_line ${box_only_line} ${sort_detail} ${columns:+--columns }${columns} \
+                                                             --output_file_prefix "${filename%.*}"  "${filename_prefix}.compressed.json" 
     )
 ) 2>> "${filename_prefix}.err"
 [[ $? -gt 0 ]] && exit 6

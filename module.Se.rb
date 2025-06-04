@@ -78,8 +78,11 @@ module SE
         self.my_source_code_path.sub( /.*\//, '' )
     end
 
-    def self.ap_stack()
-        self.ap( self.stack( 1 ) )
+  # def self.ap_stack()
+      # self.ap( self.stack( 1 ) )
+  # end
+    def self.my_caller(  )
+        return self.stack[ 2 ]
     end
     def self.stack( p1 = 0 )
         param_regexp = nil

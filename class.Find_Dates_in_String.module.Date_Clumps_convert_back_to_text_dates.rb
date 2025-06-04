@@ -9,7 +9,7 @@ module Date_Clumps_convert_back_to_text_dates
             replace_option = option_H[ :morality_replace_option ][ date_clump_S.morality ]
             case replace_option
             when :keep                
-                output_data_O.string[ date_clump_S.uid ]                        = date_clump_S.full_match_string__with_original_dates
+                output_data_O.string[ date_clump_S.uid ]                        = date_clump_S.full_match_string__with_original_dates_and_modifiers
                 output_data_with_all_dates_removed_O.string[ date_clump_S.uid ] = ''
                                 
             when :replace                
@@ -31,21 +31,17 @@ module Date_Clumps_convert_back_to_text_dates
             end
         end
         if ( option_H[ :morality_replace_option ][ :good ] == :remove_from_end ) then
-            look_ahead_RES = "(?=([^#{date_clump_uid_O.date_clump_punct_chars[ 0 ]}#{date_clump_uid_O.date_clump_punct_chars[ 1 ]}]))"
             loop do
-                output_data_O.string.sub!( /#{look_ahead_RES}#{thru_date_end_delim_RES}\s*$/, ' ' )  #  There need to be at least one space at the end!
-                if ( output_data_O.string.match( /(#{date_clump_uid_O.pattern_RES})\s*$/ ) ) then
-                    date_clump_uid = $&                   
-                    output_data_O.string[ date_clump_uid ] = ''
-                    output_data_O.string.sub!( /#{look_ahead_RES}#{begin_delim_RES}\s*$/, ' ' )  #  There need to be at least one space at the end!
-                else
-                    break
-                end
+                matchdata_O = output_data_O.string.match( /(#{date_clump_uid_O.pattern_RES})(#{begin_delim_RES}|#{end_delim_RES})\s*$/ )
+                break if ( matchdata_O.nil? )
+                date_clump_uid = matchdata_O[ 1 ] 
+                output_data_O.string[ date_clump_uid ] = 3.chr   # We've got to use the string[ uid ] way because of the validation logic
+                output_data_O.string.sub!( /#{3.chr}.*$/, '' )
             end
             while ( output_data_O.string.match( date_clump_uid_O.pattern_RE ) ) 
                 date_clump_uid = $&
                 date_clump_S = date_clump_S__A[ date_clump_uid_O.num_from_uid( date_clump_uid ) - 1 ]  # The number is 1 relative                      
-                output_data_O.string[ date_clump_uid ] = date_clump_S.full_match_string__with_original_dates
+                output_data_O.string[ date_clump_uid ] = date_clump_S.full_match_string__with_original_dates_and_modifiers
             end
         end
     end

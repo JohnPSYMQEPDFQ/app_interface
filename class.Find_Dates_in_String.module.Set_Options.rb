@@ -105,7 +105,7 @@ module Set_Options
             when :date_text_separators
                 if ( option_H[ option_H_key ].is_a?( Symbol ) ) then
                     if ( option_H[ option_H_key ] == :none ) then
-                        option_H[ :date_text_separators ] = 255.chr                        #  Use 255.chr \xFF for none
+                        option_H[ :date_text_separators ] = 29.chr                        #  Use 29.chr for none
                     else
                         SE.puts "#{SE.lineno}: param__option_H[ :date_text_separators ] should be :none, or [xyz] (where xyz = some separators)."
                         SE.puts "#{SE.lineno}: The default is '[\|]| and '"
@@ -221,7 +221,7 @@ module Set_Options
             option_H[ :morality_replace_option ][ :bad ] = :keep
         end
         if ( not option_H.key?( :thru_date_separators ) ) then
-            option_H[ :thru_date_separators ] = '[-]| to | through '
+            option_H[ :thru_date_separators ] = '[-]| to | through '    # Beware of different dashes in the data! Do:  echo '-—–' | od -ctx1
             separation_punctuation_O.reserve_punctuation_chars( /#{option_H[ :thru_date_separators ]}/ )
         end
         if ( not option_H.key?( :date_text_separators ) ) then

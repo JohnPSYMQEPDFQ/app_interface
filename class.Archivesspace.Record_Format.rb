@@ -40,6 +40,7 @@ class Record_Format < Buffer_Base
                 } ,
                 K.title => K.undefined ,   #  "Southern Pacific" 
                 K.level => K.undefined ,
+                K.other_level => "",
                 K.component_id => "",
                 K.publish =>  true ,
                 K.dates => [] ,
@@ -92,6 +93,7 @@ class Record_Format < Buffer_Base
     def inclusive_dates  
         h =  {
                 K.label => K.undefined, 
+                K.certainty => '',
                 K.date_type => K.inclusive, 
                 K.begin => K.undefined, 
                 K.end => K.undefined,
