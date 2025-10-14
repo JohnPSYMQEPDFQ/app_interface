@@ -8,6 +8,7 @@ function display_usage {
     echo "       -e = Run the csv creation program with the specified ead_id value."
     echo "       -g = Minimum number of records need to make a group (default is 2)."
     echo "       -l = Maximum number of group levels (default is 5)."
+    echo "       -p = Phrase split characters (default is ':.')."
     echo "       -s = Maximum number of series records (default is 0)."
     echo "       -t = The indenter will create a new_parent record with the specified title."
     echo "       -I = DON'T run the indent prgm (the 1st one), don't remove the *txt files either."
@@ -16,15 +17,16 @@ function display_usage {
 } 
 
 combine_like_records=''  #  -c
-ead_id=""                #  -e X
-min_group_size=2         #  -g N
-max_group_levels=""      #  -l N
-max_series_records=0     #  -s N
-parent_title=""          #  -t X
-do_sort=""               #  -S
-do_indent_prgm='1'       #  -I don't do the indent program, don't remove files at the beginning.
+ead_id=''                #  -e X
+min_group_size=''        #  -g N      formatter.indent.to.add_objects.rb default is 2
+max_group_levels=''      #  -l N      formatter.dictation_1.to.indent.rb default is 12
+phrase_split_chars=''    #  -p 'XXX'  formatter.dictation_1.to.indent.rb default is ':.'
+max_series_records=''    #  -s N      formatter.indent.to.add_objects.rb default is 0
+parent_title=''          #  -t X
+do_sort=''               #  -S
+do_indent_prgm='1'       #  -I = don't do the indent program, don't remove files at the beginning.
 
-while getopts ce:g:l:s:t:IS cmdln_opt
+while getopts ce:g:l:p:s:t:IS cmdln_opt
 do
     case $cmdln_opt in
     (c)     combine_like_records='1'
@@ -34,6 +36,8 @@ do
     (g)     min_group_size="$OPTARG"
             ;;
     (l)     max_group_levels="$OPTARG"
+            ;;
+    (p)     phrase_split_chars="$OPTARG"
             ;;
     (s)     max_series_records="$OPTARG"
             ;;
@@ -121,7 +125,9 @@ trap 'trap_0' 0
 if [[ -n "${do_indent_prgm}" ]]
 then
     (   set -x
-        run_ruby.sh formatter.dictation_1.to.indent.rb ${max_group_levels:+--max_levels }${max_group_levels} "${file_name}" \
+        run_ruby.sh formatter.dictation_1.to.indent.rb ${max_group_levels:+--max_group_levels }${max_group_levels} \
+                                                       ${phrase_split_chars:+--phrase_split_chars }${phrase_split_chars} \
+                                "${file_name}" \
                                >"${file_name_prefix}.indent.json" \
                               2>"${file_name_prefix}.formatter.err"   \
                               3>"${file_name_prefix}.formatter.title_text.txt"
@@ -148,7 +154,7 @@ then
     echo ""        >> "${file_name_prefix}.indent.err"
     echo "SORTED:" >> "${file_name_prefix}.indent.err"
     (   set -x
-        sort -f "${file_name_prefix}.indent.txt" > "${file_name_prefix}.indent.sorted.json"
+        sort -f "${file_name_prefix}.indent.json" > "${file_name_prefix}.indent.sorted.json"
         run_ruby.sh formatter.indent.to.add_objects.rb ${combine_like_records:+--combine_like_records} \
                                                        ${min_group_size:+--min_group_size=}${min_group_size:+"${min_group_size}"} \
                                                        ${max_series_records:+--max_series=}${max_series_records:+"${max_series_records}"} \

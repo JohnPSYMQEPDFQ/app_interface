@@ -48,16 +48,17 @@ def put_indent( calculated_indent_level, group_number_A, group_title_A )
     else     
         output_record_H[ K.fmtr_record ][ K.level ]       = K.otherlevel
         output_record_H[ K.fmtr_record ][ K.other_level ] = K.group.capitalize
-        stringer = group_title_A.last
-        output_record_H[ K.fmtr_record ][ K.title ] = stringer
+        output_record_H[ K.fmtr_record ][ K.title ]       = group_title_A.last
     end
     if ( output_record_H[ K.fmtr_record ][ K.title ].blank? ) then
         SE.puts "#{SE.lineno}: Title can't be blank."
         SE.q {'group_title_A'}
         raise
     end
+    
     output_record_H[ K.fmtr_record ][ K.title ].sub!( /[.,:;]\s*$/, '' )
     output_record_H[ K.fmtr_record ][ K.title ].sub!( /./,&:upcase )
+    output_record_H[ K.fmtr_record ][ K.title ].strip!
 
     self.output_fd3_F.puts 'I %-13s: ' % output_record_H[ K.fmtr_record ][ K.level ] +
                            'L %1d ' % calculated_indent_level + group_title_A.join( "| " )
@@ -84,7 +85,7 @@ def put_record( calculated_indent_level, record_H__stack_A, current_record_H )
                 raise
             end
             circa  = ''
-            circa += 'circa'  if ( date_H[ K.circa ] )
+            circa += K.circa  if ( date_H[ K.circa ] )
             inclusive_dates_O = Record_Format.new( :inclusive_dates )
             inclusive_dates_O.record_H[ K.label ] = K.creation 
             inclusive_dates_O.record_H[ K.date_type ] = ( date_H[ K.bulk ] ) ? K.bulk : K.inclusive
@@ -179,7 +180,9 @@ def put_record( calculated_indent_level, record_H__stack_A, current_record_H )
         end  
     end
 
-    output_record_H[ K.fmtr_record ][ K.title ].sub( /[.,]\s*$/, '' ).sub( /./,&:upcase ).strip
+    output_record_H[ K.fmtr_record ][ K.title ].sub!( /[.,:;]\s*$/, '' )
+    output_record_H[ K.fmtr_record ][ K.title ].sub!( /./,&:upcase )
+    output_record_H[ K.fmtr_record ][ K.title ].strip!
    
     stringer = ''
     stringer = 'Forced' if ( output_record_H[ K.fmtr_record ][ K.level ] == K.otherlevel )
@@ -211,7 +214,7 @@ myself_name = File.basename( $0 )
 
 #   Note that:  The "Class variables" can be used in "programs", which means that
 #               the program itself is somewhat like a class.
-self.cmdln_option_H = { :min_group_size => 4, 
+self.cmdln_option_H = { :min_group_size => 2, 
                         :max_series => 0,
                         :max_levels => nil,
                         :parent_title => nil,
@@ -242,17 +245,17 @@ OptionParser.new do |option|
 end.parse!  # Bang because ARGV is altered
 self.cmdln_option_H[ :min_group_size ] -= 1                   # min-group-size is zero relative.
 self.cmdln_option_H[ :min_group_size ] = 1 if ( self.cmdln_option_H[ :min_group_size ] < 1 )
-
 if ( not self.cmdln_option_H[ :max_levels] ) then
     self.cmdln_option_H[ :max_levels ] = self.cmdln_option_H[ :max_series]
 end
+SE.q {'self.cmdln_option_H'}
 
 if ( self.cmdln_option_H[ :parent_title ] ) then
     put_new_parent( self.cmdln_option_H[ :parent_title ] )
 end
 
 self.output_fd3_F = File::open( '/dev/fd/3', mode='w' )
-ObjectSpace.each_object(IO) { |f| SE.q { ['f.fileno','f'] } unless f.closed? }
+#ObjectSpace.each_object(IO) { |f| SE.q { ['f.fileno','f'] } unless f.closed? }    <<< This stopped working for some reason.
 
 Record_Grouping_Indent.new_with_flush( method( :put_record ), method( :put_indent ), self.cmdln_option_H[ :min_group_size ] ) do |rgi_O|
 #   $DEBUG = true   

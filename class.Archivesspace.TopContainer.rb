@@ -204,22 +204,25 @@ class TC_Record_Buf < Record_Buf
 end
 
 
-class TC_Query
+class TC_Query_of_Repository
+    attr_accessor :rep_O,  :uri,  :page_cnt,  :record_H_A                          
+    private       :rep_O=, :uri=, :page_cnt=, :record_H_A=
+    
     def initialize( p1_rep_O )
-        @rep_O = p1_rep_O
-        @uri = "#{p1_rep_O.uri}/top_containers"    
-        @page_cnt = 0
+        self.rep_O = p1_rep_O
+        self.uri = "#{p1_rep_O.uri}/top_containers"    
+        self.page_cnt = 0
+        self.record_H_A = nil
     end
-    attr_reader :rep_O, :uri
 
     def get_num_A
-        http_response_body = @rep_O.aspace_O.http_calls_O.get( @uri, { 'all_ids' => 'true' } )
+        http_response_body = self.rep_O.aspace_O.http_calls_O.get( self.uri, { 'all_ids' => 'true' } )
         return http_response_body
     end
     
     def get_page_H( page, page_size )
-        http_response_body = @rep_O.aspace_O.http_calls_O.get( @uri, { 'page' => page, 'page_size' => page_size } )
-        @page_cnt += 1
+        http_response_body = self.rep_O.aspace_O.http_calls_O.get( self.uri, { 'page' => page, 'page_size' => page_size } )
+        self.page_cnt += 1
         return http_response_body
     end
    
@@ -293,16 +296,184 @@ class TC_Query
                 end
             end
         record_H_A = self.get_record_H_A   
-        all_TC_S = all_TC_C.new( record_H_A, @page_cnt )
+        all_TC_S = all_TC_C.new( record_H_A, self.page_cnt )
 #       SE.pom( all_TC_S )
         return all_TC_S
     end
-    #attr_reader :record_H_A   # Don't know why, but a reader and writer is included for 'record_H_A' 
-                               # See 'SE.pom( all_TC_S )' output.  It's something to do with the Structure.
 
-    
+    def for_num_A( tc_uri_num_A )
+        if ( tc_uri_num_A.is_not_a?( Array ) ) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "Param 1 is not an Array, it's: '#{tc_uri_num_A.class}'"
+            raise
+        end   
+        if ( not tc_uri_num_A.all? { | element | element.integer? } ) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "The param 1 array isn't all integers."
+            SE.puts "URL's won't work."
+            raise
+        end
+        record_H_A = []
+        tc_uri_num_A.each_slice( 250 ) do | sliced_A |        
+            http_response_body = rep_O.aspace_O.http_calls_O.get( self.uri, { 'id_set' => sliced_A.join( ',' ) } )
+            if ( http_response_body.is_not_a?( Array ) ) then
+                SE.puts "#{SE.lineno}: =============================================="
+                SE.puts "Unexpected response from #{self.uri}"
+                SE.q {'http_response_body'}
+                raise
+            end
+            if ( http_response_body.length < 1 ) then
+                SE.puts "#{SE.lineno}: =============================================="
+                SE.puts "Unable to find Archival_Object with 'id_set'='#{tc_uri_num_A}'"
+                raise
+            end  
+            if ( http_response_body.length != sliced_A.length ) then
+                SE.puts "#{SE.lineno}: =============================================="
+                SE.puts "http_response_body.length != sliced_A.length"
+                SE.q {[ 'http_response_body.length', 'sliced_A.length' ]}
+                SE.q {[ 'http_response_body' ]}
+                SE.q {[ 'sliced_A' ]}            
+                raise
+            end  
+            record_H_A.concat( http_response_body )
+        end
+        if ( record_H_A.length != tc_uri_num_A.length ) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "record_H_A.length != tc_uri_num_A.length"
+            SE.q {[ 'record_H_A.length', 'tc_uri_num_A.length' ]}
+#           SE.q {[ 'record_H_A' ]}
+            SE.q {[ 'tc_uri_num_A' ]}            
+            raise
+        end          
+        return record_H_A
+    end    
 end
 
+class TC_Query_of_Resource
+    attr_accessor :res_query_O,  :uri,  :tc_display_order_H,  :record_H_A
+    private       :res_query_O=, :uri=, :tc_display_order_H=, :record_H_A=
+    
+    def initialize( p1_res_query_O )
+        if ( p1_res_query_O.is_not_a?( AO_Query_of_Resource ) ) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "Param 1 is not a 'AO_Query_of_Resource' class object, it's: '#{p1_res_query_O.class}'"
+            raise
+        end    
+        self.res_query_O = p1_res_query_O
+        self.uri = "#{p1_res_query_O.res_O.rep_O.uri}/top_containers"    
+        if ( p1_res_query_O.record_H_A.nil? ) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "p1_res_query_O.record_H_A is nil, was the get_full_ao_buf boolean set?"
+            raise
+        end
+        tc_ao_instance_xref_H_A_H = {}
+        p1_res_query_O.record_H_A.each_with_index do | record_H, ao_display_order |
+            if ( record_H.has_no_key?( K.instances ) ) then
+                next
+            end
+            record_H[ K.instances ].each do | instance |
+                if ( instance.has_no_key?( K.sub_container ) ) then
+                    next
+                end
+                if ( instance[ K.sub_container ].has_no_key?( K.top_container ) ) then
+                    next
+                end
+                if ( instance[ K.sub_container ][ K.top_container ].has_no_key?( K.ref ) ) then
+                    SE.puts "#{SE.lineno}: =============================================="
+                    SE.puts "instance with top_container but no K.ref key!"
+                    SE.q { 'instance' }
+                    SE.q { 'record_H' }
+                    raise
+                end
+                tc_uri_num = instance[ K.sub_container ][ K.top_container ][ K.ref ].delete_prefix( "#{self.uri}/" ).to_i
+                
+                if ( tc_ao_instance_xref_H_A_H.has_no_key?( tc_uri_num ) ) then
+                    tc_ao_instance_xref_H_A_H[ tc_uri_num ] = []
+                end       
+                tc_ao_instance_xref_H_A_H[ tc_uri_num ].push( { K.title           => record_H[ K.title ],
+                                                                :ao_display_order => ao_display_order,
+                                                                K.instance        => instance[ K.sub_container ] } )
+                
+            end
+        end
+        
+        #   Make a hash by tc_uri_num with the lowest (minimum) :ao_display_order value...
+        tmp_H = {}
+        tc_ao_instance_xref_H_A_H.each_pair do | tc_uri_num, ao_instance_xref_H_A |
+             tmp_H[ tc_uri_num ] = ao_instance_xref_H_A.map { | h | h[ :ao_display_order ] }.min
+        end
+        #   Then sort the tmp_H by that lowest value, but sequence the hash 1..N for the actual order.
+        self.tc_display_order_H = tmp_H.sort_by { |_, v| v }.each_with_index.to_h { |(k, _), i| [k, i] }
+        if ( self.tc_display_order_H.length != tc_ao_instance_xref_H_A_H.length ) then
+             SE.puts "#{SE.lineno}: =============================================="
+             SE.puts "self.tc_display_order_H.length != tc_ao_instance_xref_H_A_H.length"
+             SE.q {[ 'self.tc_display_order_H.length', 'tc_ao_instance_xref_H_A_H.length' ]}
+             raise
+        end
+        
+        self.record_H_A = Array.new( self.tc_display_order_H.length )
+        TC_Query_of_Repository.new( p1_res_query_O.res_O.rep_O ).for_num_A( self.tc_display_order_H.keys.sort ).each do | record_H |
+            tc_uri_num = record_H[ K.uri ].delete_prefix( "#{self.uri}/" ).to_i
+            tc_display_order = self.tc_display_order_H[ tc_uri_num ]
+            if ( tc_display_order.nil? ) then
+                 SE.puts "#{SE.lineno}: =============================================="
+                 SE.puts "self.tc_display_order_H[ tc_uri_num ] is nil?"
+                 SE.q {'record_H[ K.uri ]'}
+                 SE.q {'self.tc_display_order_H'}
+                 raise
+            end 
+            if ( self.record_H_A[ tc_display_order ].not_nil? ) then
+                 SE.puts "#{SE.lineno}: =============================================="
+                 SE.puts "self.record_H_A[ tc_display_order ].not_nil?"
+                 SE.q {'record_H'}
+                 SE.q {'self.record_H_A[ tc_display_order ]'}
+                 SE.q {'self.tc_display_order_H'}
+                 raise
+            end 
+            record_H[ "~__RELATED_AO's__~" ] = tc_ao_instance_xref_H_A_H[ tc_uri_num ]
+            self.record_H_A[ tc_display_order ] = record_H
+        end
+        if ( self.record_H_A.length != self.tc_display_order_H.keys.length ) then
+             SE.puts "#{SE.lineno}: =============================================="
+             SE.puts "self.record_H_A.length != self.tc_display_order_H.keys.length"
+             SE.q {[ 'self.record_H_A.length', 'self.tc_display_order_H.keys.length' ]}
+             raise
+        end 
+        if ( self.record_H_A.include?( nil ) ) then
+             SE.puts "#{SE.lineno}: =============================================="
+             SE.puts "self.record_H_A.include?( nil )"
+             raise
+        end                
+        return self
+    end
+    
+    def record_H( p1_tc_uri_num )
+        case true
+        when p1_tc_uri_num.is_a?( String ) 
+            tc_uri_num = p1_tc_uri_num.delete_prefix( "#{self.uri}/" ).to_i
+        when p1_tc_uri_num.integer?
+            tc_uri_num = p1_tc_uri_num.to_i
+        else
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "Was expecting param 'p1_tc_uri_num' to be a String or integer"
+            SE.q {'p1_tc_uri_num'}
+            raise
+        end
+        tc_display_order = self.tc_display_order_H[ tc_uri_num ]
+        if ( tc_display_order.nil? ) then
+            return nil
+        end
+        if ( self.record_H_A[ tc_display_order ].nil? ) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "self.record_H_A[ tc_display_order ].nil?"
+            SE.q {'tc_display_order'}
+            SE.q {'self.record_H_A'}
+            raise
+        end
+        return self.record_H_A[ tc_display_order ]
+    end
+
+end
 
 
 

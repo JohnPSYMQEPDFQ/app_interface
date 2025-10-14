@@ -1,5 +1,7 @@
 =begin
 
+=begin
+
 Variable Abbreviations:
         AO = Archival Object ( Resources are an AO too, but they have their own structure. )
         AS = ArchivesSpace
@@ -61,7 +63,7 @@ rep_O = Repository.new( aspace_O, cmdln_option[ :rep_num ] )
 
 SE.puts "Finding Top_Containers (which takes some time) ..."
 time_begin = Time.now
-all_TC_S = TC_Query.new( rep_O ).get_all_TC_S
+all_TC_S = TC_Query_of_Repository.new( rep_O ).get_all_TC_S
 elapsed_seconds = Time.now - time_begin
 SE.puts "Elapsed seconds = #{elapsed_seconds}"
 # SE.q {[ 'all_TC_S.record_H_A' ]}

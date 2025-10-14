@@ -107,7 +107,7 @@ module Date_Clumps_parse_text_dates
                                       ) do
                                             def circa
                                                 return false if ( match_O.named_captures[ 'date_modifier' ].nil? )
-                                                return true if (match_O.named_captures[ 'date_modifier' ].match?( /^(circa|ca[.])/i ) )
+                                                return true if (match_O.named_captures[ 'date_modifier' ].match?( /^(circa|ca([.])?)/i ) )
                                                 return false
                                             end
                                             def bulk

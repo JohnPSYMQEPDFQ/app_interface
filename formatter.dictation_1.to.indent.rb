@@ -83,16 +83,18 @@ def scrape_off_container( input_record, shelf_id_O, from_thru_date_H_A)
                 raise
             end 
 
-            if ( container_and_child_types_matchdata_O[ :container_type_modifier ].not_nil? ) then           
+            if ( container_and_child_types_matchdata_O[ :container_type_modifier ].not_nil? ) then       
+                container_type_modifier = container_and_child_types_matchdata_O[ :container_type_modifier ]
+                container_type_modifier.gsub!( /[\[\]]/, '' )
                 case true
-                when container_and_child_types_matchdata_O[ :container_type_modifier ].match?( /^ov/i )  
+                when container_type_modifier.match?( /^ov/i )      # ^ov will match oversize
                     container_H[ K.indicator ] += ' OV'
-                when container_and_child_types_matchdata_O[ :container_type_modifier ].match?( /^slide/i )
+                when container_type_modifier.match?( /^(sb|slide)/i )
                     container_H[ K.indicator ] += ' SB'
-                when container_and_child_types_matchdata_O[ :container_type_modifier ].match?( /^record/i )
+                when container_type_modifier.match?( /^(rc|record)/i )
                     container_H[ K.indicator ] += ' RC'
                 else
-                    container_H[ K.indicator ] += " #{container_and_child_types_matchdata_O[ :container_type_modifier ]}"
+                    container_H[ K.indicator ] += " #{container_type_modifier}"
                 end
             end
 
@@ -257,6 +259,10 @@ def set_text_for_auto_group_F( param1 )
     if ( self.auto_group_H[ :cnt ] == 1 ) then
         SE.puts "#{SE.lineno}: Warning: Auto-group text '#{self.auto_group_H[ :text ]}' only used once."
     end
+    if ( param1.nil? ) then
+        SE.puts "#{SE.lineno}: Param1 is nil."
+        raise
+    end
     self.auto_group_H[ :text ] = param1
     self.auto_group_H[ :cnt ] = 0    
 end
@@ -275,18 +281,18 @@ end
 #MAIN   
 myself_name = File.basename( $0 )
 
-self.cmdln_option_H = { :max_levels => 12,
+self.cmdln_option_H = { :max_group_levels => 12,
                         :max_title_size => 40,
                         :default_century_pivot_ccyymmdd => '',
                         :r => nil,
                         :do_2digit_year_test => false,
                         :find_dates_option_H => { },
-                        :phrase_split_chars => ':,.'            # These go into a [] in a regexp so don't need to escaped (\).
+                        :phrase_split_chars => ':.'            # These go into a [] in a regexp so don't need to escaped (\).
                      }
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [options] [file]"
-    option.on( "-l", "--ml", "--max-levels N", OptionParser::DecimalInteger, "Max number of group levels N (default=#{self.cmdln_option_H[ :max_levels ]})" ) do |opt_arg|
-        self.cmdln_option_H[ :max_levels ] = opt_arg
+    option.on( "-l", "--ml", "--max-group-levels N", OptionParser::DecimalInteger, "Max number of group levels N (default=#{self.cmdln_option_H[ :max_group_levels ]})" ) do |opt_arg|
+        self.cmdln_option_H[ :max_group_levels ] = opt_arg
     end
     option.on( "--mts", "--max-title-size N", OptionParser::DecimalInteger, "Warn if title-size over N (default=#{self.cmdln_option_H[ :max_title_size ]})" ) do |opt_arg|
         self.cmdln_option_H[ :max_title_size ] = opt_arg
@@ -308,16 +314,16 @@ OptionParser.new do |option|
             SE.puts msg
             SE.ap "Find_Dates_in_String default options:"
             SE.ap Find_Dates_in_String.new( ).option_H
-            exit
+            raise
         end
     end
-    option.on( '-s', '--sc', '--split_char X', "Punctuation characters (X) used to split the records (default='#{self.cmdln_option_H[ :phrase_split_chars ]}')" ) do |opt_arg|
+    option.on( '-s', '--sc', '--phrase_split_chars X', "Punctuation characters (X) used to split the records (default='#{self.cmdln_option_H[ :phrase_split_chars ]}')" ) do |opt_arg|
         opt_arg.each_char do | char |
             if ( not char.match?( /[[:punct:]]/ ) ) then
                 SE.puts ''
-                SE.puts "Char '#{char}' of --split_char option value '#{opt_arg}' isn't [:punct]uation"
+                SE.puts "Char '#{char}' of --phrase_split_chars option value '#{opt_arg}' isn't [:punct]uation"
                 SE.puts
-                exit
+                raise
             end
         end
         self.cmdln_option_H[ :phrase_split_chars ] = opt_arg            
@@ -333,8 +339,8 @@ OptionParser.new do |option|
         exit
     end
 end.parse!  # Bang because ARGV is altered
-self.cmdln_option_H[ :max_levels ] += -1                   # :max_levels is zero relative.
-self.cmdln_option_H[ :max_levels ]  = 1 if ( self.cmdln_option_H[ :max_levels ] < 1 )
+self.cmdln_option_H[ :max_group_levels ] += -1                   # :max_group_levels is zero relative.
+self.cmdln_option_H[ :max_group_levels ]  =  1 if ( self.cmdln_option_H[ :max_group_levels ] < 1 )
 SE.q {'self.cmdln_option_H'}
 
 self.output_fd3_F = File::open( '/dev/fd/3', mode='w' )
@@ -387,7 +393,7 @@ ARGF.each_line do |input_record|
             next
         end
         if ( input_record.sub( /#.*$/, '').blank? ) then
-            SE.puts "#{SE.lineno}: Warning: Comment record skipped '#{input_record}'"
+          # SE.puts "#{SE.lineno}: Warning: Comment record skipped '#{input_record}'"
             next
         end
         if ( input_record.match?( /~~/ ) ) then
@@ -460,35 +466,6 @@ ARGF.each_line do |input_record|
                     SE.q {[ 'self.prepend_A' ]}
                     raise
                 end
-                # arr = command_line_split_A.reject{ | e | e.match?( command_line_split_on_RE ) }
-                # if ( arr.not_empty? ) then
-                    # idx_H = { 'STARTofROW' => 6, 'ENDofCOLUMN' => 5, 'End-Begin' => 5 }
-                    # if ( idx_H.has_no_key?( arr[ 0 ] ) ) then
-                        # SE.puts "#{SE.lineno}: '#{input_record}'"
-                        # SE.q {'idx_H'}
-                        # SE.q {'arr'}
-                        # raise
-                    # end
-                    # idx = idx_H[ arr[ 0 ] ]
-                    # if ( arr.maxindex >= 6 and arr[ idx ].integer? ) then
-                        # end_group_nbr = arr[ idx ].to_i
-                        # if ( self.prepend_A.maxindex - 1 != end_group_nbr ) then
-                            # SE.puts "#{SE.lineno}: Got a #{K.fmtr_end_group} record with " +
-                                    # "'arr[ #{idx} ]' = '#{end_group_nbr}', " 
-                            # SE.puts "#{SE.lineno}: but it's not equal to the 'self.prepend_A.maxindex' value '#{self.prepend_A.maxindex}' minus 1"
-                            # SE.puts "#{SE.lineno}: '#{input_record}'"
-                            # SE.q {'self.prepend_A'}
-                            # SE.q {'idx_H'}
-                            # SE.q {'arr'}
-                            # raise
-                        # end
-                    # else 
-                        # SE.puts "#{SE.lineno}: FALSE: arr.maxindex => 6 and arr[ 4 ].integer? "
-                        # SE.q {'idx_H'}
-                        # SE.q {['arr']}
-                        # raise
-                    # end
-                # end
                 indent_direction = K.fmtr_left
                 previous_prepend_A_pop_A = self.prepend_A.pop
                 if ( previous_prepend_A_pop_A[ 2 ] != :group ) then
@@ -549,7 +526,7 @@ ARGF.each_line do |input_record|
                 raise
             end
             stringer = command_line_split_A.join( '' ).strip
-            stringer.sub( /[,.:]$/, '' )
+            stringer.sub!( /[,.:;]$/, '' )
             stringer += '.'
             
             if ( indent_level_based_on_text_indentation != self.prepend_A.length ) then
@@ -560,6 +537,11 @@ ARGF.each_line do |input_record|
                 raise
             end
             self.prepend_A.push( [ stringer, :indent_keys, :prefix, $., SE.lineno ] )
+            if ( self.prepend_A.maxdepth != 2 ) then
+                SE.puts "#{SE.lineno}: self.prepend_A has a maxdepth != 2"
+                SE.q {[ 'input_record', 'self.prepend_A' ]}
+                raise
+            end 
             set_text_for_auto_group_F( '' )
             next
             
@@ -711,7 +693,7 @@ ARGF.each_line do |input_record|
             set_text_for_auto_group_F( '' )            
             record_values_A[ K.fmtr_record_values__text_idx ] = output_record.strip            
             output_record_H[ K.level ] = as_record_type    
-            output_record_H[ K.fmtr_record_sort_keys ] = get_prepend_elements_for_sort_F_A.join( '   ' ).downcase.gsub( /[^[a-z0-9,\- ]]/,'' )
+            output_record_H[ K.fmtr_record_sort_keys ] = get_prepend_elements_for_sort_F_A.join( '   ' ).downcase.gsub( /[^[a-z0-9,\- ]]/,'' )  + '   '
             output_record_H[ K.fmtr_record_indent_keys ] = get_prepend_elements_for_indent_keys_F_A
             output_record_H[ K.fmtr_forced_indent ].push( K.fmtr_right )
         else
@@ -774,8 +756,9 @@ ARGF.each_line do |input_record|
                     previous_phrase_was_a_right_facing_word_magnet = "*** length check: #{phrase.length} < #{K.min_length_for_indent_key} ***"
                 else
                     phrase.match( /(^|[[:punct:]]| )(dr|mr|mrs|ms|miss|no|num|nbr|nos|vs|al|st|co|ca|for)$/i ) 
-                    phrase.match( /(^|[[:punct:]]| )([A-Z]|[0-9]+)$/ )                            if ( $~.nil? )
-                    phrase.match( /(^|[[:punct:]])"/ )                                            if ( $~.nil? )
+                    phrase.match( /(^|[[:punct:]]| )(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)$/i ) if ( $~.nil? )
+                    phrase.match( /(^|[[:punct:]]| )([A-Z]|[0-9]+)$/ )                                     if ( $~.nil? )
+                    phrase.match( /(^|[[:punct:]])"/ )                                                     if ( $~.nil? )
                     previous_phrase_was_a_right_facing_word_magnet = $&
                 end
                 SE.q {[ 'phrase_A' ]}   if ( $DEBUG )
@@ -798,7 +781,7 @@ ARGF.each_line do |input_record|
             indent_keys_A = [ ] 
             loop do
                 break if ( phrase_A.empty? )
-                break if ( indent_keys_A.maxindex >= self.cmdln_option_H[ :max_levels ] )
+                break if ( indent_keys_A.maxindex >= self.cmdln_option_H[ :max_group_levels ] )
                 phrase = phrase_A[ 0 ].strip
                 break if ( phrase[ 0 ] == '[' )
                 indent_keys_A.push( phrase )
@@ -822,7 +805,7 @@ ARGF.each_line do |input_record|
             output_record_H[ K.level ] = K.file                  
 #           If the input_record has text AND there are no notes, container, or dates, assume this is an "auto-group" 
 #           record; and IF any following records have NO text use this record's text.
-            if ( note_A.empty? and container_H_A.empty? ) then      #  and from_thru_date_H_A.empty?  ???
+            if ( note_A.empty? and from_thru_date_H_A.empty? and container_H_A.empty? and indent_keys_A.not_empty? ) then   
                  set_text_for_auto_group_F( indent_keys_A.last )
                  output_record_H[ K.level ] = K.fmtr_auto_group
             else
@@ -837,7 +820,7 @@ ARGF.each_line do |input_record|
                                                              indent_keys_A +
                                                              [ title ] +
                                                              from_thru_date_H_A.map{ | e | e[ K.begin ]}  
-                                                           ).join( '   ' ).downcase.gsub( /[^[a-z0-9,\- ]]/,'' )     
+                                                           ).join( '   ' ).downcase.gsub( /[^[a-z0-9,\- ]]/,'' )  + '   '
         end
         
         record_values_A[ K.fmtr_record_values__dates_idx ] = from_thru_date_H_A     

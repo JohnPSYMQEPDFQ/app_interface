@@ -75,7 +75,7 @@ module SE
         return path
     end
     def self.my_source_code_filename
-        self.my_source_code_path.sub( /.*\//, '' )
+        return self.my_source_code_path.sub( /.*\//, '' )
     end
 
   # def self.ap_stack()

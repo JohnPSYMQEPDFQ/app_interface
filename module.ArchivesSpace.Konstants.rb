@@ -51,7 +51,7 @@ module K
     def K.coordinate_3_indicator; return 'coordinate_3_indicator'; end      # location
     def K.coordinate_3_label; return 'coordinate_3_label'; end              # location
     def K.created_by; return 'created_by'; end
-    def K.created_for_collection; return 'created_for_collection'; end
+    def K.created_for_collection; return 'created_for_collection'; end      # top_container
     def K.create_time; return 'create_time'; end
     def K.creation; return 'creation'; end                                  # dates
     def K.date; return 'date'; end                  # <<<< Danger Singular  # revision_statements                       
@@ -121,6 +121,7 @@ module K
     def K.has_unpublished_ancestor; return 'has_unpublished_ancestor'; end
     def K.hierarchy; return 'hierarchy'; end                                # spreadsheet
     def K.id; return 'id'; end                                              # tree
+    def K.identifier; return 'identifier'; end                              # top_container name for id_0 & id
     def K.id_0; return 'id_0'; end                                          # resource  This and the ead_id must be unique.  
                                                                             #           This is called the 'unitid' in the XML dump file!
     def K.ils_holding_id; return 'ils_holding_id'; end                      # top_container
@@ -145,7 +146,8 @@ module K
     def K.linked_agents; return 'linked_agents'; end                        # archival_object, resource
     def K.linked_events; return 'linked_events'; end                        # archival_object, resourcr
     def K.location; return 'location'; end                                  # location
-    def K.lock_version; return 'lock_version'; end                          # archival_object (incremented with eash update)
+    def K.lock_version; return 'lock_version'; end                          # incremented with each update
+    def K.long_display_string; return 'long_display_string'; end            # top_container
     def K.materialspec; return 'materialspec'; end                          # note singlepart (material specific)
     def K.mixed_materials; return 'mixed_materials'; end
     def K.n_physdesc; return 'n_physdesc'; end                              # Spreadsheet only: physical description note text
@@ -173,7 +175,7 @@ module K
     def K.portion; return 'portion'; end                                    # extents
     def K.position; return 'position'; end
     def K.precomputed_waypoints; return 'precomputed_waypoints'; end        # tree
-    def K.processinfo; return 'processinfo'; end                            # note singlepart (process information)
+    def K.processinfo; return 'processinfo'; end                            # note multipart (process information)
     def K.publish; return 'publish'; end
     def K.recordgrp; return 'recordgrp'; end                                # archival_object
     def K.recordgrp_text; return 'Record Group'; end                        # formatters
@@ -209,7 +211,7 @@ module K
     def K.title; return 'title'; end                                        # archival_object, resource
     def K.top_container; return 'top_container'; end                        # sub_container
     def K.tree; return 'tree'; end                                          # resource
-    def K.type; return 'type'; end                                          # top_container
+    def K.type; return 'type'; end                                          # top_container, notes
     def K.type_2; return 'type_2'; end                                      # sub_container
     def K.type_3; return 'type_3'; end                                      # sub_container
     def K.undefined; return '__UNDEFINED__'; end                            # used everywhere
@@ -278,23 +280,27 @@ module K
         return /#{K.container_type_separators_RES}/i
     end
     
-    def K.container_and_child_types_RES
-        stringer = '(?<begin_del>(\A|\s+|\[\s*))' +     # MUST use the /x option on the regex!!!
-                   '(?<inside_the_dels>(' +
-                   '(?<container_type>(ov |box(s|es)?))((\s+nos?\.?))?(\s+)(?<container_num>[0-9]+(' + K.container_type_separators_RES + '((ov |box(s|es)?)\s*)?[0-9]+)?),?' + 
-                   '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,|\s+))?' + 
-                   '(\s+(?<child_type>      (folders?|volumes?))            (\s+nos?\.?)?  (\s+(?<child_num>     ([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))*  ))?  )?' +
-                   '(\s+(?<grandchild_type> (volumes?|files?|letterpress))  (\s+nos?\.?)?  (\s+(?<grandchild_num>([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))*  ))?  )?' +
-                   '))' +
-                   '(?<end_del>(\Z|\.|,|\s*\]|\s+))'   
+    def K.container_and_child_types_RES   
         stringer = '(?<begin_del>(\A|\s+|\[\s*))' +     # MUST use the /x option on the regex!!!
                    '(?<inside_the_dels>(' +
                    '(?<container_type>(ov |box(s|es)?))((\s+nos?\.?))?(\s+)(?<container_num>[0-9]+(' + K.container_type_separators_RES + '[0-9]+)?),?' + 
-                   '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,|\s+))?' + 
-                   '(\s+(?<child_type>      (folders?|volumes?))            (\s+nos?\.?)?  (\s+(?<child_num>     ([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
+                   '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
+                   '(\s+(?<child_type>      (folders?|volumes?|items?))     (\s+nos?\.?)?  (\s+(?<child_num>     ([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
                    '(\s+(?<grandchild_type> (volumes?|files?))              (\s+nos?\.?)?  (\s+(?<grandchild_num>([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
                    '))' +
-                   '(?<end_del>(\Z|\.|,|\s*\]|\s+))'                      
+                   '(?<end_del>(\Z|\.|,|:|\s*\]|\s+))' 
+        stringer = '(?<begin_del>(\A|\s+|\[\s*))' +     # MUST use the /x option on the regex!!!
+                   '(?<inside_the_dels>' + 
+                       '(' +
+                           '(?<container_type>(ov |box(s|es)?))((\s+nos?\.?))?(\s+)(?<container_num>[0-9]+(' + K.container_type_separators_RES + '[0-9]+)?),?' + 
+                           '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
+                           '(\s+(?<child_type>      (folders?|volumes?|items?))     (\s+nos?\.?)?  (\s+(?<child_num>     ([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
+                           '(\s+(?<grandchild_type> (volumes?|files?))              (\s+nos?\.?)?  (\s+(?<grandchild_num>([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
+                       ')' +
+                   ')' +
+                   '(?<end_del>(\Z|\.|,|:|\s*\]|\s+))'                         
+#       When adding or changing stuff (like the '<container_type_modifier>') don't forget to add them to 
+#       the 'formatter.dictation_1.to.indent.rb' program.        
         return stringer
     end
     def K.container_and_child_types_RE

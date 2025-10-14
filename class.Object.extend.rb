@@ -19,6 +19,10 @@ class Object
         return ! self.is_a?( p1 )
     end
     
+    def not_match?( p1 )
+        return ! self.match?( p1 )
+    end
+    
     def in?( *args )
         args.flatten.include?( self )
     end
@@ -26,4 +30,13 @@ class Object
         return ! self.in?( args )
     end
     
+    def integer?( all_your_base_are_belong_to_us = 10 )
+        val = Integer( self, all_your_base_are_belong_to_us ) rescue nil
+        return false if ( val.nil? ) 
+        return true
+    end
+    def not_integer?( all_your_base_are_belong_to_us = 10 )
+        return ! self.integer?( all_your_base_are_belong_to_us )
+    end
+            
 end

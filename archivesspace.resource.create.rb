@@ -23,8 +23,17 @@ def csrm_collection( repository_uri:,
                      provenance:,
                      filing_location:,
                      historical_info:,
-                     series_summary:
+                     series_summary:,
+                     process_info:
                      )      
+                     
+    collection_name     = "PLACE HOLDER !!!!!!!!!!" if ( collection_name.blank? )
+    scope_and_content   = "PLACE HOLDER !!!!!!!!!!" if ( scope_and_content.blank? )
+    provenance          = "PLACE HOLDER !!!!!!!!!!" if ( provenance.blank? )
+    filing_location     = "PLACE HOLDER !!!!!!!!!!" if ( filing_location.blank? )
+    historical_info     = "PLACE HOLDER !!!!!!!!!!" if ( historical_info.blank? )
+    series_summary      = "PLACE HOLDER !!!!!!!!!!" if ( series_summary.blank? )
+    
     matchdata_O = ead_id.match( /MS [0-9]+/ )
     if  ( matchdata_O.nil? ) then
         ead_id__MS_NNNN_part_only = ead_id
@@ -32,20 +41,20 @@ def csrm_collection( repository_uri:,
         ead_id__MS_NNNN_part_only = matchdata_O[ 0 ]
     end
     
-    h = {   
+    resource_H = {   
             "ead_id"                    =>  ead_id,
             "finding_aid_author"        =>  "Library & Archives staff",
             "finding_aid_date"          =>  "2025 revision",
             "finding_aid_filing_title"  =>  collection_name,
-            "finding_aid_language"      =>  "und",
+            "finding_aid_language"      =>  "eng",
             "finding_aid_language_note" =>  ".",
-            "finding_aid_script"        =>  "Zyyy",
+            "finding_aid_script"        =>  "Latn",
             "finding_aid_status"        =>  "completed",
             "finding_aid_title"         =>  "Guide to the #{collection_name} #{ead_id__MS_NNNN_part_only}.",
             "id_0"                      =>  ead_id,
-            "jsonmodel_type"            =>  "resource",
+            K.jsonmodel_type            =>  "resource",
             "level"                     =>  "collection",
-            "publish"                   =>  true,
+            K.publish                   =>  true,
             "repository"                =>  { 'ref' => repository_uri },
             "restrictions"              =>  false,
             "suppressed"                =>  false,
@@ -67,107 +76,117 @@ def csrm_collection( repository_uri:,
                                             "date_type"         => "inclusive", 
                                             "end"               => "2600", 
                                             "expression"        => "1600 - 2600", 
-                                            "jsonmodel_type"    => "date", 
-                                            "label"             => "creation",
+                                            K.jsonmodel_type    => "date", 
+                                            K.label             => "creation",
                                             }   # Index 0
                                         ],
 
             "extents"           =>  [   {   "container_summary" => "NNNN Boxes", 
                                             "extent_type"       => "Linear Feet", 
-                                            "jsonmodel_type"    => "extent", 
+                                            K.jsonmodel_type    => "extent", 
                                             "number"            => "99999999999", 
                                             "portion"           => "whole" 
                                             }   # Index 0
                                         ],
                                 
-            "lang_materials"    =>  [   {   "jsonmodel_type"        =>  "lang_material",
-                                            "language_and_script"   =>  {   "jsonmodel_type"    => "language_and_script", 
-                                                                            "language"          => "und", 
+            "lang_materials"    =>  [   {   K.jsonmodel_type        =>  "lang_material",
+                                            "language_and_script"   =>  {   K.jsonmodel_type    => "language_and_script", 
+                                                                            "language"          => "eng", 
                                                                             },
-                                            "notes"                 =>  []
+                                            K.notes                 =>  []
                                             },  
-                                        {   "jsonmodel_type"        =>  "lang_material",
-                                            "notes"                 =>  [   {   "content"           => ["English ."],
-                                                                                "jsonmodel_type"    => "note_langmaterial",
-                                                                                "type"              => "langmaterial"
+                                        {   K.jsonmodel_type        =>  "lang_material",
+                                            K.notes                 =>  [   {   K.content           => ["English."],
+                                                                                K.jsonmodel_type    => "note_langmaterial",
+                                                                                K.type              => "langmaterial"
                                                                                 }
                                                                             ]
                                             }   
                                         ],
 
-            "notes" =>  [   {   "content"           =>  [ "Statewide Museum Collection Center, #{filing_location}" ],
-                                "jsonmodel_type"    =>  "note_singlepart",
-                                "publish"           =>  true,
-                                "type"              =>  "physloc"
+            K.notes =>  [   {   K.content           =>  [ "Statewide Museum Collection Center, #{filing_location}" ],
+                                K.jsonmodel_type    =>  K.note_singlepart,
+                                K.publish           =>  true,
+                                K.type              =>  K.physloc
                                 },  # Index 0
-                            {   "content"           =>  [ "PLACE HOLDER !!!!!!!!!!" ], 
-                                "jsonmodel_type"    =>  "note_singlepart", 
-                                "type"              =>  "abstract"
+                            {   K.content           =>  [ "PLACE HOLDER !!!!!!!!!!" ], 
+                                K.jsonmodel_type    =>  K.note_singlepart, 
+                                K.type              =>  "abstract"
                                 },  # Index 1
-                            {   "jsonmodel_type"    =>  "note_multipart",
-                                "label"             =>  "Immediate Source of Acquisition",
-                                "subnotes"          =>  [   {   "content"           => provenance, 
-                                                                "jsonmodel_type"    => "note_text"
+                            {   K.jsonmodel_type    =>  K.note_multipart,
+#                               K.label             =>  "Immediate Source of Acquisition",
+                                K.subnotes          =>  [   {   K.content           => provenance, 
+                                                                K.jsonmodel_type    => K.note_text
                                                                 }
                                                             ],
-                                "type"              =>  "acqinfo"
+                                K.type              =>  K.acqinfo
                                 },  # Index 2
-                            {   "jsonmodel_type"    =>  "note_multipart",
-                                "label"             =>  "Arrangement",
-                                "subnotes"          =>  [   {   "content"           => series_summary, 
-                                                                "jsonmodel_type"    => "note_text"
+                            {   K.jsonmodel_type    =>  K.note_multipart,
+#                               K.label             =>  "Arrangement",
+                                K.subnotes          =>  [   {   K.content           => series_summary, 
+                                                                K.jsonmodel_type    => K.note_text
                                                                 }
                                                             ],
-                                "type"              =>  "arrangement"
+                                K.type              =>  "arrangement"
                                 },  # Index 3
-                            {   "jsonmodel_type"    =>  "note_multipart",
-                                "label"             =>  "Biography",
-                                "subnotes"          =>  [   {   "content"           => historical_info, 
-                                                                "jsonmodel_type"    => "note_text"
+                            {   K.jsonmodel_type    =>  K.note_multipart,
+#                               K.label             =>  "Biography",
+                                K.subnotes          =>  [   {   K.content           => historical_info, 
+                                                                K.jsonmodel_type    => K.note_text
                                                                 }
                                                             ],
-                                "type"              =>  "bioghist"
+                                K.type              =>  "bioghist"
                                 },  # Index 4
-                            {   "jsonmodel_type"    =>  "note_multipart",
-                                "label"             =>  "Conditions Governing Access",
-                                "subnotes"          =>  [   {   "content"           => "Collection is open for research by appointment. Contact Library Staff.",
-                                                                "jsonmodel_type"    => "note_text"
+                            {   K.jsonmodel_type    =>  K.note_multipart,
+#                               K.label             =>  "Conditions Governing Access",
+                                K.subnotes          =>  [   {   K.content           => "Collection is open for research by appointment. Contact Library Staff.",
+                                                                K.jsonmodel_type    => K.note_text
                                                                 }
                                                             ],
-                                "type"              =>  "accessrestrict"
+                                K.type              =>  "accessrestrict"
                                 },  # Index 5
-                            {   "jsonmodel_type"    =>  "note_multipart",
-                                "label"             =>  "Conditions Governing Use",
-                                "subnotes"          =>  [   {   "content"           =>  "Copyright has been assigned to the California State Railroad Museum. Permission for publication must be submitted in writing to the CSRM Library & Archives.",
-                                                                "jsonmodel_type"    => "note_text"
+                            {   K.jsonmodel_type    =>  K.note_multipart,
+#                               K.label             =>  "Conditions Governing Use",
+                                K.subnotes          =>  [   {   K.content           =>  "Copyright has been assigned to the California State Railroad Museum. Permission for publication must be submitted in writing to the CSRM Library & Archives.",
+                                                                K.jsonmodel_type    => K.note_text
                                                                 }
                                                             ],
-                                "type"              =>  "userestrict"
+                                K.type              =>  "userestrict"
                                 },  # Index 6
-                            {   "jsonmodel_type"    =>  "note_multipart",
-                                "label"             =>  "Scope and Contents",
-                                "subnotes"          =>  [   {   "content"           => scope_and_content, 
-                                                                "jsonmodel_type"    => "note_text"
+                            {   K.jsonmodel_type    =>  K.note_multipart,
+#                               K.label             =>  "Scope and Contents",
+                                K.subnotes          =>  [   {   K.content           => scope_and_content, 
+                                                                K.jsonmodel_type    => K.note_text
                                                                 }
                                                             ],
-                                "type"              =>  "scopecontent"
+                                K.type              =>  K.scopecontent
                                 },  # Index 7
-                            {   "jsonmodel_type"    =>  "note_multipart",
-                                "label"             =>  "Preferred Citation",
-                                "subnotes"          =>  [   {   "content"           => "[Identification of item], #{collection_name}, #{ead_id__MS_NNNN_part_only}, California State Railroad Museum Library & Archives, Sacramento, California.",
-                                                                "jsonmodel_type"    => "note_text"
+                            {   K.jsonmodel_type    =>  K.note_multipart,
+#                               K.label             =>  "Preferred Citation",
+                                K.subnotes          =>  [   {   K.content           => "[Identification of item], #{collection_name}, #{ead_id__MS_NNNN_part_only}, California State Railroad Museum Library & Archives, Sacramento, California.",
+                                                                K.jsonmodel_type    => K.note_text
                                                                 }
                                                             ],
-                                "type"              =>  "prefercite"
+                                K.type              =>  "prefercite"
                                 },  # Index 8
-                            {   "content"           =>  [ "PLACE HOLDER !!!!!!!!!!" ],
+                            {   K.content           =>  [ "PLACE HOLDER !!!!!!!!!!" ],
                                 "items"             =>  [ "PLACE HOLDER !!!!!!!!!!" ],
-                                "jsonmodel_type"    =>  "note_bibliography",
-                                "label"             =>  "Bibliography",
+                                K.jsonmodel_type    =>  "note_bibliography",
+                                K.label             =>  "Bibliography",
                                 }   # Index 9
                             ],
             }
-    return h
+    if ( process_info.not_blank? ) then
+        h = {   K.jsonmodel_type    =>  K.note_multipart,
+                K.subnotes          =>  [   {   K.content           => process_info, 
+                                                K.jsonmodel_type    => K.note_text
+                                                }
+                                            ],
+                K.type              =>  K.processinfo
+                }   # Index 10
+        resource_H[ K.notes ].push( h )
+    end
+    return resource_H
 end
 
 myself_name = File.basename( $0 )
@@ -207,12 +226,13 @@ end
 
 
 ead_id              = nil
-collection_name     = "PLACE HOLDER !!!!!!!!!!"
-scope_and_content   = "PLACE HOLDER !!!!!!!!!!"
-provenance          = "PLACE HOLDER !!!!!!!!!!"
-filing_location     = "PLACE HOLDER !!!!!!!!!!"
-historical_info     = "PLACE HOLDER !!!!!!!!!!"
-series_summary      = "PLACE HOLDER !!!!!!!!!!"
+collection_name     = ''
+scope_and_content   = ''
+provenance          = ''
+filing_location     = ''
+historical_info     = ''
+series_summary      = ''
+process_info        = ''
 
 manual_process_columns_H = {}
 if ( cmdln_option_H[ :inmagic ] ) then
@@ -223,11 +243,11 @@ if ( cmdln_option_H[ :inmagic ] ) then
             when 'Additional Access'.downcase
                 # Not used
             when 'Collection Name'.downcase
-                collection_name = inmagic_value
+                collection_name += inmagic_value.gsub( K.embedded_CRLF, "\n" )
             when 'Filing Location'.downcase
-                filing_location = inmagic_value
+                filing_location += inmagic_value.gsub( K.embedded_CRLF, "\n" )
             when 'Historical Info'.downcase
-                historical_info = inmagic_value
+                historical_info += inmagic_value.gsub( K.embedded_CRLF, "\n" )
             when 'MS Number'.downcase
                 if ( cmdln_option_H[ :ead_id ].nil? ) then
                     ead_id = "InMagic MS #{inmagic_value}"
@@ -251,15 +271,18 @@ if ( cmdln_option_H[ :inmagic ] ) then
                     end
                 end
             when 'Provenance'.downcase
-                provenance = inmagic_value         
+                provenance += inmagic_value.gsub( K.embedded_CRLF, "\n" )        
             when 'Record ID number'.downcase
                 # Not used
             when 'Scope and content'.downcase
-                scope_and_content = inmagic_value
+                scope_and_content += inmagic_value.gsub( K.embedded_CRLF, "\n" )
             when 'Series Summary'.downcase
-                series_summary = inmagic_value
-            else
+                series_summary += inmagic_value.gsub( K.embedded_CRLF, "\n" )
+            when 'Extent'.downcase
                 manual_process_columns_H[ inmagic_column ] = inmagic_value
+            else
+                process_info += "InMagic column '#{inmagic_column}':\n" + 
+                                inmagic_value.gsub( K.embedded_CRLF, "\n" ) + "\n\n"
             end
         end
     end   
@@ -286,18 +309,19 @@ aspace_O = ASpace.new
 aspace_O.allow_updates = cmdln_option_H[ :update ]
 rep_O = Repository.new( aspace_O, rep_num )
 
-csrm_collection_H = csrm_collection( repository_uri: rep_O.uri,
-                                     ead_id: ead_id,
-                                     collection_name: collection_name,
-                                     scope_and_content: scope_and_content,
-                                     provenance: provenance,
-                                     filing_location: filing_location,
-                                     historical_info: historical_info,
-                                     series_summary: series_summary
-                                     )
-
+resource_H = csrm_collection( repository_uri: rep_O.uri,
+                              ead_id: ead_id,
+                              collection_name: collection_name,
+                              scope_and_content: scope_and_content,
+                              provenance: provenance,
+                              filing_location: filing_location,
+                              historical_info: historical_info,
+                              series_summary: series_summary,
+                              process_info: process_info
+                              )
+#SE.q {'resource_H'}
 resource_buf_O = Resource.new( rep_O ).new_buffer.create
-resource_buf_O.load( csrm_collection_H )
+resource_buf_O.load( resource_H )
 
 #SE.q {[ 'resource_buf_O.record_H' ]}
 new_resource_num = resource_buf_O.store

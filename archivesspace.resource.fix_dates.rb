@@ -17,6 +17,8 @@ require 'class.Archivesspace.Resource.rb'
 BEGIN {}
 END {}
 
+raise "Add 'circa' logic to dates"
+
 myself_name = File.basename( $0 )
 
 cmdln_option = { :rep_num => 2  ,
@@ -64,7 +66,7 @@ res_O = Resource.new( rep_O, res_num )
 
 update_cnt = 0
 record_cnt = 0
-Resource_Query.new( res_O ).record_H_A.each do | record_H |
+AO_Query_of_Resource.new( res_O ).record_H_A.each do | record_H |
     record_cnt += 1
     if ( ! ( record_H.key?( K.dates ) and record_H[ K.dates ].length > 0 )) then
         next

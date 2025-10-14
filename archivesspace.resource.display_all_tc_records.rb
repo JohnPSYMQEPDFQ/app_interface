@@ -9,9 +9,10 @@ require 'json'
 require 'optparse'
 
 require 'class.Archivesspace.rb'
-require 'class.Archivesspace.ArchivalObject.rb'
 require 'class.Archivesspace.Repository.rb'
 require 'class.Archivesspace.Resource.rb'
+require 'class.Archivesspace.ArchivalObject.rb'
+require 'class.Archivesspace.TopContainer.rb'
 
 
 BEGIN {}
@@ -21,11 +22,9 @@ myself_name = File.basename( $0 )
 
 cmdln_option = { :rep_num => 2  ,
                  :res_num => nil  ,
-                 :get_full_buffer => true ,
                  :filter => false ,
-                 :print_uri => true ,              
-                 :print_title_only => false ,
-                 :print_res_rec => false,
+                 :print_uri => true ,
+                 :print_display_string_only => false ,
                  :display => nil,
                 }
 OptionParser.new do |option|
@@ -36,20 +35,14 @@ OptionParser.new do |option|
     option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )." ) do |opt_arg|
         cmdln_option[ :res_num ] = opt_arg
     end
-    option.on( "--ao-index-only", "Get the AO index buffer only." ) do |opt_arg|
-        cmdln_option[ :get_full_buffer ] = false
-    end
     option.on( "--filter", "Apply filter." ) do |opt_arg|
         cmdln_option[ :filter ] = true
     end
     option.on( "--no-uri", "Don't print the URI value." ) do |opt_arg|
         cmdln_option[ :print_uri ] = false
     end
-    option.on( "--print-title-only", "Only print the title." ) do |opt_arg|
-        cmdln_option[ :print_title_only ] = true
-    end
-    option.on( "--print-res-rec", "Print the resource record too." ) do |opt_arg|
-        cmdln_option[ :print_res_rec ] = true
+    option.on( "--print-display_string-only", "Only print the display_string." ) do |opt_arg|
+        cmdln_option[ :print_display_string_only ] = true
     end
     option.on( "--display X", "X = 'string|json|ap(awesome-print)]', output the AO's as 'X'" ) do |opt_arg|
         if ( opt_arg.not_in?( [ 'string', 'json', 'ap' ] ) ) then
@@ -80,11 +73,9 @@ end
 
 print__record_H = lambda{ | record_H, cnt | 
     case true
-    when cmdln_option[ :print_title_only ] 
-        puts "#{record_H[ K.title ]}"
+    when cmdln_option[ :print_display_string_only ] 
+        puts "#{record_H[ K.display_string ]}"
     when cmdln_option[ :display ].not_nil?
-        print "#{record_H[ K.title ].gsub( '&amp;', '&' )} "    # This is to get the title printed first.
-        
         if ( cmdln_option[ :filter ] ) then
         
 #           The --filter option is useful for comparison of two resources, so remove anything that might
@@ -92,14 +83,7 @@ print__record_H = lambda{ | record_H, cnt |
 
             remove_A = [ K.created_by, K.last_modified_by, K.create_time, K.system_mtime, K.user_mtime,  # From read filter
                          K.ref, K.uri, K.lock_version, 
-                         K.title,            # removed because it's printed first (above)
-                         K.repository, K.resource,
-                         K.ancestors, K.ead_id, K.id_0, K.parent, 
-                         K.position, K.persistent_id, K.is_slug_auto, K.slugged_url, K.ref_id, 
-                     # From the index_record:
-                         K.parent_id, K.tree, K.waypoints, K.waypoint_size, 
-                     # Maybe optional ones:
-                         K.publish, K.has_unpublished_ancestor,
+                         K.collection, K.created_for_collection, K.display_string, K.long_display_string, K.identifier, 
                        ]
             remove_A.each do | key |           
                 record_H.except_nested!( key )      
@@ -113,31 +97,24 @@ print__record_H = lambda{ | record_H, cnt |
         when 'ap'
             print record_H.ai
         else
-            SE.puts "Programmer malfuction"
+            SE.puts "Programmer malfunction"
             raise
         end
         print "\n"
     else
         print "#{cnt} "
-        print "#{record_H[ K.uri ]} " if ( cmdln_option[ :print_uri ] )
-        print "#{record_H[ K.position ]} "
-        print "#{record_H[ K.level ]} "
-        print "#{record_H[ K.publish ]} " if ( cmdln_option[ :get_full_buffer ] )
-        print "#{record_H[ K.title ]} "
+        print "#{record_H[ K.display_string ]} "
         print "\n"
     end
 }
 
 aspace_O = ASpace.new
 rep_O = Repository.new( aspace_O, rep_num )
+res_O = Resource.new( rep_O, res_num )
+res_query_O = AO_Query_of_Resource.new( res_O, true )
 
 cnt = 0
-res_O = Resource.new( rep_O, res_num )
-if ( cmdln_option[ :print_res_rec ] ) then
-    print__record_H.call( res_O.new_buffer.read( cmdln_option[ :filter ] ).record_H, 0 )
-end
-
-AO_Query_of_Resource.new( res_O, cmdln_option[ :get_full_buffer ] ).record_H_A.each do | record_H |
+TC_Query_of_Resource.new( res_query_O ).record_H_A.each do | record_H |
     cnt += 1
     print__record_H.call( record_H, cnt )
 end

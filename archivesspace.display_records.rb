@@ -57,7 +57,7 @@ end
 #SE.pom(rep_O)
 #SE.pov(rep_O)
 
-res_query_O = nil
+ao_query_O = nil
 current_record_type = K.undefined
 ARGV.push('res') if (ARGV.empty?)
 ARGV.each do | element | 
@@ -86,11 +86,11 @@ ARGV.each do | element |
         ao_buf_O = Archival_Object.new( res_buf_O, element ).new_buffer.read( record_filter_B )
         puts ao_buf_O.record_H.ai
     when 'index'
-        puts "Index for: #{element}:"
-        if ( res_query_O.nil? ) then
-            res_query_O = Resource_Query.new( res_O )
+        puts "Index for Archival_Object: #{element}:"
+        if ( ao_query_O.nil? ) then
+            ao_query_O = AO_Query_of_Resource.new( res_O )
         end
-        puts res_query_O.get_record_H_of_uri_num( element ).ai
+        puts ao_query_O.get_index_H( element ).ai
     when 'tc'
         puts "Top_Container: #{element}:"
         tc_buf_O = Top_Container.new( res_buf_O, element ).new_buffer.read( record_filter_B )

@@ -40,7 +40,6 @@ class Repository
 #       SE.puts "#{SE.lineno}: ================ In Repository:initialize,@num=#{@num}"
     end
     attr_reader :aspace_O, :num, :uri
-       
 end
 
 class Repository_Query   

@@ -20,6 +20,7 @@ Variable Abbreviations:
 =end
 
 require 'pp'
+require 'awesome_print'
 require 'io/console'
 require 'module.SE.rb'
 require 'class.Array.extend.rb'
@@ -73,7 +74,7 @@ class ASpace
         end
         userid, password = p1_user.split(':')
         if ( password.nil? ) then
-            SE.puts  "(After entering the password: if nothing happens after hitting <enter>, try a new windows...)"
+            SE.puts  "(After entering the password: if there's no LF immediately after hitting <enter>, try a new window...)"
             SE.print "Enter password:"
             password = STDIN.noecho(&:gets).chomp   # If the 'gets' stops working from the cygwin command line
 #           password = STDIN.gets.chomp             # open a new window.  It does that sometimes.
@@ -158,10 +159,13 @@ class ASpace
         return date_formatted
     end
     
-    def format_date_expression( from_yyyyDmmDdd, thru_yyyyDmmDdd = '', prefix )
-        from_date_formatted = format_date( from_yyyyDmmDdd )
+    def format_date_expression( from_yyyyDmmDdd, thru_yyyyDmmDdd, prefix )
+        date_expression = ''
+        date_expression += "#{prefix} " if ( prefix.not_blank? )
+        
+        from_date_formatted = format_date( from_yyyyDmmDdd )        
         if ( thru_yyyyDmmDdd.empty? or from_yyyyDmmDdd == thru_yyyyDmmDdd ) then
-            date_expression = from_date_formatted
+            date_expression += from_date_formatted
         else
             if ( from_yyyyDmmDdd > thru_yyyyDmmDdd ) then
                 SE.puts "#{SE.lineno}: from date > thru date"
@@ -169,8 +173,6 @@ class ASpace
                 raise
             end
             thru_date_formatted = format_date( thru_yyyyDmmDdd ) 
-            date_expression = ''
-            date_expression += "#{prefix} " if ( prefix.not_blank? )
             date_expression += "#{from_date_formatted}#{self.date_expression_separator}#{thru_date_formatted}"
         end
         return date_expression      

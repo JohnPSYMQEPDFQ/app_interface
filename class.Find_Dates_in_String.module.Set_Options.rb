@@ -97,7 +97,7 @@ module Set_Options
                     # keep going...
                 else
                     SE.puts "#{SE.lineno}: Expected '#{option_H_key}' to be of type Array or String not '#{option_H[ option_H_key ].class}'"
-                    SE.puts "#{SE.lineno}: If an array, it will be join with a '|'. The default is: '[-]| to | through '."
+                    SE.puts "#{SE.lineno}: If an array, it will be join with a '|'. The default is: '[-]| to | thru | through '."
                     SE.q { 'param__option_H' }
                     raise
                 end  
@@ -221,7 +221,7 @@ module Set_Options
             option_H[ :morality_replace_option ][ :bad ] = :keep
         end
         if ( not option_H.key?( :thru_date_separators ) ) then
-            option_H[ :thru_date_separators ] = '[-]| to | through '    # Beware of different dashes in the data! Do:  echo '-—–' | od -ctx1
+            option_H[ :thru_date_separators ] = '[-]| to | thru | through '    # Beware of different dashes in the data! Do:  echo '-—–' | od -ctx1
             separation_punctuation_O.reserve_punctuation_chars( /#{option_H[ :thru_date_separators ]}/ )
         end
         if ( not option_H.key?( :date_text_separators ) ) then

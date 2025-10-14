@@ -47,20 +47,20 @@ module Date_Regexp_variables
 #               NOTE: \G is required when using a 'match( regexp, starting_point )'.  \A or ^ means from the start of the string
 #                     whereas \G means from the start of the match!   
         self.begin_delim_RES            = "(?:\\G|\\s+|[ #{usable_text_punct_RES}]|#{date_text_separator_RES})"    
-#                        NOTE: The single space after the [ <<<(here, at the beginning)
-#                              is NOT the same as "\\s*(?:[#{usable_text_punct_RES} ]|\\Z){1}"                            
-#                                            -or- "\\s*(?:[#{usable_text_punct_RES}]| |\\Z){1}"   
-#                        But I don't know why!      
+#                     NOTE: The single space after the [ <<<(here, at the beginning)
+#                           is NOT the same as "\\s*(?:[#{usable_text_punct_RES} ]|\\Z){1}"                            
+#                                         -or- "\\s*(?:[#{usable_text_punct_RES}]| |\\Z){1}"   
+#                     But I don't know why!      
         self.end_delim_RES              = "\\s*(?:#{thru_date_separator_RES}|[ #{usable_text_punct_RES}]|\\Z){1}"  
 #                                           NOTE: The single space after the [ <<<(here, at the beginning)
 #                                                 is NOT the same as "\\s*(?:[#{usable_text_punct_RES} ]|\\Z){1}"                            
 #                                                               -or- "\\s*(?:[#{usable_text_punct_RES}]| |\\Z){1}"   
 #                                           But I don't know why!      
-        self.date_modifier_RES          = "(?<date_modifier>((bulk|circa|ca[.])(\\s+|[ #{usable_text_punct_RES}]|#{date_text_separator_RES}))+)?"   
-#                           NOTE: The single space after the [ <<<(here, at the beginning)
-#                                 is NOT the same as "\\s*(?:[#{usable_text_punct_RES} ]|\\Z){1}"                            
-#                                               -or- "\\s*(?:[#{usable_text_punct_RES}]| |\\Z){1}"   
-#                           But I don't know why!           
+        self.date_modifier_RES          = "(?<date_modifier>((bulk|circa|ca([.])?)(\\s+|[ #{usable_text_punct_RES}]|#{date_text_separator_RES}))+)?"   
+#                                                      NOTE: The single space after the [ <<<(here, at the beginning)
+#                                                            is NOT the same as "\\s*(?:[#{usable_text_punct_RES} ]|\\Z){1}"                            
+#                                                                          -or- "\\s*(?:[#{usable_text_punct_RES}]| |\\Z){1}"   
+#                                                      But I don't know why!           
 
         date_pattern_RES_S = Struct.new( :pattern_name, :pattern_RES )      # The :pattern_name and length are computed and added later.
                                                                             # Literal spaces in the pattern are removed.  Spaces are just

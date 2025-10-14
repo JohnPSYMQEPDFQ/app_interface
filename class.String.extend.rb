@@ -6,15 +6,6 @@ class String
     end
     alias_method :maxindex, :maxoffset     # But I had code already using maxindex so I'm leaving it for now
 
-    def integer?( all_your_base_are_belong_to_us = 10 )
-        val = Integer( self, all_your_base_are_belong_to_us ) rescue nil
-        return false if ( val.nil? ) 
-        return true
-    end
-    def not_integer?( all_your_base_are_belong_to_us = 10 )
-        return ! self.integer?( all_your_base_are_belong_to_us )
-    end
-        
     def blank?( )
         return self.to_s.strip.empty?
     end

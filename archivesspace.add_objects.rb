@@ -66,23 +66,19 @@ require 'class.Archivesspace.TopContainer.rb'
 require 'class.Archivesspace.Resource.rb'
 
 class Res_Q
+    attr_accessor :ao_query_O,  :index_H_A 
+    private       :ao_query_O=, :index_H_A=
+    
     def initialize( res_O )
-        @record_H_A = [ ]
-        Resource_Query.new( res_O ).record_H_A.each do | record_H |
-            if ( record_H[ K.level ] != K.file ) then
-#               SE.puts "%-11s" % record_H[ K.level ] + " #{record_H[ K.uri ]} '#{record_H[ K.title ]}'"
-                @record_H_A << record_H
-            end
-        end
-        return self
+        self.ao_query_O = AO_Query_of_Resource.new( res_O )
     end
     
     def uri_of( title )  # Find the URI with the matching title
         a1 = [ ]
-        @record_H_A.each do | record_H |
-            if ( title.downcase == record_H[ K.title ].downcase ) then
-                a1 << record_H[ K.uri ]
-#               SE.puts "New parent: #{record_H[ K.uri ]} '#{record_H[ K.title ]}'"
+        self.ao_query_O.index_H_A.each do | index_H |
+            if ( index_H[ K.title ].downcase == title.downcase and index_H[ K.level ] == K.file ) then
+                a1 << index_H[ K.uri ]
+#               SE.puts "New parent: #{index_H[ K.uri ]} '#{index_H[ K.title ]}'"
             end
         end
         if ( a1.maxindex < 0 ) then
@@ -143,9 +139,15 @@ OptionParser.new do |option|
         SE.puts option
         exit
     end
+    
+    option.separator '' 
+    option.separator 'Example:'
+    option.separator "    rr -aL #{myself_name} --res-num NNN --res-title 'XXX' file.json"
+    option.separator ''
+    
 end.parse!  # Bang because ARGV is altered
 if ( ARGV.maxindex < 0 ) then
-    SE.puts "No input file provided."
+    SE.puts "No input file provided. Try: rr #{myself_name} -h"
     exit
 end
 # SE.q {[ 'cmdln_option' ]}
