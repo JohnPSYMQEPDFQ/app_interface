@@ -19,7 +19,7 @@ Variable Abbreviations:
 
 =end
 
-require 'Date'                       # This messes-up CSV.
+require 'date'                       
 require 'class.Date.extend.rb'
 require 'class.Hash.extend.rb'
 require 'class.Array.extend.rb'

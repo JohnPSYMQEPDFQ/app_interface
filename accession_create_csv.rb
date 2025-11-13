@@ -1,6 +1,6 @@
 #!run_ruby.sh
 
-require 'Date'
+require 'date'
 require 'class.Archivesspace.rb'
 require 'csv.rb'
 require 'class.Find_Dates_in_String.rb'

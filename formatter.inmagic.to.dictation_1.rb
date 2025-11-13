@@ -154,6 +154,15 @@ def container_for_following_records_reset
     self.container_for_following_records_A = [ ] 
 end
 
+def is_there_series_or_recordgrp_data?( input_column_H ) 
+    its_true = nil
+    its_true = ( series_column_name.not_nil?    and input_column_H[ series_column_name ].not_blank? )
+    return true if ( its_true ) 
+    its_true = ( recordgrp_column_name.not_nil? and input_column_H[ recordgrp_column_name ].not_blank? )
+    return true if ( its_true )
+    return false
+end
+
 def box_only_line_logic( sub_column_value, note )
     stringer = sub_column_value.sub( K.container_and_child_types_RE, '' )
     if ( $&.not_nil? ) then
@@ -687,8 +696,13 @@ tmp3_F.rewind
 tmp3_F.each_line do | input_column_J |
     input_column_J.chomp!
     input_column_H = JSON.parse( input_column_J )
-    next if ( series_column_name.not_nil?    and input_column_H[ series_column_name ].not_blank? )
-    next if ( recordgrp_column_name.not_nil? and input_column_H[ recordgrp_column_name ].not_blank? )
+  # next if ( series_column_name.not_nil?    and input_column_H[ series_column_name ].not_blank? )
+  # next if ( recordgrp_column_name.not_nil? and input_column_H[ recordgrp_column_name ].not_blank? )
+    if ( is_there_series_or_recordgrp_data?( input_column_H ) ) then
+        SE.puts "#{SE.lineno}: Record skipped in RESOURCE_DATA process because:"
+        SE.q {[ 'is_there_series_or_recordgrp_data?( input_column_H )' ]}
+        SE.q {[ 'input_column_H[ recordgrp_column_name ]', 'input_column_H[ series_column_name ]']}
+    end
     input_column_H.each_pair do | column_name, column_value |
         if ( column_value.blank? ) then
 #           SE.puts "#{SE.lineno}: column_name:#{column_name} value blank"
@@ -706,7 +720,7 @@ tmp3_F.each_line do | input_column_J |
                 next
             end
         end
-        
+  
         column_value.rstrip!
         if ( resource_data_H.has_no_key?( column_name ) ) then
             resource_data_H[ column_name ] = ''
@@ -761,8 +775,15 @@ tmp3_F.each_line do | input_column_J |
         SE.puts "#{SE.lineno}: WARNING: tmp3_F record skipped, having all blank detail rows"
         next
     end
-
-    all_possible_notes_H    = create_H_of_all_possible_notes( input_column_H )     # This doesn't include the 'series column' notes.
+    if ( is_there_series_or_recordgrp_data?( input_column_H ) ) then
+        all_possible_notes_H = create_H_of_all_possible_notes( input_column_H )     # This doesn't include the 'series column' notes.
+    else
+        SE.puts "#{SE.lineno}: 'create_H_of_all_possible_notes' skpped because:"
+        SE.q {[ 'is_there_series_or_recordgrp_data?( input_column_H )' ]}
+        SE.q {[ 'input_column_H[ recordgrp_column_name ]', 'input_column_H[ series_column_name ]']}
+        all_possible_notes_H = {}
+    end
+    
     seriesdate_column_value = ''
     output_column_H = {}
     column_use_H.each_pair do | column_name, column_use |     

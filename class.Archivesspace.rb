@@ -43,7 +43,7 @@ class ASpace
         @api_uri_base = nil
         @http_calls_O = 'NEVER_LOGGED_IN! SEE:class.Archivespace.rb'
         @date_expression_format = 'aspace_default'      # The default is the yyyyDmmDdd format.   or :mmmddyyyy = MMM. nn, yyyy
-        @date_expression_separator = '-'
+        @date_expression_separator = ' - '
         if ( ENV.has_key?( env_var_aspace_uri_base ) and ENV[ env_var_aspace_uri_base ].not_blank? ) then
             if ( ENV.has_key?( env_var_aspace_user ) and ENV[ env_var_aspace_user ].not_blank? ) then
                 @api_uri_base = ENV[ env_var_aspace_uri_base ]

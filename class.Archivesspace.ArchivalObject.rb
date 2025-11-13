@@ -185,8 +185,8 @@ end
 
 
 class AO_Query_of_Repository
-    attr_accessor :rep_O,  :uri,  :record_H_A  
-    private       :rep_O=, :uri=, :record_H_A=  
+    public  attr_reader :rep_O, :uri, :record_H_A  
+    private attr_writer :rep_O, :uri, :record_H_A  
         
     def initialize( p1_rep_O )
         if ( p1_rep_O.is_not_a?( Repository ) ) then
@@ -249,49 +249,62 @@ class AO_Query_of_Repository
 end
 
 class AO_Query_of_Resource
-    attr_accessor :res_O,  :uri,  :index_H_A,  :ao_display_order_H,  :record_H_A
-    private       :res_O=, :uri=, :index_H_A=, :ao_display_order_H=, :record_H_A=
+    public  attr_reader :res_O, :uri, :index_H_A, :ao_display_order_H,              :index_only_warning_given_TF    
+    private attr_writer :res_O, :uri, :index_H_A, :ao_display_order_H, :record_H_A, :index_only_warning_given_TF
     
-    def initialize( p1_res_O, p2_get_full_ao_buf = false )
+    def initialize( p1_res_O, 
+                    p2_get_full_ao_record_TF = false, p3_starting_node_url = '', p4_recurse_index_children_TF = true )
         if ( p1_res_O.is_not_a?( Resource ) ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Param 1 is not a Resource class object, it's: '#{p1_res_O.class}'"
             raise
         end    
-        self.res_O      = p1_res_O
-        self.uri        = "#{self.res_O.rep_O.uri}/#{K.archival_objects}"
+        self.res_O = p1_res_O
+        self.uri = "#{self.res_O.rep_O.uri}/#{K.archival_objects}"
         self.index_H_A  = nil
         self.ao_display_order_H  = nil
         self.record_H_A = nil
+        self.index_only_warning_given_TF = false
 =begin    
         Param2, if true, causes the query to read each AO record.  This is about 10 times slower
         than using the data from the AO indexes, which is a subset of the AO.
 =end
-        if ( not (p2_get_full_ao_buf == true or p2_get_full_ao_buf == false )) then
+        if ( p2_get_full_ao_record_TF.not_in?( true, false )) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 should be true or false, not '#{p2_get_full_ao_buf}'"
+            SE.puts "Param 1 should be true or false, not '#{p2_get_full_ao_record_TF}'"
             raise
         end 
-        if ( p2_get_full_ao_buf ) then
-            SE.puts "'AO_Query_of_Resource' returning full buffer data."
-        else
-            SE.puts "'AO_Query_of_Resource' returning index buffer data ONLY!"
-        end
+      # if ( p2_get_full_ao_record_TF ) then
+      #     SE.puts "'AO_Query_of_Resource' fetching full AO-Record data."
+      # else
+      #     SE.puts "'AO_Query_of_Resource' fetching index data ONLY!"
+      # end
+
+        if ( p4_recurse_index_children_TF.not_in?( true, false )) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "Param 1 should be true or false, not '#{p4_recurse_index_children_TF}'"
+            raise
+        end         
+
 =begin
         Get all the AO's for the resource, building an array of index_H,
         loaded with the subset of AO data contained in the 'tree' records.
-        The parameter allows one to start from anyplace on the resource's tree,
-        but I've never need it.
+        The 'p3_starting_node_url' parameter allows one to start from anyplace on the resource's tree.
+        For example, from a specific "Series" record, using the series' URL
+        would return all the children of the series. A 'blank' mean all the 1st level records (the
+        children of the Resource record).  The 'p4_recurse_index_children_TF' boolean determines 
+        whether the records with children will be recursed. Basically, if 'false' only the records
+        of a particular level will be fetched.
 =end
         self.index_H_A = []
         self.ao_display_order_H = {}     # Hash of ao_uri_num's with associated index_H_A index number
-        process_each_node( '' )
+        process_each_node( p3_starting_node_url, p4_recurse_index_children_TF )
         self.index_H_A.each_with_index do | index_H, ao_display_order |
             ao_uri_num = index_H[ K.uri ].delete_prefix( "#{self.uri}/" ).to_i
             self.ao_display_order_H[ ao_uri_num ] = ao_display_order
         end
 
-        if ( p2_get_full_ao_buf and self.ao_display_order_H.length > 0 ) then
+        if ( p2_get_full_ao_record_TF and self.ao_display_order_H.length > 0 ) then
             self.record_H_A = Array.new( self.ao_display_order_H.length )
             AO_Query_of_Repository.new( res_O.rep_O ).for_num_A( self.ao_display_order_H.keys.sort ).each do | record_H |
                 if ( record_H.has_no_key?( K.resource ) ) then
@@ -358,41 +371,67 @@ class AO_Query_of_Resource
         end
         return self
     end   
-
     
-    def record_H( ao_uri_num )
+    def record_H_A
+#            @record_H_A must be used in here because 'self.record_H_A' is this method.  
+        if ( @record_H_A.nil? ) then 
+            if ( not self.index_only_warning_given_TF ) then
+                SE.puts "#{SE.lineno}: Returning index_H ONLY data! Called from: #{SE.lineno( 1 )}"
+                self.index_only_warning_given_TF = true
+            end
+            return self.index_H_A
+        else
+            return @record_H_A
+        end
+    end
+    
+    def record_H_of_uri_num( p1_ao_uri_num )
         if ( self.record_H_A.nil? ) then
+            if ( not self.index_only_warning_given_TF ) then
+                SE.puts "#{SE.lineno}: Returning index ONLY data! Called from: #{SE.lineno( 1 )}"
+                self.index_only_warning_given_TF = true
+            end
+            return index_H_of_uri_num( p1_ao_uri_num )
+        end
+        case true
+        when p1_ao_uri_num.is_a?( String ) 
+            ao_uri_num = p1_ao_uri_num.delete_prefix( "#{self.uri}/" ).to_i
+        when p1_ao_uri_num.integer?
+            ao_uri_num = p1_ao_uri_num.to_i
+        else
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "record_H_A is nil, was the get_full_ao_buf boolean set?"
+            SE.puts "Was expecting param 'p1_ao_uri_num' to be a URI String or integer"
+            SE.q {'p1_ao_uri_num'}
             raise
         end
-        if ( ! self.ao_uri_num.integer? ) then
-            SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Was expecting param 1 to be an integer"
-            raise
-        end
-        if ( self.ao_display_order_H.has_no_key?( ao_uri_num.to_i ) ) then
+        if ( self.ao_display_order_H.has_no_key?( ao_uri_num ) ) then
             SE.puts "#{SE.lineno}: No ao_uri_num '#{ao_uri_num}' in resource"
             raise
         end
-        return self.record_H_A[ self.ao_display_order_H[ ao_uri_num.to_i ] ]
+        return self.record_H_A[ self.ao_display_order_H[ ao_uri_num ] ]
     end   
 
-    def index_H( ao_uri_num )
-        if ( ! self.ao_uri_num.integer? ) then
+    def index_H_of_uri_num( p1_ao_uri_num )
+        case true
+        when p1_ao_uri_num.is_a?( String ) 
+            ao_uri_num = p1_ao_uri_num.delete_prefix( "#{self.uri}/" ).to_i
+        when p1_ao_uri_num.integer?
+            ao_uri_num = p1_ao_uri_num.to_i
+        else
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Was expecting param 1 to be an integer"
+            SE.puts "Was expecting param 'p1_ao_uri_num' to be a URI String or integer"
+            SE.q {'p1_ao_uri_num'}
             raise
         end
-        if ( self.ao_display_order_H.has_no_key?( ao_uri_num.to_i ) ) then
+        if ( self.ao_display_order_H.has_no_key?( ao_uri_num ) ) then
             SE.puts "#{SE.lineno}: No ao_uri_num '#{ao_uri_num}' in resource"
             raise
         end
-        return self.index_H_A[ self.ao_display_order_H[ ao_uri_num.to_i ] ]
+        return self.index_H_A[ self.ao_display_order_H[ ao_uri_num ] ]
     end   
   
 
-    def process_each_node( node_uri )
+    def process_each_node( node_uri, recurse_index_children = true )
         if ( node_uri == '' ) then
             waypoint_node_H = self.res_O.rep_O.aspace_O.http_calls_O.get( "#{self.res_O.uri}/tree/root", { } ) 
             if (  waypoint_node_H.has_key?( K.precomputed_waypoints ) and
@@ -420,15 +459,17 @@ class AO_Query_of_Resource
         end
         if ( waypoint_node_H[ K.precomputed_waypoints ].keys.length != 1 ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "WARNING: waypoint_node_H[ K.precomputed_waypoints ].keys.length != 1, equals: " +
+            SE.puts "ERROR: waypoint_node_H[ K.precomputed_waypoints ].keys.length != 1, equals: " +
                     "#{waypoint_node_H[ K.precomputed_waypoints ].keys.length}"
             SE.puts "waypoint_node_H[ K.precomputed_waypoints ].keys:" + waypoint_node_H[ K.precomputed_waypoints ].keys
+            raise
         end
         if ( waypoint_node_H[ K.precomputed_waypoints ][ node_uri ].keys.length != 1 ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "WARNING: waypoint_node_H[ K.precomputed_waypoints ][ node_uri ].keys.length != 1, equals: " +
+            SE.puts "ERROR: waypoint_node_H[ K.precomputed_waypoints ][ node_uri ].keys.length != 1, equals: " +
                     "#{waypoint_node_H[ K.precomputed_waypoints ][ node_uri ].keys.length}"
             SE.puts "waypoint_node_H[ K.precomputed_waypoints ][ node_uri ].keys:" + waypoint_node_H[ K.precomputed_waypoints ][ '0' ].keys
+            raise
         end
 #       SE.puts "node_uri = #{node_uri}, waypoint_node_H[ K.waypoints ] = #{waypoint_node_H[ K.waypoints ]}"
         waypoint_A = waypoint_node_H[ K.precomputed_waypoints ][ node_uri ] [ '0' ]
@@ -446,8 +487,8 @@ class AO_Query_of_Resource
                 end
                 child_H[ K.resource ] = { K.ref => self.res_O.uri }
                 self.index_H_A << child_H
-                if ( child_H[ K.child_count ] > 0 ) then
-                    process_each_node( child_H[ K.uri ] )
+                if ( child_H[ K.child_count ] > 0 and recurse_index_children ) then
+                    process_each_node( child_H[ K.uri ], recurse_index_children )
                 end
             end 
             waypoint_num += 1

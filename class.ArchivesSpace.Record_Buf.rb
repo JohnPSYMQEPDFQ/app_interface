@@ -108,12 +108,25 @@ class Record_Buf < Buffer_Base
             raise
         end 
 
-        if ( ! ( external_record_H.has_key?( K.jsonmodel_type ) ) )
+        if (  external_record_H.has_no_key?( K.jsonmodel_type ) ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Was expecting a jsonmodel_type in external_record_H"
             SE.puts "@uri = #{@uri}"
             SE.ap "external_record_H:", external_record_H
             raise
+        end
+        
+        #   Don't check for the existance of 'external_record_H[ K.uri ]' as new records won't have one.
+        if ( @uri.nil? ) then
+            @uri = external_record_H[ K.uri ]  # if there's no 'K.uri' (like for a new record) this will still leave @uri nil.
+        else
+            if ( @uri != external_record_H[ K.uri ] ) then
+                SE.puts "#{SE.lineno}: =============================================="
+                SE.puts "@uri != external_record_H[ K.uri ]"
+                SE.puts "@uri = #{@uri}"
+                SE.ap "external_record_H:", external_record_H
+                raise            
+            end
         end
         
         load_result_H = Hash.new

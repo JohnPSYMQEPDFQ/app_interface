@@ -1,4 +1,4 @@
-require 'Date'
+require 'date'
 require 'json'
 require 'pp'
 require 'awesome_print'
@@ -279,7 +279,7 @@ def get_prepend_elements_for_sort_F_A
 end
 
 #MAIN   
-myself_name = File.basename( $0 )
+self.myself_name = File.basename( $0 )
 
 self.cmdln_option_H = { :max_group_levels => 12,
                         :max_title_size => 40,
@@ -290,7 +290,7 @@ self.cmdln_option_H = { :max_group_levels => 12,
                         :phrase_split_chars => ':.'            # These go into a [] in a regexp so don't need to escaped (\).
                      }
 OptionParser.new do |option|
-    option.banner = "Usage: #{myself_name} [options] [file]"
+    option.banner = "Usage: #{self.myself_name} [options] [file]"
     option.on( "-l", "--ml", "--max-group-levels N", OptionParser::DecimalInteger, "Max number of group levels N (default=#{self.cmdln_option_H[ :max_group_levels ]})" ) do |opt_arg|
         self.cmdln_option_H[ :max_group_levels ] = opt_arg
     end
@@ -335,7 +335,7 @@ OptionParser.new do |option|
         SE.puts Find_Dates_in_String.new( ).option_H.ai
         SE.puts ''
         SE.puts "Note that:  The --find_dates_option_H numeric values have to be quoted (no integers), eg."
-        SE.puts "            #{myself_name} --find_date_option_H '{ :default_century_pivot_ccyymmdd => \"20\" }' file"
+        SE.puts "            #{self.myself_name} --find_date_option_H '{ :default_century_pivot_ccyymmdd => \"20\" }' file"
         exit
     end
 end.parse!  # Bang because ARGV is altered

@@ -180,7 +180,7 @@ end
 def fetch_top_container(sub_container, tc_query_O)
   ref = sub_container.dig("top_container", "ref")
   return nil unless ref
-  tc = tc_query_O.record_H( ref )
+  tc = tc_query_O.record_H_of_uri_num( ref )
   if ( tc.nil? ) then
     raise "Invalid tc ref '#{ref}'"
   end
@@ -250,7 +250,7 @@ def fill_notes(row, ao)
     end
 
     text = extract_note_text(note)
-    publish_flag = note.key?("publish") ? (note["publish"] ? "TRUE" : "FALSE") : nil
+    publish_flag = note.key?("publish") ? (note["publish"] ? 1 : 0) : nil
 
     # n_ => note text; p_ => publish flag
     row["n_#{type}"] = [row["n_#{type}"], text].compact.reject(&:empty?).join("\n\n") unless text.to_s.strip.empty?
@@ -271,8 +271,8 @@ def build_row_from_ao(ao, collection_id, tc_query_O)
   row["hierarchy"]         = ao["ancestors"].length
   row["level"]             = ao["level"]
   row["other_level"]       = ao["other_level"]
-  row["publish"]           = ao["publish"] ? "TRUE" : "FALSE"
-  row["restrictions_flag"] = ao["restrictions"] ? "TRUE" : "FALSE"
+  row["publish"]           = ao["publish"] ? 1 : 0
+  row["restrictions_flag"] = ao["restrictions"] ? 1 : 0
 
   fill_dates(row, ao)
   fill_extents(row, ao)

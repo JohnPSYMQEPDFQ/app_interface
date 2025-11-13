@@ -54,10 +54,6 @@ The input FILE has the following three formats( JSONized ):
 require 'json'
 require 'optparse'
 
-require 'class.Array.extend.rb'
-require 'class.String.extend.rb'
-require 'module.SE.rb'
-
 require 'class.Archivesspace.rb'
 require 'class.ArchivesSpace.http_calls.rb'
 require 'class.Archivesspace.ArchivalObject.rb'
@@ -65,18 +61,12 @@ require 'class.Archivesspace.Repository.rb'
 require 'class.Archivesspace.TopContainer.rb'
 require 'class.Archivesspace.Resource.rb'
 
-class Res_Q
-    attr_accessor :ao_query_O,  :index_H_A 
-    private       :ao_query_O=, :index_H_A=
-    
-    def initialize( res_O )
-        self.ao_query_O = AO_Query_of_Resource.new( res_O )
-    end
-    
+class Res_Q < AO_Query_of_Resource
+
     def uri_of( title )  # Find the URI with the matching title
         a1 = [ ]
-        self.ao_query_O.index_H_A.each do | index_H |
-            if ( index_H[ K.title ].downcase == title.downcase and index_H[ K.level ] == K.file ) then
+        self.index_H_A.each do | index_H |
+            if ( index_H[ K.title ].downcase == title.downcase and index_H[ K.level ] != K.file ) then
                 a1 << index_H[ K.uri ]
 #               SE.puts "New parent: #{index_H[ K.uri ]} '#{index_H[ K.title ]}'"
             end
@@ -117,7 +107,7 @@ OptionParser.new do |option|
     option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
         cmdln_option[ :res_num ] = opt_arg
     end
-    option.on( "--res-title x", "Resource Title ( optional, but must match the suppled Resource number.)" ) do |opt_arg|
+    option.on( "--res-title x", "Resource Title ( required )" ) do |opt_arg|
         cmdln_option[ :res_title ] = opt_arg
     end
     option.on( "--ao-num n", OptionParser::DecimalInteger, "Initial parent AO URI number ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
@@ -152,12 +142,16 @@ if ( ARGV.maxindex < 0 ) then
 end
 # SE.q {[ 'cmdln_option' ]}
 
-if ( ! cmdln_option[ :rep_num ] ) then
+if ( cmdln_option[ :rep_num ].nil? ) then
     SE.puts "The --rep-num option is required."
     raise
 end
-if ( ! cmdln_option[ :res_num ] ) then
+if ( cmdln_option[ :res_num ].nil? ) then
     SE.puts "The --res-num option is required."
+    raise
+end
+if ( cmdln_option[ :res_title ].nil? ) then
+    SE.puts "The --res-title option is required."
     raise
 end
 
@@ -169,32 +163,36 @@ rep_O = Repository.new( aspace_O, cmdln_option[ :rep_num ] )
 res_O = Resource.new( rep_O, cmdln_option[ :res_num ] )
 res_buf_O = res_O.new_buffer.read
 
-if ( cmdln_option[ :res_title ].not_nil? ) then
-    if ( cmdln_option[ :res_title ] != res_buf_O.record_H[ K.title ] ) then
-        SE.puts "#{SE.lineno}: The --res-title value must match the title of --res-num #{cmdln_option[ :res_num ]}. They don't:"
-        SE.q {[ 'cmdln_option[ :res_title ]' ]}
-        SE.q {[ 'res_buf_O.record_H[ K.title ]' ]}
-        raise
-    end
+if ( cmdln_option[ :res_title ].downcase != res_buf_O.record_H[ K.title ].downcase ) then
+    SE.puts "#{SE.lineno}: The --res-title value must match the title of --res-num #{cmdln_option[ :res_num ]}. They don't:"
+    SE.q {[ 'cmdln_option[ :res_title ]' ]}
+    SE.q {[ 'res_buf_O.record_H[ K.title ]' ]}
+    raise
 end
 
+
+res_Q_O = Res_Q.new( res_O, false )
 parent_ref_stack_A = [ ]
 if ( cmdln_option[ :ao_num ] ) then
     if ( cmdln_option[ :ao_title ] ) then
         SE.puts "#{SE.lineno}: The '--ao-num' and 'ao-title' options are mutually exclusive"
         raise
     end
-    parent_ref_stack_A << Archival_Object.new( res_buf_O,cmdln_option[ :ao_num ] ).new_buffer.read.record_H[ K.uri ]
+    parent_ref_stack_A << res_Q_O.index_H_of_uri_num( cmdln_option[ :ao_num ] )[ K.uri ]
     SE.puts "#{SE.lineno}: initial parent uri = #{parent_ref_stack_A[ 0 ]} (From the cmd_line)"
 else
-    res_Q_O = Res_Q.new( res_O )
     if ( cmdln_option[ :ao_title ] ) then
-        parent_ref_stack_A << res_Q_O.uri_of( cmdln_option[ :ao_title ] )
+        parent_ref_stack_A << res_Q_O.uri_of_title( cmdln_option[ :ao_title ] )
         SE.puts "#{SE.lineno}: initial parent AO uri = #{parent_ref_stack_A[ 0 ]} (From the cmd_line)"
     else
         parent_ref_stack_A << res_buf_O.record_H[ K.uri ]
         SE.puts "#{SE.lineno}: initial parent AO_uri = #{parent_ref_stack_A[ 0 ]} (The Resource)"
     end
+end
+if ( parent_ref_stack_A.maxindex != 0 ) then
+    SE.puts "#{SE.lineno}: Was expecting parent_ref_stack_A.maxindex to be 0"
+    SE.q {[ 'parent_ref_stack_A' ]}
+    raise
 end
 
 tc_uri_H__by_type_and_indicator = {}
@@ -220,12 +218,6 @@ end
 net_indent_cnt = 0
 record_level_cnt = Hash.new( 0 )  # h.default works too...
 last_AO_uri_created = ""
-if ( parent_ref_stack_A.maxindex != 0 ) then
-    SE.puts "#{SE.lineno}: Was expecting parent_ref_stack_A.maxindex to be 0"
-    SE.q {[ 'parent_ref_stack_A' ]}
-    raise
-end
-
 for argv in ARGV do
     File.foreach( argv ) do |input_record_J|
         if (cmdln_option[ :last_record_num ] != nil and $. >cmdln_option[ :last_record_num ] ) then 

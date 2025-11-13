@@ -11,7 +11,7 @@ require 'class.Archivesspace.rb'
 require 'class.Archivesspace.ArchivalObject.rb'
 require 'class.Archivesspace.Repository.rb'
 require 'class.Archivesspace.Resource.rb'
-
+require 'class.Find_Dates_in_String.rb'
 
 BEGIN {}
 END {}
@@ -24,7 +24,9 @@ def csrm_collection( repository_uri:,
                      filing_location:,
                      historical_info:,
                      series_summary:,
-                     process_info:
+                     process_info:,
+                     begin_date:,
+                     end_date:
                      )      
                      
     collection_name     = "PLACE HOLDER !!!!!!!!!!" if ( collection_name.blank? )
@@ -72,10 +74,10 @@ def csrm_collection( repository_uri:,
             "rights_statements"         =>  [],
             "subjects"                  =>  [],
             
-            "dates"             =>  [   {   "begin"             => "1600", 
+            "dates"             =>  [   {   "begin"             => begin_date, 
                                             "date_type"         => "inclusive", 
-                                            "end"               => "2600", 
-                                            "expression"        => "1600 - 2600", 
+                                            "end"               => end_date, 
+                                            "expression"        => "#{begin_date} - #{end_date}", 
                                             K.jsonmodel_type    => "date", 
                                             K.label             => "creation",
                                             }   # Index 0
@@ -224,6 +226,12 @@ else
     raise
 end
 
+find_dates_O = Find_Dates_in_String.new( {  :morality_replace_option => { :good  => :remove },
+                                            :date_string_composition => :dates_in_text,
+#                                           :default_century_pivot_ccyymmdd => '1900',
+                                            :sort => false,
+                                         } )
+#SE.q {[ 'find_dates_O.option_H' ]}
 
 ead_id              = nil
 collection_name     = ''
@@ -233,6 +241,8 @@ filing_location     = ''
 historical_info     = ''
 series_summary      = ''
 process_info        = ''
+begin_date          = '1600'
+end_date            = '2600'
 
 manual_process_columns_H = {}
 if ( cmdln_option_H[ :inmagic ] ) then
@@ -279,7 +289,18 @@ if ( cmdln_option_H[ :inmagic ] ) then
             when 'Series Summary'.downcase
                 series_summary += inmagic_value.gsub( K.embedded_CRLF, "\n" )
             when 'Extent'.downcase
-                manual_process_columns_H[ inmagic_column ] = inmagic_value
+                output_string = find_dates_O.do_find( inmagic_value )
+                if ( output_string == inmagic_value or find_dates_O.good__date_clump_S__A.length > 1 ) then
+                    manual_process_columns_H[ inmagic_column ] = inmagic_value
+                else
+                    manual_process_columns_H[ inmagic_column ] = output_string.strip
+                    begin_date = find_dates_O.good__date_clump_S__A.first.as_from_date
+                    if ( find_dates_O.good__date_clump_S__A.first.as_thru_date.blank? ) then
+                        end_date = begin_date
+                    else
+                        end_date = find_dates_O.good__date_clump_S__A.first.as_thru_date
+                    end
+                end
             else
                 process_info += "InMagic column '#{inmagic_column}':\n" + 
                                 inmagic_value.gsub( K.embedded_CRLF, "\n" ) + "\n\n"
@@ -317,7 +338,9 @@ resource_H = csrm_collection( repository_uri: rep_O.uri,
                               filing_location: filing_location,
                               historical_info: historical_info,
                               series_summary: series_summary,
-                              process_info: process_info
+                              process_info: process_info,
+                              begin_date: begin_date,
+                              end_date: end_date
                               )
 #SE.q {'resource_H'}
 resource_buf_O = Resource.new( rep_O ).new_buffer.create

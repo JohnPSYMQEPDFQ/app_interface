@@ -21,7 +21,7 @@ myself_name = File.basename( $0 )
 
 cmdln_option = { :rep_num => 2  ,
                  :res_num => nil  ,
-                 :get_full_buffer => true ,
+                 :get_full_ao_record_TF => true ,
                  :filter => false ,
                  :print_uri => true ,              
                  :print_title_only => false ,
@@ -37,7 +37,7 @@ OptionParser.new do |option|
         cmdln_option[ :res_num ] = opt_arg
     end
     option.on( "--ao-index-only", "Get the AO index buffer only." ) do |opt_arg|
-        cmdln_option[ :get_full_buffer ] = false
+        cmdln_option[ :get_full_ao_record_TF ] = false
     end
     option.on( "--filter", "Apply filter." ) do |opt_arg|
         cmdln_option[ :filter ] = true
@@ -83,7 +83,7 @@ print__record_H = lambda{ | record_H, cnt |
     when cmdln_option[ :print_title_only ] 
         puts "#{record_H[ K.title ]}"
     when cmdln_option[ :display ].not_nil?
-        print "#{record_H[ K.title ].gsub( '&amp;', '&' )} "    # This is to get the title printed first.
+        print "#{record_H[ K.title ].gsub( '&amp;', '&' )} "    # This 'print' is to get the title printed first.
         
         if ( cmdln_option[ :filter ] ) then
         
@@ -122,7 +122,7 @@ print__record_H = lambda{ | record_H, cnt |
         print "#{record_H[ K.uri ]} " if ( cmdln_option[ :print_uri ] )
         print "#{record_H[ K.position ]} "
         print "#{record_H[ K.level ]} "
-        print "#{record_H[ K.publish ]} " if ( cmdln_option[ :get_full_buffer ] )
+        print "#{record_H[ K.publish ]} " if ( cmdln_option[ :get_full_ao_record_TF ] )
         print "#{record_H[ K.title ]} "
         print "\n"
     end
@@ -130,14 +130,13 @@ print__record_H = lambda{ | record_H, cnt |
 
 aspace_O = ASpace.new
 rep_O = Repository.new( aspace_O, rep_num )
-
-cnt = 0
 res_O = Resource.new( rep_O, res_num )
 if ( cmdln_option[ :print_res_rec ] ) then
     print__record_H.call( res_O.new_buffer.read( cmdln_option[ :filter ] ).record_H, 0 )
 end
 
-AO_Query_of_Resource.new( res_O, cmdln_option[ :get_full_buffer ] ).record_H_A.each do | record_H |
+cnt = 0
+AO_Query_of_Resource.new( res_O, cmdln_option[ :get_full_ao_record_TF ] ).record_H_A.each do | record_H |
     cnt += 1
     print__record_H.call( record_H, cnt )
 end

@@ -205,8 +205,8 @@ module K
     def K.sub_container; return 'sub_container'; end                        # instances
     def K.sub_series_text; return 'Sub-series'; end                         # The 'level' value is subseries
     def K.suppressed; return 'suppressed'; end
-    def K.spreadsheet_true; return '1'; end
-    def K.spreadsheet_false; return '0'; end
+    def K.spreadsheet_true; return 1; end                                   # Harvard-Spreadsheet (for booleans)
+    def K.spreadsheet_false; return 0; end                                  # Harvard-Spreadsheet (for booleans)
     def K.system_mtime; return 'system_mtime'; end
     def K.title; return 'title'; end                                        # archival_object, resource
     def K.top_container; return 'top_container'; end                        # sub_container
@@ -292,10 +292,10 @@ module K
         stringer = '(?<begin_del>(\A|\s+|\[\s*))' +     # MUST use the /x option on the regex!!!
                    '(?<inside_the_dels>' + 
                        '(' +
-                           '(?<container_type>(ov |box(s|es)?))((\s+nos?\.?))?(\s+)(?<container_num>[0-9]+(' + K.container_type_separators_RES + '[0-9]+)?),?' + 
+                           '(?<container_type>(ov |box(s|es)?))((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>[0-9]+(' + K.container_type_separators_RES + '[0-9]+)?),?' + 
                            '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
-                           '(\s+(?<child_type>      (folders?|volumes?|items?))     (\s+nos?\.?)?  (\s+(?<child_num>     ([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
-                           '(\s+(?<grandchild_type> (volumes?|files?))              (\s+nos?\.?)?  (\s+(?<grandchild_num>([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
+                           '(\s+(?<child_type>      (folders?|volumes?|items?))     (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     ([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
+                           '(\s+(?<grandchild_type> (volumes?|files?))              (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
                        ')' +
                    ')' +
                    '(?<end_del>(\Z|\.|,|:|\s*\]|\s+))'                         

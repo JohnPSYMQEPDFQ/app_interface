@@ -447,7 +447,7 @@ class TC_Query_of_Resource
         return self
     end
     
-    def record_H( p1_tc_uri_num )
+    def record_H_of_uri_num( p1_tc_uri_num )
         case true
         when p1_tc_uri_num.is_a?( String ) 
             tc_uri_num = p1_tc_uri_num.delete_prefix( "#{self.uri}/" ).to_i
@@ -455,7 +455,7 @@ class TC_Query_of_Resource
             tc_uri_num = p1_tc_uri_num.to_i
         else
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Was expecting param 'p1_tc_uri_num' to be a String or integer"
+            SE.puts "Was expecting param 'p1_tc_uri_num' to be a URI String or integer"
             SE.q {'p1_tc_uri_num'}
             raise
         end
