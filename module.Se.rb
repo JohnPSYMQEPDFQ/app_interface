@@ -55,7 +55,7 @@ module SE
     def self.lineno( e = 0 )
         s = caller[ e ].sub(/^.*\//,"").sub(/:in .* in /,":in ").gsub(/[`']/,"")
         if ( defined?( $. ) and $. and $. > 0 ) then
-            s += " $.=#{$.}"
+            s << " $.=#{$.}"
         end
         return s
     end

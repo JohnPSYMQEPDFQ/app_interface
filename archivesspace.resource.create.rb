@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 =begin
 
     Add a new Resource Collection Record
@@ -25,8 +27,9 @@ def csrm_collection( repository_uri:,
                      historical_info:,
                      series_summary:,
                      process_info:,
-                     begin_date:,
-                     end_date:
+                     from_date:,
+                     thru_date:,
+                     date_expression:
                      )      
                      
     collection_name     = "PLACE HOLDER !!!!!!!!!!" if ( collection_name.blank? )
@@ -74,10 +77,10 @@ def csrm_collection( repository_uri:,
             "rights_statements"         =>  [],
             "subjects"                  =>  [],
             
-            "dates"             =>  [   {   "begin"             => begin_date, 
+            "dates"             =>  [   {   "begin"             => from_date, 
                                             "date_type"         => "inclusive", 
-                                            "end"               => end_date, 
-                                            "expression"        => "#{begin_date} - #{end_date}", 
+                                            "end"               => thru_date, 
+                                            "expression"        => date_expression, 
                                             K.jsonmodel_type    => "date", 
                                             K.label             => "creation",
                                             }   # Index 0
@@ -197,7 +200,7 @@ cmdln_option_H = { :rep_num => 2  ,
                    :update => false ,
                    :ead_id => nil ,
                    :inmagic => false ,
-                 }
+                  }
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [ options ]"
     option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )." ) do |opt_arg|
@@ -217,16 +220,34 @@ OptionParser.new do |option|
         exit
     end
 end.parse!  # Bang because ARGV is altered
-#p cmdln_option_H
-#p ARGV
+#SE.q {'cmdln_option_H'}
+#SE.q { 'ARGV' }
 if ( cmdln_option_H[ :rep_num ] ) then
     rep_num = cmdln_option_H[ :rep_num ]
 else
-    SE.puts "The --rep-num option is required."
+    SE.puts "#{SE.lineno}: The --rep-num option is required."
     raise
 end
 
-find_dates_O = Find_Dates_in_String.new( {  :morality_replace_option => { :good  => :remove },
+if ( ARGV.length != 1 ) then
+    SE.puts "#{SE.lineno}: No input-file provided (or extra param found)"
+    SE.q {'ARGF'}
+    raise
+end
+if ( ARGV[ 0 ].start_with?( '.' ) ) then
+    ARGV[ 0 ] = File.basename( Dir.getwd ) + ARGV.first
+end
+
+if not File.exist?( ARGV[ 0 ] ) then
+    SE.puts "#{SE.lineno}: File '#{ARGV[ 0 ]}' not-found."
+    raise
+end
+aspace_O = ASpace.new
+aspace_O.allow_updates = cmdln_option_H[ :update ]
+rep_O = Repository.new( aspace_O, rep_num )
+
+find_dates_O = Find_Dates_in_String.new( aspace_O,
+                                         {  :morality_replace_option => { :good  => :remove },
                                             :date_string_composition => :dates_in_text,
 #                                           :default_century_pivot_ccyymmdd => '1900',
                                             :sort => false,
@@ -234,15 +255,16 @@ find_dates_O = Find_Dates_in_String.new( {  :morality_replace_option => { :good 
 #SE.q {[ 'find_dates_O.option_H' ]}
 
 ead_id              = nil
-collection_name     = ''
-scope_and_content   = ''
-provenance          = ''
-filing_location     = ''
-historical_info     = ''
-series_summary      = ''
-process_info        = ''
-begin_date          = '1600'
-end_date            = '2600'
+collection_name     = +''
+scope_and_content   = +''
+provenance          = +''
+filing_location     = +''
+historical_info     = +''
+series_summary      = +''
+process_info        = +''
+from_date           = '1600'
+thru_date           = '2600'
+date_expression     = "#{from_date} - #{thru_date}"
 
 manual_process_columns_H = {}
 if ( cmdln_option_H[ :inmagic ] ) then
@@ -253,11 +275,11 @@ if ( cmdln_option_H[ :inmagic ] ) then
             when 'Additional Access'.downcase
                 # Not used
             when 'Collection Name'.downcase
-                collection_name += inmagic_value.gsub( K.embedded_CRLF, "\n" )
+                collection_name << inmagic_value.gsub( K.embedded_CRLF, "\n" )
             when 'Filing Location'.downcase
-                filing_location += inmagic_value.gsub( K.embedded_CRLF, "\n" )
+                filing_location << inmagic_value.gsub( K.embedded_CRLF, "\n" )
             when 'Historical Info'.downcase
-                historical_info += inmagic_value.gsub( K.embedded_CRLF, "\n" )
+                historical_info << inmagic_value.gsub( K.embedded_CRLF, "\n" )
             when 'MS Number'.downcase
                 if ( cmdln_option_H[ :ead_id ].nil? ) then
                     ead_id = "InMagic MS #{inmagic_value}"
@@ -281,28 +303,29 @@ if ( cmdln_option_H[ :inmagic ] ) then
                     end
                 end
             when 'Provenance'.downcase
-                provenance += inmagic_value.gsub( K.embedded_CRLF, "\n" )        
+                provenance << inmagic_value.gsub( K.embedded_CRLF, "\n" )        
             when 'Record ID number'.downcase
                 # Not used
             when 'Scope and content'.downcase
-                scope_and_content += inmagic_value.gsub( K.embedded_CRLF, "\n" )
+                scope_and_content << inmagic_value.gsub( K.embedded_CRLF, "\n" )
             when 'Series Summary'.downcase
-                series_summary += inmagic_value.gsub( K.embedded_CRLF, "\n" )
+                series_summary << inmagic_value.gsub( K.embedded_CRLF, "\n" )
             when 'Extent'.downcase
                 output_string = find_dates_O.do_find( inmagic_value )
                 if ( output_string == inmagic_value or find_dates_O.good__date_clump_S__A.length > 1 ) then
                     manual_process_columns_H[ inmagic_column ] = inmagic_value
                 else
                     manual_process_columns_H[ inmagic_column ] = output_string.strip
-                    begin_date = find_dates_O.good__date_clump_S__A.first.as_from_date
+                    from_date = find_dates_O.good__date_clump_S__A.first.as_from_date
                     if ( find_dates_O.good__date_clump_S__A.first.as_thru_date.blank? ) then
-                        end_date = begin_date
+                        thru_date = from_date
                     else
-                        end_date = find_dates_O.good__date_clump_S__A.first.as_thru_date
+                        thru_date = find_dates_O.good__date_clump_S__A.first.as_thru_date
                     end
+                    date_expression = find_dates_O.good__date_clump_S__A.first.as_date_expression                                                                           
                 end
             else
-                process_info += "InMagic column '#{inmagic_column}':\n" + 
+                process_info << "InMagic column '#{inmagic_column}':\n" + 
                                 inmagic_value.gsub( K.embedded_CRLF, "\n" ) + "\n\n"
             end
         end
@@ -326,10 +349,6 @@ else
 end 
 
 
-aspace_O = ASpace.new
-aspace_O.allow_updates = cmdln_option_H[ :update ]
-rep_O = Repository.new( aspace_O, rep_num )
-
 resource_H = csrm_collection( repository_uri: rep_O.uri,
                               ead_id: ead_id,
                               collection_name: collection_name,
@@ -339,8 +358,9 @@ resource_H = csrm_collection( repository_uri: rep_O.uri,
                               historical_info: historical_info,
                               series_summary: series_summary,
                               process_info: process_info,
-                              begin_date: begin_date,
-                              end_date: end_date
+                              from_date: from_date,
+                              thru_date: thru_date,
+                              date_expression: date_expression
                               )
 #SE.q {'resource_H'}
 resource_buf_O = Resource.new( rep_O ).new_buffer.create
@@ -348,10 +368,10 @@ resource_buf_O.load( resource_H )
 
 #SE.q {[ 'resource_buf_O.record_H' ]}
 new_resource_num = resource_buf_O.store
-puts ""
+puts ''
 puts "New resource number: #{new_resource_num}"
 puts "               name: #{collection_name}"   
-puts ""
+puts ''
 if ( manual_process_columns_H.not_empty? ) then
     SE.q { [ 'manual_process_columns_H' ] }
 end

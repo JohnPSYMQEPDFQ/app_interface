@@ -54,7 +54,7 @@ class Top_Container
                 stringer = "#{@rep_O.uri}/top_containers"
                 if ( stringer == p2_TC_identifier[ 0 .. stringer.maxindex ]) then
                     @uri = p2_TC_identifier
-                    @num = p2_TC_identifier.sub( /^.*\//, '' )
+                    @num = p2_TC_identifier.trailing_digits
                     if (! @num.integer? ) then
                         SE.puts "#{SE.lineno}: =============================================="
                         SE.puts "Invalid param2: #{p2_TC_identifier}"
@@ -170,7 +170,7 @@ class TC_Record_Buf < Record_Buf
             SE.puts "#{SE.lineno}: Updated top_container, uri = #{http_response_body_H[ K.uri ]}"
         end
         @uri = http_response_body_H[ K.uri ] 
-        @num = @uri.sub( /^.*\//, '' )
+        @num = @uri.trailing_digits
         return self
     end
         

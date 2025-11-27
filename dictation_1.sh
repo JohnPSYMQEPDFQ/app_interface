@@ -65,9 +65,14 @@ then
     display_usage
     exit 2
 fi
-if [[ ! -a "$1" ]] 
+input_fn="$1"
+if [[ "${input_fn:0:1}" == '.' ]]
 then
-    echo "Can't find file: '$1'" 1>&2
+    input_fn="$(basename $PWD)${input_fn}"
+fi
+if [[ ! -a "${input_fn}" ]] 
+then
+    echo "Can't find file: '${input_fn}'" 1>&2
     exit 3
 fi
 if [[ -n "${ead_id}" && -n "${combine_like_records}" ]]
@@ -78,46 +83,45 @@ then
     } 1>&2
     exit 4
 fi
-file_name="$1"
-file_name_prefix="${myself_name%.*}.${file_name%.*}"
+output_fn_prefix="${myself_name%.*}.${input_fn%.*}"
 shopt -s nocaseglob     # Options are NOT inheried, and this is needed to glob files when the pattern contains upper cases.
-rm -v ${file_name_prefix}.*.err 
+rm -v ${output_fn_prefix}.*.err 
 if [[ -n "${do_indent_prgm}" ]]
 then
-    rm -v ${file_name_prefix}.*.txt
-    rm -v ${file_name_prefix}.*.json
+    rm -v ${output_fn_prefix}.*.txt
+    rm -v ${output_fn_prefix}.*.json
 fi 
 
 function trap_0 {
     echo "Last rc=$?"
-    if [[ -a "${file_name_prefix}.formatter.err" ]] 
+    if [[ -a "${output_fn_prefix}.formatter.err" ]] 
     then
         echo '========================================'
         echo '   Formatter results:'
         echo ''
-        cat "${file_name_prefix}.formatter.err"
+        cat "${output_fn_prefix}.formatter.err"
     fi
-    if [[ -a "${file_name_prefix}.indent.err" ]] 
+    if [[ -a "${output_fn_prefix}.indent.err" ]] 
     then
         echo '========================================'
         echo '   Indenter results:'
         echo ''
-        cat "${file_name_prefix}.indent.err"
+        cat "${output_fn_prefix}.indent.err"
     fi
     if [[ -n "${ead_id}" ]] 
     then
-        if [[ -a "${file_name_prefix}.spreadsheet.err" ]]
+        if [[ -a "${output_fn_prefix}.spreadsheet.err" ]]
         then
             echo '========================================'
             echo '   csv creator results:'
             echo ''
-            cat "${file_name_prefix}.spreadsheet.err"
+            cat "${output_fn_prefix}.spreadsheet.err"
         fi
     fi
     echo 
-    if [[ -e "${file_name_prefix}.add_objects.SORTED.txt" && -e "${file_name_prefix}.add_objects.UNSORTED.txt" ]]
+    if [[ -e "${output_fn_prefix}.add_objects.SORTED.txt" && -e "${output_fn_prefix}.add_objects.UNSORTED.txt" ]]
     then
-        echo "sdiff ${file_name_prefix}.add_objects.SORTED.txt ${file_name_prefix}.add_objects.UNSORTED.txt"
+        echo "sdiff ${output_fn_prefix}.add_objects.SORTED.txt ${output_fn_prefix}.add_objects.UNSORTED.txt"
     fi
 } 1>&2
 trap 'trap_0' 0
@@ -127,42 +131,42 @@ then
     (   set -x
         run_ruby.sh formatter.dictation_1.to.indent.rb ${max_group_levels:+--max_group_levels }${max_group_levels} \
                                                        ${phrase_split_chars:+--phrase_split_chars }${phrase_split_chars} \
-                                "${file_name}" \
-                               >"${file_name_prefix}.indent.json" \
-                              2>"${file_name_prefix}.formatter.err"   \
-                              3>"${file_name_prefix}.formatter.title_text.txt"
+                                "${input_fn}" \
+                               >"${output_fn_prefix}.indent.json" \
+                              2>"${output_fn_prefix}.formatter.err"   \
+                              3>"${output_fn_prefix}.formatter.title_text.txt"
     )
     [[ $? -gt 0 ]] && exit 5
 fi
-touch "${file_name_prefix}.indent.err"
-echo ""          >> "${file_name_prefix}.indent.err"
-echo "UNSORTED:" >> "${file_name_prefix}.indent.err"
+touch "${output_fn_prefix}.indent.err"
+echo ""          >> "${output_fn_prefix}.indent.err"
+echo "UNSORTED:" >> "${output_fn_prefix}.indent.err"
 (   set -x
     run_ruby.sh formatter.indent.to.add_objects.rb ${combine_like_records:+--combine_like_records} \
                                                    ${min_group_size:+--min_group_size=}${min_group_size:+"${min_group_size}"} \
                                                    ${max_series_records:+--max_series=}${max_series_records:+"${max_series_records}"} \
                                                    ${parent_title:+--parent_title=}${parent_title:+"${parent_title}"} \
-                                                   "${file_name_prefix}.indent.json" \
-               1> "${file_name%.*}.add_objects.UNSORTED.json" \
-               2>>"${file_name_prefix}.indent.err" \
-               3> "${file_name_prefix}.indent.title_text.UNSORTED.txt"
+                                                   "${output_fn_prefix}.indent.json" \
+               1> "${input_fn%.*}.add_objects.UNSORTED.json" \
+               2>>"${output_fn_prefix}.indent.err" \
+               3> "${output_fn_prefix}.indent.title_text.UNSORTED.txt"
 )
 [[ $? -gt 0 ]] && exit 6
 
 if [[ -n "${do_sort}" ]]
 then
-    echo ""        >> "${file_name_prefix}.indent.err"
-    echo "SORTED:" >> "${file_name_prefix}.indent.err"
+    echo ""        >> "${output_fn_prefix}.indent.err"
+    echo "SORTED:" >> "${output_fn_prefix}.indent.err"
     (   set -x
-        sort -f "${file_name_prefix}.indent.json" > "${file_name_prefix}.indent.sorted.json"
+        sort -f "${output_fn_prefix}.indent.json" > "${output_fn_prefix}.indent.sorted.json"
         run_ruby.sh formatter.indent.to.add_objects.rb ${combine_like_records:+--combine_like_records} \
                                                        ${min_group_size:+--min_group_size=}${min_group_size:+"${min_group_size}"} \
                                                        ${max_series_records:+--max_series=}${max_series_records:+"${max_series_records}"} \
                                                        ${parent_title:+--parent_title=}${parent_title:+"${parent_title}"} \
-                                                       "${file_name_prefix}.indent.sorted.json" \
-               1> "${file_name%.*}.add_objects.SORTED.json" \
-               2>>"${file_name_prefix}.indent.err" \
-               3> "${file_name_prefix}.indent.title_text.SORTED.txt"
+                                                       "${output_fn_prefix}.indent.sorted.json" \
+               1> "${input_fn%.*}.add_objects.SORTED.json" \
+               2>>"${output_fn_prefix}.indent.err" \
+               3> "${output_fn_prefix}.indent.title_text.SORTED.txt"
     )
     [[ $? -gt 0 ]] && exit 7
 fi
@@ -170,7 +174,7 @@ fi
 if [[ -n "${ead_id}" ]] 
 then
     (   set -x
-        run_ruby.sh spreadsheet.add_objects.to.csv.rb --ead "${ead_id}" "${file_name%.*}.add_objects.UNSORTED.txt" 2>"${file_name_prefix}.spreadsheet.err" >"${file_name%.*}.AS_spreadsheet.csv" 
+        run_ruby.sh spreadsheet.add_objects.to.csv.rb --ead "${ead_id}" "${input_fn%.*}.add_objects.UNSORTED.txt" 2>"${output_fn_prefix}.spreadsheet.err" >"${input_fn%.*}.AS_spreadsheet.csv" 
     )
 fi
 [[ $? -gt 0 ]] && exit 8

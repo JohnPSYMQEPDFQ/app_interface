@@ -103,39 +103,44 @@ then
     display_usage
     exit 2
 fi
-if [[ ! -a "$1" ]] 
+
+input_fn="$1"
+if [[ "${input_fn:0:1}" == '.' ]]
 then
-    echo "Can't find file: '$1'" 1>&2
+    input_fn="$(basename $PWD)${input_fn}"
+fi
+if [[ ! -a "${input_fn}" ]] 
+then
+    echo "Can't find file: '${input_fn}'" 1>&2
     exit 3
 fi
-filename="$1"
-filename_prefix="${myself_name%.*}.${filename%.*}"
+output_fn_prefix="${myself_name%.*}.${input_fn%.*}"
 shopt -s nocaseglob     # Options are NOT inheried, and this is needed to glob files when the pattern contains upper cases.
-rm -v ${filename_prefix:=VAR_NOT_SET}.err       # Don't remove .* because the -D option won't work.
+rm -v ${output_fn_prefix:=VAR_NOT_SET}.err       # Don't remove .* because the -D option won't work.
 if [[ -n "${run_json_script}" ]]
 then
-    rm -v ${filename_prefix:=VAR_NOT_SET}.* 
+    rm -v ${output_fn_prefix:=VAR_NOT_SET}.* 
 fi
-touch ${filename_prefix:=VAR_NOT_SET}.err
+touch ${output_fn_prefix:=VAR_NOT_SET}.err
 
 function trap_0 {
     echo "Last rc=$?"
-    cat "${filename_prefix}.err"
+    cat "${output_fn_prefix}.err"
 } 1>&2
 trap 'trap_0' 0
 
 (   
-    if [[ -z "${run_json_script}" && -s "${filename_prefix}.json" ]] 
+    if [[ -z "${run_json_script}" && -s "${output_fn_prefix}.json" ]] 
     then
         echo ""
-        echo "The '${filename_prefix}.json' file exists, skipping the 'csv-to-json' step."
-        ls -la "${filename_prefix}.json"
+        echo "The '${output_fn_prefix}.json' file exists, skipping the 'csv-to-json' step."
+        ls -la "${output_fn_prefix}.json"
         echo ""
         echo ""
     else
-        if grep -i "${new_delimiter}" "${filename}" 
+        if grep -i "${new_delimiter}" "${input_fn}" 
         then
-            echo_2 "Output delimiter '${new_delimiter}' present in '${filename}' file, aborting..."
+            echo_2 "Output delimiter '${new_delimiter}' present in '${input_fn}' file, aborting..."
             exit 4
         fi
         
@@ -151,21 +156,21 @@ trap 'trap_0' 0
         fi
         sort_by="${sort_by} {[int]\$_.'Record ID number'}"
        
-        (   echo "\$csv = import-csv -path '${filename}'"
+        (   echo "\$csv = import-csv -path '${input_fn}'"
             echo "\$csv = \$csv | Sort-Object ${sort_by}"
-            echo "\$csv | export-csv '${filename_prefix}.sorted.csv'"
-            echo "\$csv | convertto-json -compress | out-file '${filename_prefix}.compressed.json'"
-            echo "\$csv | convertto-json           | out-file '${filename_prefix}.json'"
-        ) | tee "${filename_prefix}.sort.ps1" | do_pwsh -x  
+            echo "\$csv | export-csv '${output_fn_prefix}.sorted.csv'"
+            echo "\$csv | convertto-json -compress | out-file '${output_fn_prefix}.compressed.json'"
+            echo "\$csv | convertto-json           | out-file '${output_fn_prefix}.json'"
+        ) | tee "${output_fn_prefix}.sort.ps1" | do_pwsh -x  
         [[ $? -gt 0 ]] && exit 5    #  This doesn't catch runtime errors...
-        dos2unix "${filename_prefix}.compressed.json" 
+        dos2unix "${output_fn_prefix}.compressed.json" 
         [[ $? -gt 0 ]] && exit 6
     fi
     (   
         eval run_ruby.sh formatter.inmagic.to.dictation_1.rb --box_only_line ${box_only_line} ${sort_detail} ${columns:+--columns }${columns} \
-                                                             --output_file_prefix "${filename%.*}"  "${filename_prefix}.compressed.json" 
+                                                             --output_file_prefix "${input_fn%.*}"  "${output_fn_prefix}.compressed.json" 
     )
-) 2>> "${filename_prefix}.err"
+) 2>> "${output_fn_prefix}.err"
 [[ $? -gt 0 ]] && exit 7
 
 exit 0

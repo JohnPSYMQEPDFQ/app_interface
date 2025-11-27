@@ -80,7 +80,7 @@ class Location_Record_Buf < Record_Buf
     end
     
     def read( filter_record_B = true )
-        stringer = "/locations"
+        stringer = '/locations'
         if ( stringer != @uri[ 0 .. stringer.maxindex ]) then 
             SE.puts "#{SE.lineno}: =============================================="     
             SE.puts "uri isn't a location! uri=#{@uri}"
@@ -108,7 +108,7 @@ class Location_Record_Buf < Record_Buf
             raise
         end
         if ( @uri == nil ) then
-            @uri = "/locations"
+            @uri = '/locations'
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Created TopContainer, uri = #{http_response_body_H[ K.uri ]}"
         else
@@ -119,15 +119,15 @@ class Location_Record_Buf < Record_Buf
             SE.puts "#{SE.lineno}: Updated location, uri = #{http_response_body_H[ K.uri ]}"
         end
         @uri = http_response_body_H[ K.uri ] 
-        @num = @uri.sub( /^.*\//, '' )
+        @num = @uri.trailing_digits
         return self
     end
         
     def delete( )
-        stringer = "/locations"
+        stringer = '/locations'
         if ( stringer != @uri[ 0 .. stringer.maxindex ]) then 
             SE.puts "#{SE.lineno}: =============================================="     
-            SE.puts "uri isn't a location! uri=#{@uri}"
+            SE.puts "uri isn't a locations uri=#{@uri}"
             raise
         end
         read()
@@ -141,7 +141,7 @@ end
 class Location_Query
     def initialize( p1_aspace_O )
         @aspace_O = p1_aspace_O
-        @uri = "/locations"    
+        @uri = '/locations'    
         @result = nil
     end
     attr_reader :aspace_O, :result, :uri

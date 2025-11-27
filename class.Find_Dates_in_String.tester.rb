@@ -1,4 +1,4 @@
-#!run_ruby.sh
+# frozen_string_literal: true
 
 require 'pp'
 require 'awesome_print'
@@ -28,7 +28,7 @@ OptionParser.new do |option|
             thing = eval( formatter_morality_option ).to_h
             cmdln_option_H[ :find_dates_option_H ].update( thing )
         rescue Exception => msg
-            SE.puts ""
+            SE.puts ''
             SE.puts msg
             SE.ap "Find_Dates_in_String default options:"
             SE.ap Find_Dates_in_String.new( ).option_H
@@ -40,7 +40,7 @@ OptionParser.new do |option|
             thing = eval( opt_arg )
             cmdln_option_H[ :find_dates_option_H ].update( thing )
         rescue Exception => msg
-            SE.puts ""
+            SE.puts ''
             SE.puts msg
             SE.ap "Find_Dates_in_String default options:"
             SE.ap Find_Dates_in_String.new( ).option_H
@@ -49,13 +49,13 @@ OptionParser.new do |option|
     end
     option.on( "-h", "--help" ) do
         SE.puts option
-        SE.puts ""
+        SE.puts ''
         SE.puts "Find_Dates_in_String default options:".ai
         SE.puts Find_Dates_in_String.new( ).option_H.ai
-        SE.puts ""
+        SE.puts ''
         SE.puts "Note that:  The --file_dates_option_H numeric values have to be quoted (no integers), eg."
-        SE.puts "            #{myself_name} --find_date_option_H '{ :default_century_pivot_ccyymmdd => \"20\" }' file"
-        SE.puts ""
+        SE.puts "            #{myself_name} --find_date_option_H '{ :default_century_pivot_ccyymmdd => \"19\" }' file"
+        SE.puts ''
         SE.puts "            The :debug_options require a hash-in-a-hash, as follow:"
         SE.puts "            #{myself_name} -f '{ :debug_options => { :print_date_tree => true } }'"
         exit
@@ -65,7 +65,7 @@ end.parse!  # Bang because ARGV is altered
 
 
 if ( ARGV.length > 0 ) then 
-    input_string = ARGV.join(" ")  
+    input_string = ARGV.join(' ')  
 elsif ( $stdin.stat.pipe? ) then
     SE.puts "No test string found on command line, input from pipe..."
     input_string = ARGF.each_line.to_a.join( ' ' ).chomp
@@ -92,9 +92,9 @@ else
     a1 << "fmt013_a Sep-Oct 1987"
     a1 << "fmt013_b Nov-Dec 87"
     a1 << "fmt014_a 7-1-88 - 7/2/88"
-    input_string =""
-    input_string += a1.shuffle.join( " " )
-    input_string += a1.map{ | e | e.sub(/^fmt\d\d\d_./, '') }.shuffle.join( " and " )
+    input_string = +''
+    input_string << a1.shuffle.join( ' ' )
+    input_string << a1.map{ | e | e.sub(/^fmt\d\d\d_./, '') }.shuffle.join( " and " )
 end
 
 expected_cnt_H = {                      #  As-of 11/19/2024
@@ -112,7 +112,8 @@ expected_cnt_H = {                      #  As-of 11/19/2024
     }
 
 SE.puts "input_string  = #{input_string.ai}"
-find_dates_O = Find_Dates_in_String.new( {  :morality_replace_option => { :good  => :remove },
+find_dates_O = Find_Dates_in_String.new( nil,   #  This is the aspace_O param, but is only need for the format_date_expression method
+                                         {  :morality_replace_option => { :good  => :remove },
                                             :date_string_composition => :dates_in_text,
 #                                           :default_century_pivot_ccyymmdd => '1900',
                                             :sort => false,
@@ -155,7 +156,7 @@ find_dates_O.pattern_cnt_H.each_pair do | k, v |
         if ( ARGV.empty? and v != expected_cnt_H[ k ] ) then
             puts " expected #{expected_cnt_H[ k ]}"
         else
-            puts ""
+            puts ''
         end
     else
         puts " unexpected key" + k
@@ -165,9 +166,9 @@ end
 
 if ( cmdln_option_H[ :find_dates_option_H ].nil? or cmdln_option_H[ :find_dates_option_H ][:default_century_pivot_ccyymmdd].nil? ) then
     SE.puts "Finding 4 digit dates only !!!!!!!!"
-    SE.puts "Set --find_date_option_H '{ :default_century_pivot_ccyymmdd => \"20\" }' to include 2 digit dates."
+    SE.puts "Set --find_date_option_H '{ :default_century_pivot_ccyymmdd => \"19\" }' to include 2 digit dates."
 else
-    SE.puts ""
+    SE.puts ''
     SE.puts "Finding 2 and 4 digit dates."
 end
 if ( ARGV.not_empty? ) then

@@ -46,17 +46,17 @@ module Date_Regexp_variables
 #               NOTE: 'only-dates' or 'from-dates' can't START with '-'.
 #               NOTE: \G is required when using a 'match( regexp, starting_point )'.  \A or ^ means from the start of the string
 #                     whereas \G means from the start of the match!   
-        self.begin_delim_RES            = "(?:\\G|\\s+|[ #{usable_text_punct_RES}]|#{date_text_separator_RES})"    
+        self.begin_delim_RES            = "(?:\\G|\\s+|[ #{usable_text_punct_RES}]|#{self.date_text_separator_RES})"    
 #                     NOTE: The single space after the [ <<<(here, at the beginning)
 #                           is NOT the same as "\\s*(?:[#{usable_text_punct_RES} ]|\\Z){1}"                            
 #                                         -or- "\\s*(?:[#{usable_text_punct_RES}]| |\\Z){1}"   
 #                     But I don't know why!      
-        self.end_delim_RES              = "\\s*(?:#{thru_date_separator_RES}|[ #{usable_text_punct_RES}]|\\Z){1}"  
+        self.end_delim_RES              = "\\s*(?:#{self.thru_date_separator_RES}|[ #{usable_text_punct_RES}]|\\Z){1}"  
 #                                           NOTE: The single space after the [ <<<(here, at the beginning)
 #                                                 is NOT the same as "\\s*(?:[#{usable_text_punct_RES} ]|\\Z){1}"                            
 #                                                               -or- "\\s*(?:[#{usable_text_punct_RES}]| |\\Z){1}"   
 #                                           But I don't know why!      
-        self.date_modifier_RES          = "(?<date_modifier>((bulk|circa|ca([.])?)(\\s+|[ #{usable_text_punct_RES}]|#{date_text_separator_RES}))+)?"   
+        self.date_modifier_RES          = "(?<date_modifier>((bulk|circa|ca([.])?)(\\s+|[ #{usable_text_punct_RES}]|#{self.date_text_separator_RES}))+)?"   
 #                                                      NOTE: The single space after the [ <<<(here, at the beginning)
 #                                                            is NOT the same as "\\s*(?:[#{usable_text_punct_RES} ]|\\Z){1}"                            
 #                                                                          -or- "\\s*(?:[#{usable_text_punct_RES}]| |\\Z){1}"   
@@ -125,20 +125,20 @@ module Date_Regexp_variables
 
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt011__MMM_dd_dd_yyyy>     (?<month_M>#{K.alpha_month_RES})#{space_RES}    (?<day_M>#{n_nn_RES})"+
-                                                              "#{thru_date_separator_RES}       (?<thru_day_M>#{n_nn_RES})#{space_comma_RES}  (?<year_M>#{year_RES}))" )
+                                                              "#{self.thru_date_separator_RES}       (?<thru_day_M>#{n_nn_RES})#{space_comma_RES}  (?<year_M>#{year_RES}))" )
 
 
                                          #   fmt012__ = Dates in 'MMM dd - MMM dd, yyyy format (hybid double)
                                          
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt012__MMM_dd_MMM_dd_yyyy> (?<month_M>#{K.alpha_month_RES})#{space_RES}             (?<day_M>#{n_nn_RES})"+
-                "#{thru_date_separator_RES}     (?<thru_month_M>#{K.alpha_month_RES})#{space_comma_RES}  (?<thru_day_M>#{n_nn_RES})#{comma_RES}(?<year_M>#{year_RES}))" )
+                "#{self.thru_date_separator_RES}     (?<thru_month_M>#{K.alpha_month_RES})#{space_comma_RES}  (?<thru_day_M>#{n_nn_RES})#{comma_RES}(?<year_M>#{year_RES}))" )
 
                                         #   fmt013__ = Dates in 'MMM-MMMM yy[yy] format (hybid double) Note there's NO COMMA after the month
 
         initial__date_pattern_RES_S__A << date_pattern_RES_S.new( nil,
                 "(?<fmt013__MMM_MMM_yyyy>        (?<month_M>#{K.alpha_month_RES})#{space_RES}"+
-                "#{thru_date_separator_RES}      (?<thru_month_M>#{K.alpha_month_RES})#{space_RES}                                              (?<year_M>#{year_RES}))" )
+                "#{self.thru_date_separator_RES}      (?<thru_month_M>#{K.alpha_month_RES})#{space_RES}                                              (?<year_M>#{year_RES}))" )
 
 
                                         #   fmt014__ = All numeric dates 'nn [-/] nn [-/] nn ' format,  the 1st and 3rd positions could be 1 or 4 digets (days or years)
@@ -166,10 +166,10 @@ module Date_Regexp_variables
         initial__date_pattern_RES_S__A.each_index do | idx |
             pattern_name = initial__date_pattern_RES_S__A[ idx ].pattern_name
             if ( pattern_name.match?( /#{option_H[ :pattern_name_RES ]}/ )) then
-                date_pattern_RES_S__A.push( initial__date_pattern_RES_S__A[ idx ] )
+                self.date_pattern_RES_S__A.push( initial__date_pattern_RES_S__A[ idx ] )
             end
         end
-        if ( date_pattern_RES_S__A.length == 0 ) then
+        if ( self.date_pattern_RES_S__A.length == 0 ) then
             SE.puts "#{SE.lineno}: No patterns selected based on RE: #{option_H[ :pattern_name_RES ]}"
             raise
         end
@@ -177,12 +177,12 @@ module Date_Regexp_variables
 #       Check for duplicate pattern names
         self.pattern_cnt_H = {}
         self.date_pattern_RES_S__A.each_index do | idx |
-            pattern_name = date_pattern_RES_S__A[ idx ].pattern_name
-            if ( pattern_cnt_H.key?( pattern_name ) ) then
+            pattern_name = self.date_pattern_RES_S__A[ idx ].pattern_name
+            if ( self.pattern_cnt_H.key?( pattern_name ) ) then
                 SE.puts "#{SE.lineno}: I shouldn't be here: duplicate pattern_name '#{pattern_name}'"
                 raise
             end
-            pattern_cnt_H[ pattern_name ] = 0
+            self.pattern_cnt_H[ pattern_name ] = 0
         end
                   
     end

@@ -90,7 +90,7 @@ ARGV.each do | element |
         if ( ao_query_O.nil? ) then
             ao_query_O = AO_Query_of_Resource.new( res_O )
         end
-        puts ao_query_O.get_index_H( element ).ai
+        puts ao_query_O.index_H_of_uri_num( element ).ai
     when 'tc'
         puts "Top_Container: #{element}:"
         tc_buf_O = Top_Container.new( res_buf_O, element ).new_buffer.read( record_filter_B )

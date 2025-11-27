@@ -12,7 +12,20 @@ class String
     def not_blank?( )
         return ! self.blank?
     end
-    
+    def first( n = 1 )
+        return self[ 0, n ]
+    end
+    def last( n = 1 )
+        return self[ -1, n ]
+    end
+    def leading_digits
+        match = self.match(/^(\d+)/)
+        return match ? match[ 1 ] : ''
+    end
+    def trailing_digits
+        match = self.match(/(\d+)$/)
+        return match ? match[ 1 ] : ''
+    end
 end
 
 class String_with_before_after_STORE_and_ASSIGN_methods

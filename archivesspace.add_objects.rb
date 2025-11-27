@@ -136,10 +136,20 @@ OptionParser.new do |option|
     option.separator ''
     
 end.parse!  # Bang because ARGV is altered
-if ( ARGV.maxindex < 0 ) then
-    SE.puts "No input file provided. Try: rr #{myself_name} -h"
-    exit
+if ( ARGV.length != 1 ) then
+    SE.puts "#{SE.lineno}: No input-file provided (or extra param found)"
+    SE.q {'ARGF'}
+    raise
 end
+if ( ARGV[ 0 ].start_with?( '.' ) ) then
+    ARGV[ 0 ] = File.basename( Dir.getwd ) + ARGV.first
+end
+
+if not File.exist?( ARGV[ 0 ] ) then
+    SE.puts "#{SE.lineno}: File '#{ARGV[ 0 ]}' not-found."
+    raise
+end
+
 # SE.q {[ 'cmdln_option' ]}
 
 if ( cmdln_option[ :rep_num ].nil? ) then
@@ -205,7 +215,7 @@ if ( cmdln_option[ :reuse_TCs ] ) then
     all_TC_S.for_res__record_H_A( res_O ).each do | record_H |
         if ( record_H.key?( K.type ) and record_H.key?( K.indicator )) then
             stringer=record_H[ K.type ] + record_H[ K.indicator ]
-            SE.puts "Reusing TC: #{record_H[ K.uri ].sub( /^.*\//, '' )}, type=#{record_H[ K.type ]}, indicator='#{record_H[ K.indicator ]}'"
+            SE.puts "Reusing TC: #{record_H[ K.uri ].trailing_digits}, type=#{record_H[ K.type ]}, indicator='#{record_H[ K.indicator ]}'"
             if ( tc_uri_H__by_type_and_indicator.key?( stringer ) ) then
                 SE.puts "#{SE.lineno}: Duplicate record_H 'type+indicator' #{stringer}, K.uri=#{record_H[ K.uri ]}"
                 next

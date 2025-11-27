@@ -91,11 +91,10 @@ def scrape_off_dates( title_field )
         else
             from_thru_date_H[ K.end ] = date_clump_S.as_from_date
         end
-        from_thru_date_H[ K.bulk ]  = date_clump_S.bulk 
-        from_thru_date_H[ K.circa ] = date_clump_S.circa 
-        from_thru_date_H[ K.expression] = self.aspace_O.format_date_expression( from_thru_date_H[ K.begin ], 
-                                                                                from_thru_date_H[ K.end], 
-                                                                                ( from_thru_date_H[ K.circa ] ) == true ? K.circa : '' )
+        from_thru_date_H[ K.bulk ]      = date_clump_S.bulk 
+        from_thru_date_H[ K.certainty ] = date_clump_S.certainty 
+        from_thru_date_H[ K.expression] = self.aspace_O.format_date_expression( from_date: from_thru_date_H[ K.begin ], 
+                                                                                certainty: from_thru_date_H[ K.certainty ] )
         from_thru_date_H_A << from_thru_date_H
     end
     return from_thru_date_H_A

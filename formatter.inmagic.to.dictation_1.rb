@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'json'
 require 'optparse'
 
@@ -16,8 +18,8 @@ module Main_Global_Variables
                       :output_F, :pending_output_BUF, :output_cnt, :box_cnt, :box_line_only_cnt, :detail_column_A, :column_stack_A,
                       :used_column_header_A, :columns_to_skip_for_notes, :inmagic_column_to_as_note_type_xlat_H
         attr_accessor :container_for_following_records_A
-        VALUE_IDX = 0     
-        COUNT_IDX = 1
+        VALUE_IDX = 0 # Both of these
+        COUNT_IDX = 1 # are for the 'container_for_following_records_A' array
 end
 include Main_Global_Variables
 #       But not sure why it needs to be in a module...
@@ -37,9 +39,9 @@ def create_H_of_all_possible_notes( input_column_H )
         end
         stringer = "Note: {#{self.inmagic_column_to_as_note_type_xlat_H[ column_name.downcase ][ 0 ]}}: "
         if ( self.inmagic_column_to_as_note_type_xlat_H[ column_name.downcase ][ 1 ].not_blank? ) then
-            stringer += self.inmagic_column_to_as_note_type_xlat_H[ column_name.downcase ][ 1 ] + ' '
+            stringer << self.inmagic_column_to_as_note_type_xlat_H[ column_name.downcase ][ 1 ] + ' '
         end
-        stringer += column_value.gsub( '|', embedded_crlf )
+        stringer << column_value.gsub( '|', embedded_crlf )
         if ( notes_H.has_key?( column_name ) ) then
             SE.puts "#{SE.lineno}: Found duplicate column_name '#{column_name}' in notes_H"
             SE.q {'notes_H'}
@@ -179,7 +181,7 @@ def box_only_line_logic( sub_column_value, note )
             when :prior
                 pending_BUF_group_record_match_O = self.pending_output_BUF.match( /^\s*#{K.any_fmtr_group_record_RES}/i )          
                 if ( pending_BUF_group_record_match_O.not_nil? ) then
-                    sub_column_value += ' CONFUSING BOX_ONLY_LINE: Previous line is a group.'
+                    sub_column_value << ' CONFUSING BOX_ONLY_LINE: Previous line is a group.'
                     self.box_line_only_cnt += 1
                     return sub_column_value
                 end
@@ -193,7 +195,7 @@ def box_only_line_logic( sub_column_value, note )
                         self.box_line_only_cnt += 1
                         return "# BOX_ONLY_LINE '#{current_container}' moved to previous line (2+)."
                     else
-                        sub_column_value += ' CONFUSING BOX_ONLY_LINE: Previous line already has a box.'
+                        sub_column_value << ' CONFUSING BOX_ONLY_LINE: Previous line already has a box.'
                         self.box_line_only_cnt += 1
                         return sub_column_value
                     end
@@ -219,16 +221,16 @@ end
 
 def output_F_puts( stringer )
     if ( stringer == :flush ) then
-        stringer = ''
+        stringer = +''
     else
         self.output_cnt += 1
         if ( stringer.blank? ) then
-            self.pending_output_BUF += "\n"     #  puts won't "double-space" if "\n" is added to the end of the string!  
+            self.pending_output_BUF << "\n"     #  puts won't "double-space" if "\n" is added to the end of the string!  
                                                 #  See just below.
             return
         end
         if ( stringer.match( /^\s*#\s*BOX_ONLY_LINE/ ) ) then
-            self.pending_output_BUF += "\n#{stringer}"
+            self.pending_output_BUF << "\n#{stringer}"
             return
         end
     end
@@ -237,7 +239,7 @@ def output_F_puts( stringer )
 #                     puts adds a "\n" ONLY IF there's not one there already!!!
         self.output_F.print self.pending_output_BUF.gsub( embedded_crlf, '|' ) + "\n"
     end
-    self.pending_output_BUF = stringer + ''
+    self.pending_output_BUF = stringer.dup
 end
 
 def put_column( column_idx = 0, title_length = 0 )
@@ -255,11 +257,11 @@ def put_column( column_idx = 0, title_length = 0 )
     SE.q { 'sub_column_value_A' } if ( $DEBUG )
     sub_column_value_A.each_with_index do | sub_column_value, sub_column_idx |
 #       next if ( sub_column_value.blank? )
-        sub_column_value_unaltered = sub_column_value + ''
-        sub_column_without_notes = sub_column_value + ''
+        sub_column_value_unaltered = sub_column_value.dup
+        sub_column_without_notes = sub_column_value.dup
         sub_column_without_notes.gsub!( /\s+Note:.*/i, '' )  
 
-        note = ''
+        note = +''
         if ( sub_column_value.sub!( /\s+note:(.*)$/i, '' ) ) then
             note = $&
             note.strip!
@@ -279,27 +281,26 @@ def put_column( column_idx = 0, title_length = 0 )
         end
 
             
-        stringer = ''
+        stringer = +''
         loop do
             #   Move the container_and_child_types to the front of the record (without any brackets).            
             sub_column_value.sub!( K.container_and_child_types_RE, ' ' )  # <<  This must be a ' '
             break if ( $~.nil? )            
-            stringer += $~[ :inside_the_dels ].downcase + ' '             # The downcase is needed for BOX ONLY logic below
+            stringer << $~[ :inside_the_dels ].downcase + ' '             # The downcase is needed for BOX ONLY logic below
             self.box_cnt += 1                                             # which uses upcase
             #   Move the bracketed words [volume,letterpress] to the front of the record without the brackket. 
             sub_column_value.sub!( K.container_bracketed_word_RE, ' ' )   # <<  This must be a ' '
             if ( $~.not_nil? )
-                stringer += $~[ :bracketed_word ] + ' '
+                stringer << $~[ :bracketed_word ] + ' '
             end
 
         end
-        stringer += sub_column_value
-        sub_column_value = stringer + ''
-        
-        
+        stringer << sub_column_value
+        sub_column_value = stringer.dup
+                
         sub_column_value = box_only_line_logic( sub_column_value, note )
         
-        sub_column_value += " #{note}." if ( note.not_blank? )
+        sub_column_value << " #{note}." if ( note.not_blank? )
         
         this_column_is_a_record_group_continuation = false
         if ( column_idx == 0 )
@@ -315,7 +316,7 @@ def put_column( column_idx = 0, title_length = 0 )
                 else  
                   # SE.puts "#{SE.lineno}: POP:  #{self.column_stack_A.last[ 0, 30 ]}"
                     self.column_stack_A.pop                    
-                    indent_spaces = ' ' * ( self.column_stack_A.length * 4 )
+                    indent_spaces = +' ' * ( self.column_stack_A.length * 4 )
                     output_F_puts indent_spaces  + "#{K.fmtr_end_group} STARTofROW csv.row=#{$.}" +
                                 " '#{group_text_from_stack}', #{self.column_stack_A.maxindex},#{column_idx},#{sub_column_idx}"
                 end 
@@ -328,7 +329,7 @@ def put_column( column_idx = 0, title_length = 0 )
                 group_text_from_stack = $1
               # SE.puts "#{SE.lineno}: POP:  #{self.column_stack_A.last[ 0, 30 ]}"
                 self.column_stack_A.pop
-                indent_spaces = ' ' * ( self.column_stack_A.length * 4 )
+                indent_spaces = +' ' * ( self.column_stack_A.length * 4 )
                 output_F_puts indent_spaces  + "#{K.fmtr_end_group} End-Begin csv.row=#{$.}" +
                             " '#{group_text_from_stack}', #{self.column_stack_A.maxindex},#{column_idx},#{sub_column_idx}"
             end
@@ -336,7 +337,7 @@ def put_column( column_idx = 0, title_length = 0 )
         if ( this_column_is_a_record_group_continuation ) then
         #   skip this column
         else
-            stringer = ' ' * ( self.column_stack_A.length * 4 )
+            stringer = +' ' * ( self.column_stack_A.length * 4 )
             if ( sub_column_value.blank? or sub_column_value.match?( /^\s*#/ ) ) then    # Don't put boxes on comment lines 
                 group_record_MO = nil
               # SE.q {'sub_column_value'}
@@ -348,7 +349,7 @@ def put_column( column_idx = 0, title_length = 0 )
                 #   do nothing...
                 else
                     if ( group_record_MO.nil? ) then
-                        stringer   += "%-20s  " % self.container_for_following_records_A[ VALUE_IDX ]
+                        stringer   << "%-20s  " % self.container_for_following_records_A[ VALUE_IDX ]
                         self.container_for_following_records_A[ COUNT_IDX ] += 1
                     else
                         if ( self.container_for_following_records_A[ COUNT_IDX ] > 0 ) then
@@ -366,7 +367,7 @@ def put_column( column_idx = 0, title_length = 0 )
                     end
                 end
             end
-            stringer += sub_column_value                            
+            stringer << sub_column_value                            
             output_F_puts stringer
             if ( group_record_MO.not_nil? ) then 
                 self.column_stack_A.push( sub_column_value_unaltered.sub( /[[:punct:]]\s*$/, '' ).gsub( /\s\s+/, ' ').strip.downcase )  
@@ -407,7 +408,7 @@ def put_column( column_idx = 0, title_length = 0 )
             group_text_from_stack = m_O[ 1 ]
           # SE.puts "#{SE.lineno}: POP:  #{self.column_stack_A.last[ 0, 30 ]}"
             self.column_stack_A.pop
-            indent_spaces = ' ' * ( self.column_stack_A.length * 4 )
+            indent_spaces = +' ' * ( self.column_stack_A.length * 4 )
             output_F_puts indent_spaces + "#{K.fmtr_end_group} ENDofCOLUMN csv.row=#{$.}" +
                         " '#{group_text_from_stack}',#{self.column_stack_A.maxindex},#{column_idx}"
         end
@@ -610,7 +611,17 @@ end
 tmp1_F.close
 
 tmp3_F = File.new( "#{myself_name}.tmp3_F.json", 'w+' )
-SE.q {['column_with_data_H']}
+#SE.q {['column_with_data_H']}
+
+display_column_with_data_H = lambda{
+    h = {}
+    column_with_data_H.each_pair do | column, value |
+        h[ column ] = value[ 0, 120 ]
+    end
+    return h
+}
+SE.q {'display_column_with_data_H.call'}
+
 self.used_column_header_A = []
 tmp2_F.rewind
 tmp2_F.each_line do | input_column_J |    
@@ -723,16 +734,16 @@ tmp3_F.each_line do | input_column_J |
   
         column_value.rstrip!
         if ( resource_data_H.has_no_key?( column_name ) ) then
-            resource_data_H[ column_name ] = ''
+            resource_data_H[ column_name ] = +''
         end
         case column_name.downcase
         when 'Filing Location'.downcase
             stringer = (( resource_data_H[ column_name ].blank? ) ? '' : ', ' ) + column_value.sub( /\s*Statewide Museum Collections Center\s*/i, '' )
-            resource_data_H[ column_name ] += stringer.gsub( /\s\s+/, ' ' )
+            resource_data_H[ column_name ] << stringer.gsub( /\s\s+/, ' ' )
         else    
-            if ( resource_data_H[ column_name ] != column_value ) then
+            if ( resource_data_H[ column_name ].downcase != column_value.downcase ) then
                 stringer = (( resource_data_H[ column_name ].blank? ) ? '' : ' +++++ ' ) + column_value
-                resource_data_H[ column_name ] += stringer
+                resource_data_H[ column_name ] << stringer
             end
         end
     end
@@ -784,7 +795,7 @@ tmp3_F.each_line do | input_column_J |
         all_possible_notes_H = {}
     end
     
-    seriesdate_column_value = ''
+    seriesdate_column_value = +''
     output_column_H = {}
     column_use_H.each_pair do | column_name, column_use |     
         input_column_name_value__save = input_column_H[ column_name ].copy_by_value
@@ -847,13 +858,13 @@ tmp3_F.each_line do | input_column_J |
                 else
                     series_num = $1
                 end
-                output_column_H[ column_name ] = ''
+                output_column_H[ column_name ] = +''
                 arr1 = input_column_H[ column_name ].split( '|' ).map( &:to_s ).map( &:strip ) 
-                series_name = ''
+                series_name = +''
                 note_A = []
                 arr1.each_with_index do | e, idx |
                     if ( idx == 0 ) then
-                        output_column_H[ column_name ] += "Series #{series_num}: #{e}"
+                        output_column_H[ column_name ] << "Series #{series_num}: #{e}"
                         series_name = e
                     end
                     next if ( e.blank? )
@@ -884,12 +895,12 @@ tmp3_F.each_line do | input_column_J |
                 raise
             end
             
-            output_column_H[ column_name ] = ' '     # This column must be before the series in output_column_H
+            output_column_H[ column_name ] = +' '     # This column must be before the series in output_column_H
 
 #               The 'Collection Name' field seems to always be in the format of:
 #                   Collection Name text|Record Group text|SubGroup Text
             arr1 = input_column_H[ 'Collection Name' ].split( '|' ).map( &:to_s ).map( &:strip ) 
-            stringer = ''
+            stringer = +''
             if ( arr1.maxindex > 0 )
                 if ( m_O = arr1[ 1 ].match( /^\s*record\s*group\s+(#{input_column_H[ column_name ]})/i ) ) then
                     stringer = "#{K.recordgrp_text} #{m_O[ 1 ]}."
@@ -912,7 +923,7 @@ tmp3_F.each_line do | input_column_J |
             if ( series_column_name.nil? or input_column_H[ series_column_name ].blank? ) then
                 output_column_H[ series_column_name ] = 'NO_SERIES_RECORD'
             else
-                output_column_H[ series_column_name ] = ''
+                output_column_H[ series_column_name ] = +''
             end
             
         when K.fmtr_inmagic_detail    
@@ -947,10 +958,10 @@ tmp3_F.each_line do | input_column_J |
         end
     else   
         if ( seriesdate_column_value.not_empty? ) then
-            output_column_H[ column_name_for_dates_n_notes ] += ' ' + seriesdate_column_value                 
+            output_column_H[ column_name_for_dates_n_notes ] << ' ' + seriesdate_column_value                 
         end     
         if ( all_possible_notes_H.not_empty? ) then
-            output_column_H[ column_name_for_dates_n_notes ] += ' ' + all_possible_notes_H.values.join( ' ' )
+            output_column_H[ column_name_for_dates_n_notes ] << ' ' + all_possible_notes_H.values.join( ' ' )
         end                                                    
     end
 #   SE.q {'column_name_for_dates_n_notes'}
@@ -976,13 +987,13 @@ self.box_cnt = 0
 self.box_line_only_cnt = 0
 container_for_following_records_reset
 
-output_filename = self.cmdln_option_H[ :output_file_prefix ] + ".DETAIL.txt"
+output_filename = self.cmdln_option_H[ :output_file_prefix ] + ".detail.txt"
 SE.puts "Output DETAIL file '#{output_filename}'"
 SE.puts ''
 SE.puts ''
 
 self.output_F = File::open( output_filename, mode='w' )
-self.pending_output_BUF = ''
+self.pending_output_BUF = +''
 self.column_stack_A = [ ]
 tmp4_F.rewind
 tmp4_F.each_line do | input_column_J |

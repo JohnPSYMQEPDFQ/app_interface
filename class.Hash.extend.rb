@@ -85,5 +85,16 @@ class Hash
         end
     end
 
+    def flatten_hash(hash, prefix = "")
+        hash.each_pair.reduce({}) do |acc, (key, value)|
+            full_key = prefix.empty? ? key : "#{prefix}.#{key}"
+            if value.is_a?(Hash)
+                acc.merge(flatten_hash(value, full_key))
+            else
+                acc.merge(full_key.to_sym => value)
+            end
+        end
+    end
+
 end
 

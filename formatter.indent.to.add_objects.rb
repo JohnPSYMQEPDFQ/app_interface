@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 =begin
 
 Usage: format_for_add_object.rb --help
@@ -17,42 +19,42 @@ include Main_Global_Variables
 #       But not sure why it needs to be in a module...
 
 
-def put_indent( calculated_indent_level, group_number_A, group_title_A )
-    SE.q {'group_title_A'}  if ( $DEBUG )
+def put_indent( p1_calculated_indent_level, p2_group_number_A, p3_group_title_A )
+    SE.q {'p3_group_title_A'}  if ( $DEBUG )
     output_record_H={}
     output_record_H[ K.fmtr_record ] = {}
-    case group_number_A.length 
+    case p2_group_number_A.length 
     when 0
         SE.puts "#{SE.lineno}: =============================="
-        SE.puts "Wasn't expecting param1 group_number_A to be empty"
+        SE.puts "Wasn't expecting param1 p2_group_number_A to be empty"
         raise
     when 1 .. self.cmdln_option_H[ :max_series ]
         output_record_H[ K.fmtr_record ][ K.level ] = K.series.downcase
-        stringer = "Series"
-        if ( group_number_A.length <= self.cmdln_option_H[ :max_levels ] ) then
-            stringer += " #{group_number_A.join( '.' )}" 
-            output_record_H[ K.fmtr_record ][ K.component_id ] = group_number_A.join( '.' )
+        stringer = +"Series"
+        if ( p2_group_number_A.length <= self.cmdln_option_H[ :max_levels ] ) then
+            stringer << " #{p2_group_number_A.join( '.' )}" 
+            output_record_H[ K.fmtr_record ][ K.component_id ] = p2_group_number_A.join( '.' )
         end
-        stringer += ": #{group_title_A.join( ' ' )}"  
+        stringer << ": #{p3_group_title_A.join( ' ' )}"  
         output_record_H[ K.fmtr_record ][ K.title ] = stringer
     
     when 2 .. self.cmdln_option_H[ :max_series ] 
         output_record_H[ K.fmtr_record ][ K.level ] = K.subseries.downcase
-        stringer = "Subseries"
-        if ( group_number_A.length <= self.cmdln_option_H[ :max_levels ] ) then
-            stringer += " #{group_number_A.join( '.' )}" 
-            output_record_H[ K.fmtr_record ][ K.component_id ] = group_number_A.join( '.' ) 
+        stringer = +"Subseries"
+        if ( p2_group_number_A.length <= self.cmdln_option_H[ :max_levels ] ) then
+            stringer << " #{p2_group_number_A.join( '.' )}" 
+            output_record_H[ K.fmtr_record ][ K.component_id ] = p2_group_number_A.join( '.' ) 
         end
-        stringer += ": #{group_title_A.join( ' ' )}"   
+        stringer << ": #{p3_group_title_A.join( ' ' )}"   
         output_record_H[ K.fmtr_record ][ K.title ] = stringer
     else     
         output_record_H[ K.fmtr_record ][ K.level ]       = K.otherlevel
         output_record_H[ K.fmtr_record ][ K.other_level ] = K.group.capitalize
-        output_record_H[ K.fmtr_record ][ K.title ]       = group_title_A.last
+        output_record_H[ K.fmtr_record ][ K.title ]       = p3_group_title_A.last
     end
     if ( output_record_H[ K.fmtr_record ][ K.title ].blank? ) then
         SE.puts "#{SE.lineno}: Title can't be blank."
-        SE.q {'group_title_A'}
+        SE.q {'p3_group_title_A'}
         raise
     end
     
@@ -61,44 +63,43 @@ def put_indent( calculated_indent_level, group_number_A, group_title_A )
     output_record_H[ K.fmtr_record ][ K.title ].strip!
 
     self.output_fd3_F.puts 'I %-13s: ' % output_record_H[ K.fmtr_record ][ K.level ] +
-                           'L %1d ' % calculated_indent_level + group_title_A.join( "| " )
+                           'L %1d ' % p1_calculated_indent_level + p3_group_title_A.join( "| " )
     puts output_record_H.to_json
 end
 
-def put_record( calculated_indent_level, record_H__stack_A, current_record_H )
+def put_record( p1_calculated_indent_level, p2_record_H__stack_A, p3_current_record_H )
 
     output_record_H={}
     output_record_H[ K.fmtr_record ] = {}
-    output_record_H[ K.fmtr_record ][ K.level ] = current_record_H[ K.level ]
-    if ( output_record_H[ K.fmtr_record ][ K.level ] == K.otherlevel )
+    output_record_H[ K.fmtr_record ][ K.level ] = p3_current_record_H[ K.level ]
+    if ( output_record_H[ K.fmtr_record ][ K.level ] == K.otherlevel ) then
         output_record_H[ K.fmtr_record ][ K.other_level ] = K.group.capitalize
     end
      
     output_record_H[ K.fmtr_record ][ K.dates ] = [ ]
-    date_H_A = current_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__dates_idx ]
+    date_H_A = p3_current_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__dates_idx ]
     if ( date_H_A && date_H_A.maxindex >= 0 ) then
         date_H_A.each do | date_H |
             if ( date_H.has_no_key?( K.begin ) ) then
                 SE.puts "#{SE.lineno}: Didn't find date_H['#{K.begin}']"
                 SE.q {[ 'date_H' ]}
-                SE.q {[ 'current_record_H' ]}
+                SE.q {[ 'p3_current_record_H' ]}
                 raise
             end
-            circa  = ''
-            circa += K.circa  if ( date_H[ K.circa ] )
+
             inclusive_dates_O = Record_Format.new( :inclusive_dates )
-            inclusive_dates_O.record_H[ K.label ] = K.creation 
+            inclusive_dates_O.record_H[ K.label ]     = K.creation 
             inclusive_dates_O.record_H[ K.date_type ] = ( date_H[ K.bulk ] ) ? K.bulk : K.inclusive
-            inclusive_dates_O.record_H[ K.certainty ] = ( date_H[ K.circa ] ) ? K.approximate : ''
-            inclusive_dates_O.record_H[ K.begin ] = date_H[ K.begin ]
-            inclusive_dates_O.record_H[ K.end ] = date_H[ K.end ]             
+            inclusive_dates_O.record_H[ K.certainty ] = date_H[ K.certainty ]
+            inclusive_dates_O.record_H[ K.begin ]     = date_H[ K.begin ]
+            inclusive_dates_O.record_H[ K.end ]       = date_H[ K.end ]             
             inclusive_dates_O.record_H[ K.expression] = date_H[ K.expression ]
             output_record_H[ K.fmtr_record ][ K.dates ].push( inclusive_dates_O.record_H )
         end
     end
 
     output_record_H[ K.fmtr_record ][ K.notes ] = [ ]
-    note_A = current_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__notes_idx ]
+    note_A = p3_current_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__notes_idx ]
     if ( note_A && note_A.maxindex >= 0 ) then
         note_A.each do | note |
             note.strip!
@@ -118,15 +119,15 @@ def put_record( calculated_indent_level, record_H__stack_A, current_record_H )
             note.strip!
             case true
             when ( note_type.in?( [ K.materialspec, K.physloc ] ) ) 
-                note_singlepart_O = Record_Format.new( :note_singlepart )
+                note_singlepart_O          = Record_Format.new( :note_singlepart )
                 note_singlepart_O.record_H = { K.type  => note_type }
                 note_singlepart_O.record_H = { K.content => [ note ] }
                 output_record_H[ K.fmtr_record ][ K.notes ].push( note_singlepart_O.record_H )
             when ( note_type.in?( [K.acqinfo, K.bioghist, K.dimensions, K.processinfo, K.scopecontent ] ) )
-                note_text_O = Record_Format.new( :note_text )
+                note_text_O          = Record_Format.new( :note_text )
                 note_text_O.record_H = { K.content => note }
-                note_multipart_O = Record_Format.new( :note_multipart )
-                note_multipart_O.record_H[ K.type ] = note_type 
+                note_multipart_O                        = Record_Format.new( :note_multipart )
+                note_multipart_O.record_H[ K.type ]     = note_type 
                 note_multipart_O.record_H[ K.subnotes ] = [ note_text_O.record_H ]                               
                 output_record_H[ K.fmtr_record ][ K.notes ].push( note_multipart_O.record_H )
             else
@@ -138,39 +139,39 @@ def put_record( calculated_indent_level, record_H__stack_A, current_record_H )
         end
     end
 
-    container_H_A = current_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__container_idx ]
+    container_H_A = p3_current_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__container_idx ]
     if ( container_H_A.not_empty? ) then
         output_record_H[ K.fmtr_record ][ K.fmtr_container ] = container_H_A
     end
 
-    arr1 = current_record_H[ K.fmtr_record_indent_keys ] + [ current_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__text_idx ] ]
-    SE.q {'current_record_H[ K.fmtr_record_indent_keys ]'}  if ( $DEBUG )
-    SE.q {'current_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__text_idx ]'}  if ( $DEBUG )
-    SE.q {'calculated_indent_level' }  if ( $DEBUG )
-    SE.q {'arr1'}                      if ( $DEBUG )
-    arr1.shift( calculated_indent_level )
+    arr1 = p3_current_record_H[ K.fmtr_record_indent_keys ] + [ p3_current_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__text_idx ] ]
+    SE.q {'p3_current_record_H[ K.fmtr_record_indent_keys ]'}                               if ( $DEBUG )
+    SE.q {'p3_current_record_H[ K.fmtr_record_values ][ K.fmtr_record_values__text_idx ]'}  if ( $DEBUG )
+    SE.q {'p1_calculated_indent_level' }                                                    if ( $DEBUG )
+    SE.q {'arr1'}                                                                           if ( $DEBUG )
+    arr1.shift( p1_calculated_indent_level )
     output_record_H[ K.fmtr_record ][ K.title ] = arr1.join( ' ' ).strip
 #   output_record_H[ K.fmtr_record ][ K.title ] = arr1[ -1 ].strip
     if ( output_record_H[ K.fmtr_record ][ K.title ].blank? ) then
         if ( date_H_A && date_H_A.maxindex >= 0 ) then
-            output_record_H[ K.fmtr_record ][ K.title ] = '[By date]'
+            output_record_H[ K.fmtr_record ][ K.title ] = +'[By date]'
         else
-            if ( current_record_H[ K.fmtr_record_indent_keys ].empty? ) then
-                output_record_H[ K.fmtr_record ][ K.title ] = '[Item]'
+            if ( p3_current_record_H[ K.fmtr_record_indent_keys ].empty? ) then
+                output_record_H[ K.fmtr_record ][ K.title ] = +'[Item]'
             else
-                SE.q {'record_H__stack_A'}   if ( $DEBUG )
-                SE.q {'current_record_H'}    if ( $DEBUG )
-                output_record_H[ K.fmtr_record ][ K.title ] = current_record_H[ K.fmtr_record_indent_keys ].last
+                SE.q {'p2_record_H__stack_A'}   if ( $DEBUG )
+                SE.q {'p3_current_record_H'}    if ( $DEBUG )
+                output_record_H[ K.fmtr_record ][ K.title ] = p3_current_record_H[ K.fmtr_record_indent_keys ].last
             end
         end
     end
 
-    skip_auto_group_record = ''
+    skip_auto_group_record = +''
     if ( output_record_H[ K.fmtr_record ][ K.level ] == K.fmtr_auto_group ) then
-        if ( record_H__stack_A.not_empty? ) then
-#           SE.q {[ 'record_H__stack_A' ]}
+        if ( p2_record_H__stack_A.not_empty? ) then
+#           SE.q {[ 'p2_record_H__stack_A' ]}
 #           SE.q {[ 'output_record_H[ K.fmtr_record ][ K.title ]' ]}
-            if ( record_H__stack_A[ 0 ][ K.fmtr_record_indent_keys ].last == output_record_H[ K.fmtr_record ][ K.title ] ) then
+            if ( p2_record_H__stack_A[ 0 ][ K.fmtr_record_indent_keys ].last == output_record_H[ K.fmtr_record ][ K.title ] ) then
                 skip_auto_group_record = ' (Auto-Group record skipped)'
             else
                 output_record_H[ K.fmtr_record ][ K.level ] = K.file
@@ -184,11 +185,11 @@ def put_record( calculated_indent_level, record_H__stack_A, current_record_H )
     output_record_H[ K.fmtr_record ][ K.title ].sub!( /./,&:upcase )
     output_record_H[ K.fmtr_record ][ K.title ].strip!
    
-    stringer = ''
+    stringer = +''
     stringer = 'Forced' if ( output_record_H[ K.fmtr_record ][ K.level ] == K.otherlevel )
     self.output_fd3_F.puts 'R %-13s: ' % output_record_H[ K.fmtr_record ][ K.level ] + 
-                           'L %1d ' % calculated_indent_level + 
-                           current_record_H[ K.fmtr_record_indent_keys ].join( '| ' ) + stringer                                     
+                           'L %1d ' % p1_calculated_indent_level + 
+                           p3_current_record_H[ K.fmtr_record_indent_keys ].join( '| ' ) + stringer                                     
     self.output_fd3_F.puts ' ' * 21 + output_record_H[ K.fmtr_record ][ K.title ] + skip_auto_group_record
 #   self.output_fd3_F.puts ' ' * 21 + output_record_H.to_json
     if ( output_record_H[ K.fmtr_record ][ K.level ] != K.fmtr_auto_group ) then

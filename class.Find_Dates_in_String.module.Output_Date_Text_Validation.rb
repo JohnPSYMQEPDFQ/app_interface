@@ -22,15 +22,15 @@ module Output_Date_Text_Validation
         SE.q {[ 'argv' ]}
     end
     def before_change_validate( my_creator, before_change_string, argv )
-        if ( option_H[ :debug_options ].include?( :print_before )) then
+        if ( self.option_H[ :debug_options ].include?( :print_before )) then
             SE.puts "==========================================================="    
             SE.q {[ 'SE.stack( SE.my_source_code_path )' ]}    
             SE.q {[ 'before_change_string' ]}
             SE.q {[ 'argv' ]}
         end   
-        output_data_uid_H_H[ my_creator.__id__ ].tap do | output_data_uid_H |            
+        self.output_data_uid_H_H[ my_creator.__id__ ].tap do | output_data_uid_H |            
             if ( output_data_uid_H.nil? ) then
-                SE.puts "#{SE.lineno}: Unable to find my_creator.__id__ '#{my_creator.__id__}' in 'output_data_uid_H_H'"
+                SE.puts "#{SE.lineno}: Unable to find my_creator.__id__ '#{my_creator.__id__}' in 'self.output_data_uid_H_H'"
                 print_before_change_params( my_creator, before_change_string, argv )
                 SE.q {[ 'output_data_uid_H' ]}
                 raise
@@ -39,7 +39,7 @@ module Output_Date_Text_Validation
             if ( argv.first.is_a?( String ) and argv.first.match( date_clump_uid_O.pattern_RE ) ) then
                 date_clump_uid__from_argv = $&
                 if  ( output_data_uid_H.has_no_key?( date_clump_uid__from_argv ) ) then
-                    SE.puts "#{SE.lineno}: output_data_uid_H_H['#{my_creator.__id__}']['#{date_clump_uid__from_argv}'] is missing."
+                    SE.puts "#{SE.lineno}: self.output_data_uid_H_H['#{my_creator.__id__}']['#{date_clump_uid__from_argv}'] is missing."
                     print_before_change_params( my_creator, before_change_string, argv )
                     SE.q {[ 'output_data_uid_H' ]}
                     raise
@@ -54,7 +54,7 @@ module Output_Date_Text_Validation
             if ( argv.last.is_a?( String) and argv.last.match( date_clump_uid_O.pattern_RE ) ) then
                 date_clump_uid__from_argv = $&
                 if  ( output_data_uid_H.has_key?( date_clump_uid__from_argv ) ) then
-                    SE.puts "#{SE.lineno}: Found an already existing uid '#{date_clump_uid__from_argv}' in 'output_data_uid_H_H'"
+                    SE.puts "#{SE.lineno}: Found an already existing uid '#{date_clump_uid__from_argv}' in 'self.output_data_uid_H_H'"
                     print_before_change_params( my_creator, before_change_string, argv ) 
                     SE.q {[ 'output_data_uid_H' ]}
                     raise
@@ -62,7 +62,7 @@ module Output_Date_Text_Validation
             end
             output_data_uid_H.keys.each do | date_clump_uid | 
                 if ( before_change_string.index( date_clump_uid ).nil? ) then
-                    SE.puts "#{SE.lineno}: Unable to find uid '#{date_clump_uid}' from 'output_data_uid_H_H' in 'before_change_string'"
+                    SE.puts "#{SE.lineno}: Unable to find uid '#{date_clump_uid}' from 'self.output_data_uid_H_H' in 'before_change_string'"
                     print_before_change_params( my_creator, before_change_string, argv ) 
                     SE.q {[ 'output_data_uid_H' ]}
                     raise
@@ -78,7 +78,7 @@ module Output_Date_Text_Validation
         SE.q {[ 'argv' ]}
     end
     def after_change_validate( my_creator, before_change_string, after_change_string, argv )  
-        if ( option_H[ :debug_options ].include?( :print_after )) then
+        if ( self.option_H[ :debug_options ].include?( :print_after )) then
             SE.puts "==========================================================="
             SE.q {[ 'SE.stack( SE.my_source_code_path )' ]}
             SE.q {[ 'before_change_string']}
@@ -86,10 +86,10 @@ module Output_Date_Text_Validation
             SE.q {[ 'argv' ]}
         end
         if ( argv.is_a?( String ) )   #  This is the initial assign, eg. obj.string = 'xyz'.
-            output_data_uid_H_H.delete( my_creator.__id__ ) if ( output_data_uid_H_H.has_key?( my_creator.__id__ ) ) 
-            output_data_uid_H_H[ my_creator.__id__ ] = { }
+            self.output_data_uid_H_H.delete( my_creator.__id__ ) if ( self.output_data_uid_H_H.has_key?( my_creator.__id__ ) ) 
+            self.output_data_uid_H_H[ my_creator.__id__ ] = { }
             argv.scan( date_clump_uid_O.pattern_RE ).each do | date_clump_uid |
-                date_clump_S = date_clump_S__A[ date_clump_uid_O.num_from_uid( date_clump_uid ) - 1 ]  # The number is 1 relative
+                date_clump_S = date_clump_S__A[ self.date_clump_uid_O.num_from_uid( date_clump_uid ) - 1 ]  # The number is 1 relative
                 if ( not ( date_clump_S.not_nil? and date_clump_S.uid == date_clump_uid ) ) then
                     SE.puts "#{SE.lineno}: Couldn't find the uid '#{date_clump_uid}' in 'date_clump_S__A'"
                     print_after_change_params( my_creator, before_change_string, after_change_string, argv )
@@ -98,12 +98,12 @@ module Output_Date_Text_Validation
                     SE.q {[ 'date_clump_S__A' ]}
                     raise                
                 end
-                output_data_uid_H_H[ my_creator.__id__ ][ date_clump_uid ] = date_clump_S
+                self.output_data_uid_H_H[ my_creator.__id__ ][ date_clump_uid ] = date_clump_S
             end
             return
         end
-        output_data_uid_H_H[ my_creator.__id__ ] = {} if ( output_data_uid_H_H.has_no_key?( my_creator.__id__ ) ) 
-        output_data_uid_H_H[ my_creator.__id__ ].tap do | output_data_uid_H |       
+        self.output_data_uid_H_H[ my_creator.__id__ ] = {} if ( self.output_data_uid_H_H.has_no_key?( my_creator.__id__ ) ) 
+        self.output_data_uid_H_H[ my_creator.__id__ ].tap do | output_data_uid_H |       
             date_clump_uid__from_argv = nil
             if ( argv.first.is_a?( String) and argv.first.match( date_clump_uid_O.pattern_RE ) ) then
                 date_clump_uid__from_argv = $&
@@ -124,7 +124,7 @@ module Output_Date_Text_Validation
                     SE.q {[ 'output_data_uid_H' ]}
                     raise
                 end
-                date_clump_S = date_clump_S__A[ date_clump_uid_O.num_from_uid( date_clump_uid__from_argv ) - 1 ]  # The number is 1 relative
+                date_clump_S = date_clump_S__A[ self.date_clump_uid_O.num_from_uid( date_clump_uid__from_argv ) - 1 ]  # The number is 1 relative
                 if ( not ( date_clump_S.not_nil? and date_clump_S.uid == date_clump_uid__from_argv ) ) then
                     SE.puts "#{SE.lineno}: Couldn't find the just added uid '#{date_clump_uid__from_argv}' in 'date_clump_S__A'"
                     print_after_change_params( my_creator, before_change_string, after_change_string, argv )
@@ -139,10 +139,10 @@ module Output_Date_Text_Validation
             cnt = 0
             output_data_uid_H.keys.each do | date_clump_uid | 
                 if ( after_change_string.index( date_clump_uid ).nil? ) then
-                    SE.puts "#{SE.lineno}: Unable to find uid '#{date_clump_uid}' from 'output_data_uid_H_H' in 'after_change_string'"
+                    SE.puts "#{SE.lineno}: Unable to find uid '#{date_clump_uid}' from 'self.output_data_uid_H_H' in 'after_change_string'"
                     print_after_change_params( my_creator, before_change_string, after_change_string, argv )
                     SE.q {[ 'output_data_uid_H' ]}
-                    SE.q {[ 'date_clump_S__A[ date_clump_uid_O.num_from_uid( date_clump_uid__from_argv ) - 1 ]' ]} if ( date_clump_uid__from_argv )
+                    SE.q {[ 'date_clump_S__A[ self.date_clump_uid_O.num_from_uid( date_clump_uid__from_argv ) - 1 ]' ]} if ( date_clump_uid__from_argv )
                     raise
                 end
                 cnt += 1
@@ -155,12 +155,12 @@ module Output_Date_Text_Validation
                 raise
             end
         end
-        if ( after_change_string.match( /(#{date_clump_uid_O.pattern_RES.rstrip}\s{0,1}#{date_clump_uid_O.pattern_RES.lstrip})/ ) ) then
+        if ( after_change_string.match( /(#{self.date_clump_uid_O.pattern_RES.rstrip}\s{0,1}#{self.date_clump_uid_O.pattern_RES.lstrip})/ ) ) then
             SE.puts "#{SE.lineno}: Found 2 date_clumps squeezed together."
             SE.q {[ '$&' ]}
             print_after_change_params( my_creator, before_change_string, after_change_string, argv )
             SE.q {[ 'output_data_uid_H' ]}
-            SE.q {[ 'date_clump_S__A[ date_clump_uid_O.num_from_uid( date_clump_uid__from_argv ) - 1 ]' ]} if ( date_clump_uid__from_argv )
+            SE.q {[ 'date_clump_S__A[ self.date_clump_uid_O.num_from_uid( date_clump_uid__from_argv ) - 1 ]' ]} if ( date_clump_uid__from_argv )
             raise
         end
     end

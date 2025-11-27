@@ -63,7 +63,7 @@ cnt = 0; AO_Query_of_Resource.new( res_O ).record_H_A.each do | query_record_H |
     ao_buf_O = Archival_Object.new( res_O, query_record_H[ K.uri ] ).new_buffer.read( )
     cnt += 1
     print "#{cnt} "
-    print "ao #{ao_buf_O.record_H[ K.uri ].sub( /^.*\//, '')} "
+    print "ao #{ao_buf_O.record_H[ K.uri ].trailing_digits} "
     print "#{ao_buf_O.record_H[ K.ancestors ].length} "
     print "#{ao_buf_O.record_H[ K.level ]} "
     print "#{ao_buf_O.record_H[ K.title ]}, "

@@ -44,7 +44,7 @@ class Resource
                 stringer = "#{@rep_O.uri}/archival_objects"
                 if ( stringer == p2_res_identifier[ 0 .. stringer.maxindex ]) then
                     @uri = p2_res_identifier
-                    @num = p2_res_identifier.sub( /^.*\//, '' )
+                    @num = p2_res_identifier.trailing_digits
                     if (not @num.integer? ) then
                         SE.puts "#{SE.lineno}: =============================================="
                         SE.puts "Invalid param2: #{p2_res_identifier}"
@@ -141,7 +141,7 @@ class Resource_Record_Buf < Record_Buf
             SE.puts "#{SE.lineno}: Updated Resource, uri = #{http_response_body_H[ K.uri ]}";
         end
         @uri = http_response_body_H[ K.uri ] 
-        @num = @uri.sub( /^.*\//, '' )
+        @num = @uri.trailing_digits
     end
 end   
 

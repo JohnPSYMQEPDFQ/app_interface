@@ -22,27 +22,27 @@ module Date_Clumps_classify_by_good_and_bad_morality
         date_clump_S__A.each do | date_clump_S |
             case date_clump_S.morality
             when :good
-                good__date_clump_S__A.push << date_clump_S 
+                self.good__date_clump_S__A.push( date_clump_S )
             when :bad
-                bad__date_clump_S__A.push << date_clump_S 
+                self.bad__date_clump_S__A.push( date_clump_S )
             else
                 SE.puts "#{SE.lineno}: I shouldn't be here: amoral date: '#{date_clump_S.morality}', #{date_clump_S}"
                 raise
             end
         end
-        if ( option_H[ :sort ] ) then
-#               Doesn't work:  good__date_clump_S__A = good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.as_from_date ] }  
-#               Does work:     good__date_clump_S__A = self.good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.as_from_date ] }
+        if ( self.option_H[ :sort ] ) then
+#               Doesn't work:  self.good__date_clump_S__A = self.good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.as_from_date ] }  
+#               Does work:     self.good__date_clump_S__A = self.good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.as_from_date ] }
 #                       -or 
-#                              good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.as_from_date ] }
+#                              self.good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.as_from_date ] }
 #               No idea why...
-            good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.as_from_date ] }
+            self.good__date_clump_S__A.sort_by! { | date_clump_S | [ date_clump_S.as_from_date ] }
             prev_date = ''
-            good__date_clump_S__A.each_with_index do | date_clump_S, idx |
+            self.good__date_clump_S__A.each_with_index do | date_clump_S, idx |
                 if ( date_clump_S.as_from_date < prev_date ) then
                     SE.puts "#{SE.lineno}: Warning: Dates overlap! good from-date '#{date_clump_S.as_from_date} at element #{idx} "+
                             "< previous date #{prev_date}, there may be others."
-                    SE.puts original_text
+                    SE.puts self.original_text
                     SE.puts ''
                     break
                 end

@@ -15,6 +15,7 @@ Variable Abbreviations:
         _Q = Query
         _C = Class of Struct
         _S = Structure of _C 
+        _TF = True/False (Boolean)
         __ = reads as: 'in a(n)', e.g.: record_H__A = 'record' Hash "in an" Array.
 
 =end
@@ -33,6 +34,7 @@ require 'class.Archivesspace.Buffer_Base.rb'
 require 'class.ArchivesSpace.Record_Buf.rb'
 require 'class.Archivesspace.Record_Format.rb'
 require 'class.ArchivesSpace.http_calls.rb'
+
 
 class ASpace
     def initialize()
@@ -115,7 +117,10 @@ class ASpace
     def format_date( yyyyDmmDdd ) 
         return yyyyDmmDdd + '' if ( self.date_expression_format == 'aspace_default' )
         short_month = [ 'Jan.', 'Feb.', 'Mar.', 'Apr.', 'May.', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.' ]
-        date_formatted = ''
+        
+        date_formatted = +''    # If strings are concatted with '<<' the variable must be mutable (changable), 
+                                # which is what the '+' sign before the literal means.  Otherwise the literal is 
+                                # frozen.
         if ( yyyyDmmDdd.maxoffset >= 5 ) then
             if ( yyyyDmmDdd[ 4, 1 ] != '-' ) then
                 SE.puts "#{SE.lineno}: Bad date '#{yyyyDmmDdd}', no dash at offset 4"
@@ -124,7 +129,7 @@ class ASpace
             end
             stringer = yyyyDmmDdd[ 5, 2 ]
             if ( stringer.length == 2 and stringer.between?( '01', '12' ) and stringer.to_i.between?( 1, 12 ) ) then
-                date_formatted += short_month[ stringer.to_i - 1 ] + ' '
+                date_formatted << short_month[ stringer.to_i - 1 ] + ' '
             else
                 SE.puts "#{SE.lineno}: Bad month '#{stringer}'"
                 SE.q {[ 'yyyyDmmDdd' ]}
@@ -138,9 +143,9 @@ class ASpace
                 end
                 stringer = yyyyDmmDdd[ 8, 2 ]
                 if    ( stringer.length == 2 and stringer.between?( '01', '09' ) and stringer.to_i.between?(  1,  9 ) ) then
-                    date_formatted += stringer[ 1, 1 ] + ', '
+                    date_formatted << stringer[ 1, 1 ] + ', '
                 elsif ( stringer.length == 2 and stringer.between?( '10', '31' ) and stringer.to_i.between?( 10, 31 ) ) then
-                    date_formatted += stringer + ', '
+                    date_formatted << stringer + ', '
                 else
                     SE.puts "#{SE.lineno}: Bad day '#{stringer}'"
                     SE.q {[ 'yyyyDmmDdd' ]}
@@ -150,7 +155,7 @@ class ASpace
         end
         stringer = yyyyDmmDdd[ 0, 4 ]
         if ( stringer.length == 4 and stringer.to_i.between?( 1000, 2200 ) ) then
-            date_formatted += stringer
+            date_formatted << stringer
         else
             SE.puts "#{SE.lineno}: Bad year '#{stringer}'"
             SE.q {[ 'yyyyDmmDdd' ]}
@@ -159,23 +164,39 @@ class ASpace
         return date_formatted
     end
     
-    def format_date_expression( from_yyyyDmmDdd, thru_yyyyDmmDdd, prefix )
-        date_expression = ''
-        date_expression += "#{prefix} " if ( prefix.not_blank? )
+    def format_date_expression( from_date:, thru_date: '', certainty: '' )
+#
+#       Turns out, the dates are optional(!) for a date as long as you've got an expression.
+#
+        date_expression = +''   # If strings are concatted with '<<' the variable must be mutable (changable), 
+                                # which is what the '+' sign before the literal means.  Otherwise the literal is 
+                                # frozen.
         
-        from_date_formatted = format_date( from_yyyyDmmDdd )        
-        if ( thru_yyyyDmmDdd.empty? or from_yyyyDmmDdd == thru_yyyyDmmDdd ) then
-            date_expression += from_date_formatted
-        else
-            if ( from_yyyyDmmDdd > thru_yyyyDmmDdd ) then
-                SE.puts "#{SE.lineno}: from date > thru date"
-                SE.q {[ 'from_yyyyDmmDdd', 'thru_yyyyDmmDdd' ]}
-                raise
-            end
-            thru_date_formatted = format_date( thru_yyyyDmmDdd ) 
-            date_expression += "#{from_date_formatted}#{self.date_expression_separator}#{thru_date_formatted}"
+        if ( from_date.not_blank? ) then
+            date_expression << format_date( from_date )      
         end
-        return date_expression      
+         
+        if ( thru_date.not_blank? ) then
+            if ( from_date.not_blank? ) then         
+                if ( from_date != thru_date ) then                              
+                    date_expression << date_expression_separator
+                    date_expression << format_date( thru_date )      
+                end
+            else
+                date_expression << format_date( thru_date )      
+            end
+        end
+        if ( date_expression.blank? ) then
+            date_expression << 'Undated' 
+        else 
+            if ( certainty == K.approximate ) then            
+                date_expression << 's' if ( date_expression.length == 4 and date_expression.last == '0' ) 
+                date_expression.prepend( K.circa + ' ' )
+            else
+                date_expression << certainty
+            end 
+        end
+        return date_expression
     end
 
 end

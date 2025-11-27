@@ -48,7 +48,7 @@ class Archival_Object
                 stringer = "#{@res_O.rep_O.uri}/#{K.archival_objects}"
                 if ( stringer == p2_AO_identifier[ 0 .. stringer.maxindex ]) then
                     @uri = p2_AO_identifier
-                    @num = p2_AO_identifier.sub( /^.*\//, '' )
+                    @num = p2_AO_identifier.trailing_digits
                     if (! @num.integer? ) then
                         SE.puts "#{SE.lineno}: =============================================="
                         SE.puts "Invalid param2: #{p2_AO_identifier}"
@@ -178,7 +178,7 @@ class AO_Record_Buf < Record_Buf
             SE.puts "#{SE.lineno}: Updated ArchivalObject, uri = #{http_response_body_H[ K.uri ]}";
         end
         @uri = http_response_body_H[ K.uri ] 
-        @num = @uri.sub( /^.*\//, '' )
+        @num = @uri.trailing_digits
         return self
     end
 end    
@@ -249,8 +249,8 @@ class AO_Query_of_Repository
 end
 
 class AO_Query_of_Resource
-    public  attr_reader :res_O, :uri, :index_H_A, :ao_display_order_H,              :index_only_warning_given_TF    
-    private attr_writer :res_O, :uri, :index_H_A, :ao_display_order_H, :record_H_A, :index_only_warning_given_TF
+    public  attr_reader :res_O, :uri, :index_H_A, :ao_display_order_H                 
+    private attr_writer :res_O, :uri, :index_H_A, :ao_display_order_H, :record_H_A
     
     def initialize( p1_res_O, 
                     p2_get_full_ao_record_TF = false, p3_starting_node_url = '', p4_recurse_index_children_TF = true )
@@ -264,14 +264,13 @@ class AO_Query_of_Resource
         self.index_H_A  = nil
         self.ao_display_order_H  = nil
         self.record_H_A = nil
-        self.index_only_warning_given_TF = false
 =begin    
         Param2, if true, causes the query to read each AO record.  This is about 10 times slower
         than using the data from the AO indexes, which is a subset of the AO.
 =end
         if ( p2_get_full_ao_record_TF.not_in?( true, false )) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 should be true or false, not '#{p2_get_full_ao_record_TF}'"
+            SE.puts "Param 2 should be true or false, not '#{p2_get_full_ao_record_TF}'"
             raise
         end 
       # if ( p2_get_full_ao_record_TF ) then
@@ -282,7 +281,7 @@ class AO_Query_of_Resource
 
         if ( p4_recurse_index_children_TF.not_in?( true, false )) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 should be true or false, not '#{p4_recurse_index_children_TF}'"
+            SE.puts "Param 4 should be true or false, not '#{p4_recurse_index_children_TF}'"
             raise
         end         
 
@@ -304,7 +303,7 @@ class AO_Query_of_Resource
             self.ao_display_order_H[ ao_uri_num ] = ao_display_order
         end
 
-        if ( p2_get_full_ao_record_TF and self.ao_display_order_H.length > 0 ) then
+        if ( p2_get_full_ao_record_TF ) then
             self.record_H_A = Array.new( self.ao_display_order_H.length )
             AO_Query_of_Repository.new( res_O.rep_O ).for_num_A( self.ao_display_order_H.keys.sort ).each do | record_H |
                 if ( record_H.has_no_key?( K.resource ) ) then
@@ -375,43 +374,22 @@ class AO_Query_of_Resource
     def record_H_A
 #            @record_H_A must be used in here because 'self.record_H_A' is this method.  
         if ( @record_H_A.nil? ) then 
-            if ( not self.index_only_warning_given_TF ) then
-                SE.puts "#{SE.lineno}: Returning index_H ONLY data! Called from: #{SE.lineno( 1 )}"
-                self.index_only_warning_given_TF = true
-            end
-            return self.index_H_A
-        else
-            return @record_H_A
+            SE.puts "#{SE.lineno}: @record_H_A == nil "
+            SE.puts "Did you set 'p2_get_full_ao_record_TF' of the query to 'true'?"
+            raise
         end
+        return @record_H_A
     end
     
     def record_H_of_uri_num( p1_ao_uri_num )
-        if ( self.record_H_A.nil? ) then
-            if ( not self.index_only_warning_given_TF ) then
-                SE.puts "#{SE.lineno}: Returning index ONLY data! Called from: #{SE.lineno( 1 )}"
-                self.index_only_warning_given_TF = true
-            end
-            return index_H_of_uri_num( p1_ao_uri_num )
-        end
-        case true
-        when p1_ao_uri_num.is_a?( String ) 
-            ao_uri_num = p1_ao_uri_num.delete_prefix( "#{self.uri}/" ).to_i
-        when p1_ao_uri_num.integer?
-            ao_uri_num = p1_ao_uri_num.to_i
-        else
-            SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Was expecting param 'p1_ao_uri_num' to be a URI String or integer"
-            SE.q {'p1_ao_uri_num'}
-            raise
-        end
-        if ( self.ao_display_order_H.has_no_key?( ao_uri_num ) ) then
-            SE.puts "#{SE.lineno}: No ao_uri_num '#{ao_uri_num}' in resource"
-            raise
-        end
-        return self.record_H_A[ self.ao_display_order_H[ ao_uri_num ] ]
+        return self.record_H_A[ ao_display_order( p1_ao_uri_num ) ]
     end   
 
     def index_H_of_uri_num( p1_ao_uri_num )
+        return self.index_H_A[ ao_display_order( p1_ao_uri_num ) ]
+    end   
+    
+    def ao_display_order( p1_ao_uri_num )
         case true
         when p1_ao_uri_num.is_a?( String ) 
             ao_uri_num = p1_ao_uri_num.delete_prefix( "#{self.uri}/" ).to_i
@@ -427,10 +405,9 @@ class AO_Query_of_Resource
             SE.puts "#{SE.lineno}: No ao_uri_num '#{ao_uri_num}' in resource"
             raise
         end
-        return self.index_H_A[ self.ao_display_order_H[ ao_uri_num ] ]
-    end   
+        return self.ao_display_order_H[ ao_uri_num ] 
+    end
   
-
     def process_each_node( node_uri, recurse_index_children = true )
         if ( node_uri == '' ) then
             waypoint_node_H = self.res_O.rep_O.aspace_O.http_calls_O.get( "#{self.res_O.uri}/tree/root", { } ) 

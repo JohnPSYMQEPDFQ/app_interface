@@ -41,10 +41,10 @@ require 'class.Find_Dates_in_String.module.Date_Clumps_classify_by_good_and_bad_
 
  
 class Find_Dates_in_String    
-    public  attr_reader :original_text,
+    public  attr_reader :aspace_O, :original_text,
                         :separation_punctuation_O, :date_clump_uid_O,
                         :output_data_O, :output_data_with_all_dates_removed_O
-    private attr_writer :original_text,
+    private attr_writer :aspace_O, :original_text,
                         :separation_punctuation_O, :date_clump_uid_O,
                         :output_data_O, :output_data_with_all_dates_removed_O
 
@@ -57,11 +57,12 @@ class Find_Dates_in_String
     include Date_Clumps_classify_by_good_and_bad_morality
             
     
-    def initialize( param__option_H = {} )    
+    def initialize( param_aspace_O, param__option_H )    
         binding.pry if ( respond_to? :pry )       
         
+        self.aspace_O = param_aspace_O
         self.separation_punctuation_O = Separator_Punctuation.new               
-        self.date_clump_uid_O = Date_clump_uid.new( separation_punctuation_O )
+        self.date_clump_uid_O = Date_clump_uid.new( self.separation_punctuation_O )
         
         set_options( param__option_H )
         
@@ -79,9 +80,9 @@ class Find_Dates_in_String
 #       __method__ (which is the currently executing method, which is :initialize).   
 
         self.singleton_class.included_modules.each do | mod |
-#               next if ( not mod.respond_to?( __method__, true ) )   <<<<<  This didn't work.  It returned true for Kernal 
-                next if ( not mod.private_instance_methods.member?( __method__ ) )
-                mod.instance_method( __method__ ).bind( self ).call
+#           next if ( not mod.respond_to?( __method__, true ) )   <<<<<  This didn't work.  It returned true for Kernal 
+            next if ( not mod.private_instance_methods.member?( __method__ ) )
+            mod.instance_method( __method__ ).bind( self ).call
         end
        
     end    
@@ -104,53 +105,51 @@ class Find_Dates_in_String
     #           each time a method is called in the class, I decided to name a module method the same name
     #           as the instance method and call it like is being done for "def initialize".
         self.singleton_class.included_modules.each do | mod |
-                next if ( not mod.method_defined?( __method__ ) )   
-                mod.instance_method( __method__ ).bind( self ).call
+            next if ( not mod.method_defined?( __method__ ) )   
+            mod.instance_method( __method__ ).bind( self ).call
         end
         
         self.original_text = param__original_text 
 
         self.output_data_O = String_with_before_after_STORE_and_ASSIGN_methods.new( after_change_method: method( :after_change_validate )  )         
-             output_data_O.string = original_text + ''   # Make a new string, not a pointer.           
-                
+        self.output_data_O.string = self.original_text.dup   # Make a new string, not a pointer.                
         date_clumps_parse_text_dates( )
-        date_clumps_judge_each_clump( )
-                        
-        output_data_O.before_change_method = method( :before_change_validate ) 
+        date_clumps_judge_each_clump( )                      
+        self.output_data_O.before_change_method = method( :before_change_validate ) 
 
         self.output_data_with_all_dates_removed_O = String_with_before_after_STORE_and_ASSIGN_methods.new( )   
-             output_data_with_all_dates_removed_O.before_change_method = method( :before_change_validate ) 
-             output_data_with_all_dates_removed_O.after_change_method  = method( :after_change_validate )            
-             output_data_with_all_dates_removed_O.string               = output_data_O.string + ''
-       
+        self.output_data_with_all_dates_removed_O.before_change_method = method( :before_change_validate ) 
+        self.output_data_with_all_dates_removed_O.after_change_method  = method( :after_change_validate )            
+        self.output_data_with_all_dates_removed_O.string               = self.output_data_O.string.dup    
         date_clumps_convert_back_to_text_dates( )
         date_clumps_classify_by_good_and_bad_morality( )
 
         case option_H[ :date_string_composition ]
         when :dates_in_text
-            if (output_data_with_all_dates_removed_O.string.match?( %r~#{K.alpha_month_RES}( |/|-)~i ) ) then
-                SE.puts "#{SE.lineno}: Warning possible unmatched date '#{$~}' in '#{output_data_with_all_dates_removed_O.string}'"
+            if ( output_data_with_all_dates_removed_O.string.match?( %r~#{K.alpha_month_RES}( |/|-)~i ) ) then
+                SE.puts "#{SE.lineno}: Warning possible unmatched date '#{$~}' in '#{self.output_data_with_all_dates_removed_O.string}'"
                 SE.puts ''
             end
         when :only_dates
-            if (output_data_with_all_dates_removed_O.string.not_blank? ) then
-                SE.puts "#{SE.lineno}: Unconverted dates in: '#{original_text}'"
-                SE.puts "#{SE.lineno}: Extra text:           '#{output_data_with_all_dates_removed_O.string}'"  if ( original_text != output_data_with_all_dates_removed_O.string )
-                if ( good__date_clump_S__A.length > 0 ) then
-                    stringer = good__date_clump_S__A.map do | date_clump_S |
+            if ( output_data_with_all_dates_removed_O.string.not_blank? ) then
+                SE.puts "#{SE.lineno}: Unconverted dates in: '#{self.original_text}'"
+                SE.puts "#{SE.lineno}: Extra text:           '#{self.output_data_with_all_dates_removed_O.string}'"  if ( original_text != self.output_data_with_all_dates_removed_O.string )
+                if ( self.good__date_clump_S__A.length > 0 ) then
+                    stringer = self.good__date_clump_S__A.map do | date_clump_S |
                         date_clump_S.date_match_S__A.map do | date_match_S |
                             date_match_S.as_date
                         end
                     end.join( "','")
-                    SE.puts "#{SE.lineno}: Good dates: '#{stringer}' moved to bad-dates array after row #{bad__date_clump_S__A.length}"
-                    bad__date_clump_S__A += good__date_clump_S__A
+                    SE.puts "#{SE.lineno}: Good dates: '#{stringer}' moved to bad-dates array after row #{self.bad__date_clump_S__A.length}"
+                    self.bad__date_clump_S__A += self.good__date_clump_S__A
                     self.good__date_clump_S__A = [ ]
                 end
                 SE.puts ''
-                return original_text
+                return self.original_text
             end
         end
-        return output_data_O.string.rstrip
+       #SE.q {'self.output_data_O.string'}  
+        return self.output_data_O.string.rstrip
     end
 end
 
