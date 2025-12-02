@@ -80,9 +80,17 @@ module Date_Clumps_parse_text_dates
                     end
                     return date_match_S__from.as_date
                 end
-                def as_thru_date
+                def as_thru_date( use_from_date_if_no_thru_date = nil )
                     if ( date_match_S__thru.nil? ) then
-                        return ''
+                        case true
+                        when use_from_date_if_no_thru_date == :else_from_date
+                            return date_match_S__from.as_date
+                        when use_from_date_if_no_thru_date.nil?
+                            return ''
+                        else
+                            SE.puts "#{SE.lineno}: 'use_from_date_if_no_thru_date' must be 'nil' or ':else_from_date', not '#{use_from_date_if_no_thru_date}'"
+                            raise
+                        end
                     else
                         return date_match_S__thru.as_date
                     end

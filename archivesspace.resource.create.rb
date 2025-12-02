@@ -27,9 +27,7 @@ def csrm_collection( repository_uri:,
                      historical_info:,
                      series_summary:,
                      process_info:,
-                     from_date:,
-                     thru_date:,
-                     date_expression:
+                     extent_date_H_A:
                      )      
                      
     collection_name     = "PLACE HOLDER !!!!!!!!!!" if ( collection_name.blank? )
@@ -75,16 +73,8 @@ def csrm_collection( repository_uri:,
             "related_accessions"        =>  [],
             "revision_statements"       =>  [],
             "rights_statements"         =>  [],
-            "subjects"                  =>  [],
-            
-            "dates"             =>  [   {   "begin"             => from_date, 
-                                            "date_type"         => "inclusive", 
-                                            "end"               => thru_date, 
-                                            "expression"        => date_expression, 
-                                            K.jsonmodel_type    => "date", 
-                                            K.label             => "creation",
-                                            }   # Index 0
-                                        ],
+            "subjects"                  =>  [],            
+            "dates"                     =>  extent_date_H_A,
 
             "extents"           =>  [   {   "container_summary" => "NNNN Boxes", 
                                             "extent_type"       => "Linear Feet", 
@@ -246,12 +236,12 @@ aspace_O = ASpace.new
 aspace_O.allow_updates = cmdln_option_H[ :update ]
 rep_O = Repository.new( aspace_O, rep_num )
 
-find_dates_O = Find_Dates_in_String.new( aspace_O,
-                                         {  :morality_replace_option => { :good  => :remove },
+find_dates_O = Find_Dates_in_String.new( {  :morality_replace_option => { :good  => :remove },
                                             :date_string_composition => :dates_in_text,
 #                                           :default_century_pivot_ccyymmdd => '1900',
                                             :sort => false,
-                                         } )
+                                          },
+                                          aspace_O )
 #SE.q {[ 'find_dates_O.option_H' ]}
 
 ead_id              = nil
@@ -262,9 +252,16 @@ filing_location     = +''
 historical_info     = +''
 series_summary      = +''
 process_info        = +''
-from_date           = '1600'
-thru_date           = '2600'
-date_expression     = "#{from_date} - #{thru_date}"
+extent_date_H_A     = [ ]
+extent_date_H = {   K.begin            => '', 
+                    K.date_type        => K.inclusive, 
+                    K.end              => '', 
+                    K.certainty        => '',
+                    K.expression       => 'Undated', 
+                    K.jsonmodel_type   => K.date, 
+                    K.label            => K.creation,
+                  }  
+extent_date_H_A.push( extent_date_H )   #  This is the default if there's no dates.
 
 manual_process_columns_H = {}
 if ( cmdln_option_H[ :inmagic ] ) then
@@ -275,7 +272,7 @@ if ( cmdln_option_H[ :inmagic ] ) then
             when 'Additional Access'.downcase
                 # Not used
             when 'Collection Name'.downcase
-                collection_name << inmagic_value.gsub( K.embedded_CRLF, "\n" )
+                collection_name << inmagic_value.gsub( K.embedded_CRLF, " " )
             when 'Filing Location'.downcase
                 filing_location << inmagic_value.gsub( K.embedded_CRLF, "\n" )
             when 'Historical Info'.downcase
@@ -312,17 +309,22 @@ if ( cmdln_option_H[ :inmagic ] ) then
                 series_summary << inmagic_value.gsub( K.embedded_CRLF, "\n" )
             when 'Extent'.downcase
                 output_string = find_dates_O.do_find( inmagic_value )
-                if ( output_string == inmagic_value or find_dates_O.good__date_clump_S__A.length > 1 ) then
+                if ( output_string == inmagic_value ) then
                     manual_process_columns_H[ inmagic_column ] = inmagic_value
                 else
                     manual_process_columns_H[ inmagic_column ] = output_string.strip
-                    from_date = find_dates_O.good__date_clump_S__A.first.as_from_date
-                    if ( find_dates_O.good__date_clump_S__A.first.as_thru_date.blank? ) then
-                        thru_date = from_date
-                    else
-                        thru_date = find_dates_O.good__date_clump_S__A.first.as_thru_date
+                    extent_date_H_A = [ ]                                      
+                    find_dates_O.good__date_clump_S__A.each do | date_clump_S | 
+                        extent_date_H = { K.begin          => date_clump_S.as_from_date, 
+                                          K.date_type      => K.inclusive, 
+                                          K.end            => date_clump_S.as_thru_date( :else_from_date ) 
+                                          K.certainty      => date_clump_S.certainty,
+                                          K.expression     => date_clump_S.as_date_expression, 
+                                          K.jsonmodel_type => K.date, 
+                                          K.label          => K.creation,
+                                         }  
+                        extent_date_H_A.push( extent_date_H )
                     end
-                    date_expression = find_dates_O.good__date_clump_S__A.first.as_date_expression                                                                           
                 end
             else
                 process_info << "InMagic column '#{inmagic_column}':\n" + 
@@ -358,9 +360,7 @@ resource_H = csrm_collection( repository_uri: rep_O.uri,
                               historical_info: historical_info,
                               series_summary: series_summary,
                               process_info: process_info,
-                              from_date: from_date,
-                              thru_date: thru_date,
-                              date_expression: date_expression
+                              extent_date_H_A: extent_date_H_A
                               )
 #SE.q {'resource_H'}
 resource_buf_O = Resource.new( rep_O ).new_buffer.create

@@ -311,16 +311,27 @@ module K
                        # ')' +
                    # ')' +
                    # '(?<end_del>(\Z|\.|,|:|\s*\]|\s+))'           
-        stringer = '(?<begin_del>(\A|\s+|\[\s*))' +     # MUST use the /x option on the regex!!!
+        # stringer = '(?<begin_del>(\A|\s+|\[\s*))' +     # MUST use the /x option on the regex!!!
+                   # '(?<inside_the_dels>' + 
+                       # '(' +
+                           # '(?<container_type>'       + "(#{K.valid_container_types_RES}|#{K.valid_child_types_RES})" + ')((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>[0-9]+                (' + K.container_type_separators_RES + '[0-9]+)?),?' + 
+                           # '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
+                           # '(\s+(?<child_type>      ' + K.valid_child_types_RES                                       + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     ([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
+                           # '(\s+(?<grandchild_type> ' + K.valid_grandchild_types_RES                                  + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
+                       # ')' +
+                   # ')' +
+                   # '(?<end_del>(\Z|\.|,|:|\s*\]|\s+))'    
+        stringer = '(\A|\s+|\[\s*)\K' +                #\K = The behavior of \K is similar to a positive lookbehind assertion (?<=...), but with the key advantage of allowing variable-length lookbehind
+                                                       # MUST use the /x option on the regex!!!
                    '(?<inside_the_dels>' + 
                        '(' +
-                           '(?<container_type>'       + "(#{K.valid_container_types_RES}|#{K.valid_child_types_RES})" + ')((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>[0-9]+(' + K.container_type_separators_RES + '[0-9]+)?),?' + 
+                           '(?<container_type>'       + "(#{K.valid_container_types_RES}|#{K.valid_child_types_RES})" + ')((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>[0-9]+         (' + K.container_type_separators_RES + '[0-9]+)?),?' + 
                            '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
-                           '(\s+(?<child_type>      ' + K.valid_child_types_RES                                       + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     ([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
-                           '(\s+(?<grandchild_type> ' + K.valid_grandchild_types_RES                                  + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
+                           '(\s+(?<child_type>      ' + K.valid_child_types_RES                                       + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     [0-9]+[a-z]?(' + K.container_type_separators_RES + '[0-9]+[a-z]?)?  ))?  )?' +
+                           '(\s+(?<grandchild_type> ' + K.valid_grandchild_types_RES                                  + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>[0-9]+[a-z]?(' + K.container_type_separators_RES + '[0-9]+[a-z]?)?  ))?  )?' +
                        ')' +
                    ')' +
-                   '(?<end_del>(\Z|\.|,|:|\s*\]|\s+))'                           
+                   '(?<trailing_del>(\Z|\s*[.,;:\]]|\s+))'        
 #       When adding or changing stuff (like the '<container_type_modifier>') don't forget to add them to 
 #       the 'formatter.dictation_1.to.indent.rb' program.        
         return stringer

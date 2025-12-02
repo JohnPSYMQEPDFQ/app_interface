@@ -161,10 +161,10 @@ module Set_Options
                 self.option_H[ option_H_key ] = strptime_O                
             when :yyyymmdd_max_value 
                 case self.option_H[ option_H_key ].to_s.length
-              # when 4
-              #     testdate = "#{self.option_H[ option_H_key ]}0101"
-              # when 6
-              #     testdate = "#{self.option_H[ option_H_key ]}01"
+                when 4
+                    testdate = "#{self.option_H[ option_H_key ]}1201"  # Dec 01 - Set to 'last_day_of_month' below.
+                when 6
+                    testdate = "#{self.option_H[ option_H_key ]}01"    # 1st day of month - Set to 'last_day_of_month' below.
                 when 8
                     testdate = "#{self.option_H[ option_H_key ]}"
                 else

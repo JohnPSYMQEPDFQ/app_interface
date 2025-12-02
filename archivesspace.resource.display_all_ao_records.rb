@@ -101,9 +101,7 @@ print__record_H = lambda{ | record_H, cnt |
                      # Maybe optional ones:
                          K.publish, K.has_unpublished_ancestor,
                        ]
-            remove_A.each do | key |           
-                record_H.except_nested!( key )      
-            end
+            record_H.nested_except!( remove_A )
         end
         case cmdln_option[ :display ]
         when 'string'

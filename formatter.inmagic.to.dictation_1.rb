@@ -170,7 +170,7 @@ def box_only_line_logic( sub_column_value, note )
     if ( $&.not_nil? ) then
         current_container = $&.strip
         prematch=$`
-        if ( stringer.match?( /^\s*([.:])?\s*$/) and note.blank? ) then            # If true: the sub_column is ONLY the Box/child data.
+        if ( stringer.match?( /^\s*([.:])?\s*$/) and note.blank? ) then  # If true: the sub_column is ONLY the Box/child data.
             case box_only_line_option
             when :next  
                 self.box_cnt += -1
@@ -186,9 +186,9 @@ def box_only_line_logic( sub_column_value, note )
                     return sub_column_value
                 end
 #   ADD!  Only move the box if the previous line ALSO has a date.  If not, just make a "confusing" line.
-                pending_BUF_container_match_O = self.pending_output_BUF.match( /^\s*#{K.container_and_child_types_RES}/i )
-                if ( pending_BUF_container_match_O.not_nil?) then
-                    if ( pending_BUF_container_match_O[ 0 ].upcase == pending_BUF_container_match_O[ 0 ] ) then    # If true:  the Pending_BUF isn't a group record AND
+                pending_BUF_type_match_O = self.pending_output_BUF.match( /^\s*#{K.container_and_child_types_RES}/i )
+                if ( pending_BUF_type_match_O.not_nil?) then
+                    if ( pending_BUF_type_match_O[ 0 ].upcase == pending_BUF_type_match_O[ 0 ] ) then    # If true:  the Pending_BUF isn't a group record AND
                       # The container/child that was present was already upcased
                       # which means it came from here.
                         self.pending_output_BUF.prepend( current_container.upcase + ', ' )
@@ -242,7 +242,7 @@ def output_F_puts( stringer )
     self.pending_output_BUF = stringer.dup
 end
 
-def put_column( column_idx = 0, title_length = 0 )
+def put_column( column_idx = 0 )
     SE.q { [ 'self.detail_column_A[ column_idx]' ]}  if ( $DEBUG )  
     column_value  = self.detail_column_A[ column_idx ]
     SE.q { [ 'column_idx','column_value' ]} if ( $DEBUG ) 
@@ -258,49 +258,118 @@ def put_column( column_idx = 0, title_length = 0 )
     sub_column_value_A.each_with_index do | sub_column_value, sub_column_idx |
 #       next if ( sub_column_value.blank? )
         sub_column_value_unaltered = sub_column_value.dup
-        sub_column_without_notes = sub_column_value.dup
-        sub_column_without_notes.gsub!( /\s+Note:.*/i, '' )  
 
-        note = +''
+        notes = +''
         if ( sub_column_value.sub!( /\s+note:(.*)$/i, '' ) ) then
-            note = $&
-            note.strip!
+            stringer = $&
+            stringer.gsub!( /\s\s+/, ' ' )
+            stringer.strip!
+            stringer.sub!( /./,&:upcase )
+            stringer << ' '
+            notes << stringer
         end
-        if ( sub_column_value.sub!( /(\(.*?\))\s*$/, '' ) ) then    # Inmagic column detail notes are enclosed in ()
-            if ( note.not_blank? ) then
+        if ( sub_column_value.sub!( /(\(.*?\))\s*$/, '' ) ) then    # Inmagic column detail notes are enclosed in ()       
+            if ( notes.not_blank? ) then
+                SE.puts "#{SE.lineno}: WARNING: multiple notes found on one line"
                 SE.q {'$&'}
                 SE.q {'sub_column_value_unaltered'}
-                SE.q {'note'}
-                raise
+                SE.q {'notes'}
             end
-            note = $&                           # The note is put back AFTER the box logic
-            note.gsub!( /[()]/, '' )
-            note.strip!
-            note.sub!( /./,&:upcase )
-            note = "Note: #{note}"
+            stringer = $&                           # The note is put back AFTER the box logic
+            stringer.gsub!( /[()]/, '' )
+            stringer.gsub!( /\s\s+/, ' ' )
+            stringer.strip!
+            stringer.sub!( /./,&:upcase )
+            stringer << ' '
+            notes << "NOTE: #{stringer}"
         end
 
+#               Get all the containers into an array           
+        type_match_O_A = []
+        loop do           
+            sub_column_value.sub!( K.container_and_child_types_RE, ' ' ) # <<  This must be a ' '
+            type_match_O = $~
+            break if ( type_match_O.nil? )
+            if ( type_match_O[ :trailing_del ].last == ']' ) then
+                SE.puts "#{SE.lineno}: WARNING: ']' chopped of due to container.sub! statement."
+            end
             
-        stringer = +''
-        loop do
-            #   Move the container_and_child_types to the front of the record (without any brackets).            
-            sub_column_value.sub!( K.container_and_child_types_RE, ' ' )  # <<  This must be a ' '
-            break if ( $~.nil? )            
-            stringer << $~[ :inside_the_dels ].downcase + ' '             # The downcase is needed for BOX ONLY logic below
-            self.box_cnt += 1                                             # which uses upcase
-            #   Move the bracketed words [volume,letterpress] to the front of the record without the brackket. 
-            sub_column_value.sub!( K.container_bracketed_word_RE, ' ' )   # <<  This must be a ' '
-            if ( $~.not_nil? )
-                stringer << $~[ :bracketed_word ] + ' '
+            regexp = /#{K.valid_container_types_RES}/i
+            
+            current_type_is_a_container = type_match_O[ :container_type ].match?( regexp )
+            self.box_cnt += 1 if current_type_is_a_container
+            
+            last_type_is_a_container = (
+                 type_match_O_A[ -1 ] and         
+                 type_match_O_A[ -1 ][ :container_type ].match?( regexp ) )
+            second_to_last_type_is_a_container = (
+                 type_match_O_A[ -2 ] and         
+                 type_match_O_A[ -2 ][ :container_type ].match?( regexp ) )
+            if ( current_type_is_a_container ) then
+                if ( type_match_O_A.empty? or last_type_is_a_container or second_to_last_type_is_a_container ) then
+                    type_match_O_A.push( type_match_O ) 
+                else
+                    type_match_O_A.insert( -2, type_match_O )  # insert BEFORE the last entry   
+                end
+            else
+                type_match_O_A.push( type_match_O ) 
             end
-
         end
-        stringer << sub_column_value
-        sub_column_value = stringer.dup
-                
-        sub_column_value = box_only_line_logic( sub_column_value, note )
+
+        rearranged_sub_column_value = +''        
+            #   Move the container_and_child_types to the front of the record (without any brackets). 
+        type_match_O_A.each do | type_match_O |
+            rearranged_sub_column_value << type_match_O[ :inside_the_dels ].downcase  # The downcase is needed for BOX ONLY logic below
+            rearranged_sub_column_value.sub!(/[\p{Punct}]+\s*$/, '')
+            rearranged_sub_column_value.rstrip!
+            rearranged_sub_column_value << ' '
+        end
+        if ( type_match_O_A.length > 0 ) then
+            loop do
+                #   Move the bracketed words to the front of the record without the bracket. 
+                sub_column_value.sub!( K.container_bracketed_word_RE, ' ' ) # <<  This must be a ' '
+                break if ( $~.nil? )
+                rearranged_sub_column_value << $~[ :bracketed_word ] + ' '
+            end  
+            rearranged_sub_column_value.rstrip!
+            rearranged_sub_column_value << '; '    # End of the containers.        
+        end
         
-        sub_column_value << " #{note}." if ( note.not_blank? )
+        rearranged_sub_column_value << sub_column_value.strip   # Put what's left of the sub_column on the end.    
+        sub_column_value = rearranged_sub_column_value.dup   # No pointers!
+
+#       This note logic needs to be here to handle the pattern of:
+#           [box NN child NN shelf XXXX]   which is usually at the end of the line.
+#
+#       The box and child things are pulled off by the code above, leaving
+#           [  shelf XXXX ] 
+#       at the end of the record.
+     
+        if ( sub_column_value.sub!( /(\[\s* shelf\s.*?\])\s*$/i, '' ) ) then    # Inmagic column shelf notes are enclosed in [ ]
+            if ( notes.not_blank? ) then
+                SE.puts "#{SE.lineno}: WARNING: multiple notes found on one line"
+                SE.q {'$&'}
+                SE.q {'sub_column_value_unaltered'}
+                SE.q {'notes'}
+            end
+            stringer = $&                           # The note is put back AFTER the box logic
+            stringer.gsub!( /[\[\]]/, '' )
+            stringer.gsub!( /\s\s+/, ' ' )
+            stringer.sub!( /\.$/, '' )
+            stringer.strip!
+            stringer.sub!( /./,&:upcase )
+            stringer << ' '
+            notes << "NOTE: {physloc} #{stringer}"
+        end              
+       
+        sub_column_value = box_only_line_logic( sub_column_value, notes )
+        
+        if ( sub_column_value.length > self.cmdln_option_H[ :max_title_size ] ) then
+            SE.puts "WARNING: Max title size is greater than #{self.cmdln_option_H[ :max_title_size ]} at ln:#{self.output_cnt}:'#{sub_column_value}'"
+            SE.puts ""
+        end
+        
+        sub_column_value << " #{notes}" if ( notes.not_blank? )
         
         this_column_is_a_record_group_continuation = false
         if ( column_idx == 0 )
@@ -388,15 +457,11 @@ def put_column( column_idx = 0, title_length = 0 )
             SE.puts "WARNING: Odd number of square-brackets found at ln:#{self.output_cnt}:'#{sub_column_value}'"
             SE.puts ""
         end
-        if ( sub_column_without_notes.length > self.cmdln_option_H[ :max_title_size ] ) then
-          # SE.puts "WARNING: Max title size is greater than #{self.cmdln_option_H[ :max_title_size ]} at ln:#{self.output_cnt}:'#{sub_column_value}'"
-          # SE.puts ""
-        end
 
         if ( column_idx < self.detail_column_A.maxindex ) then   
             self.container_for_following_records_reset
 
-            put_column( column_idx + 1, title_length + sub_column_without_notes.length )   
+            put_column( column_idx + 1  )   
 
             self.container_for_following_records_reset
         end
@@ -413,7 +478,10 @@ def put_column( column_idx = 0, title_length = 0 )
                         " '#{group_text_from_stack}',#{self.column_stack_A.maxindex},#{column_idx}"
         end
     end
-    if ( column_idx == 0 and self.column_stack_A.not_empty? and not self.column_stack_A.last.match?( /#{K.recordgrp_text}/i ) ) then   
+    if ( column_idx == 0 and 
+         self.column_stack_A.not_empty? and 
+         not self.column_stack_A.last.match?( /#{K.recordgrp_text}/i ) 
+         ) then   
         SE.q {['self.column_stack_A']}
         raise
     end
@@ -613,14 +681,15 @@ tmp1_F.close
 tmp3_F = File.new( "#{myself_name}.tmp3_F.json", 'w+' )
 #SE.q {['column_with_data_H']}
 
-display_column_with_data_H = lambda{
+column_with_data_H__truncated_display = nil   #  Just to get rid of the warning: assigned but unused variable - column_with_data_H__truncated_display
+column_with_data_H__truncated_display = lambda{
     h = {}
     column_with_data_H.each_pair do | column, value |
         h[ column ] = value[ 0, 120 ]
     end
     return h
-}
-SE.q {'display_column_with_data_H.call'}
+}                
+SE.q {'column_with_data_H__truncated_display.call'}  
 
 self.used_column_header_A = []
 tmp2_F.rewind
@@ -740,8 +809,8 @@ tmp3_F.each_line do | input_column_J |
         when 'Filing Location'.downcase
             stringer = (( resource_data_H[ column_name ].blank? ) ? '' : ', ' ) + column_value.sub( /\s*Statewide Museum Collections Center\s*/i, '' )
             resource_data_H[ column_name ] << stringer.gsub( /\s\s+/, ' ' )
-        else    
-            if ( resource_data_H[ column_name ].downcase != column_value.downcase ) then
+        else      
+            if ( resource_data_H[ column_name ].downcase.downcase.not_include?( column_value.downcase ) ) then
                 stringer = (( resource_data_H[ column_name ].blank? ) ? '' : ' +++++ ' ) + column_value
                 resource_data_H[ column_name ] << stringer
             end

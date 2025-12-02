@@ -46,7 +46,7 @@ module Date_Clumps_classify_by_good_and_bad_morality
                     SE.puts ''
                     break
                 end
-                prev_date = ( date_clump_S.as_thru_date.blank? ) ? date_clump_S.as_from_date : date_clump_S.as_thru_date
+                prev_date = date_clump_S.as_thru_date( :else_from_date )
             end
         end
     end

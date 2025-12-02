@@ -57,14 +57,21 @@ class Find_Dates_in_String
     include Date_Clumps_classify_by_good_and_bad_morality
             
     
-    def initialize( param_aspace_O, param__option_H )    
+    def initialize( p1_param__option_H = {}, p2_param_aspace_O = nil )    
         binding.pry if ( respond_to? :pry )       
         
-        self.aspace_O = param_aspace_O
+        if ( p2_param_aspace_O.not_nil? ) then   # The ASpace Object is only needed for date_format method, so
+                                                 # if that's not need nil is find.
+            if ( p2_param_aspace_O.is_not_a?( ASpace ) ) then
+                SE.puts "#{SE.lineno}: Param 2 should be 'nil' or an 'ASpace' object, not a '#{p2_param_aspace_O.class}'"
+                raise
+            end
+        end
+        self.aspace_O = p2_param_aspace_O
         self.separation_punctuation_O = Separator_Punctuation.new               
         self.date_clump_uid_O = Date_clump_uid.new( self.separation_punctuation_O )
         
-        set_options( param__option_H )
+        set_options( p1_param__option_H )
         
 #
 #       A module having a method named 'initialize' will be called IF the class 'initialize' method calls 'super'.  BUT,

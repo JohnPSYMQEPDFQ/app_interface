@@ -84,10 +84,8 @@ print__record_H = lambda{ | record_H, cnt |
             remove_A = [ K.created_by, K.last_modified_by, K.create_time, K.system_mtime, K.user_mtime,  # From read filter
                          K.ref, K.uri, K.lock_version, 
                          K.collection, K.created_for_collection, K.display_string, K.long_display_string, K.identifier, 
-                       ]
-            remove_A.each do | key |           
-                record_H.except_nested!( key )      
-            end
+                       ]          
+            record_H.nested_except!( remove_A )      
         end
         case cmdln_option[ :display ]
         when 'string'

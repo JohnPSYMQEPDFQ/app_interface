@@ -80,17 +80,14 @@ def scrape_off_dates( title_field )
         if ( self.max_date == '' or self.max_date < date_clump_S.as_from_date ) then
             self.max_date = date_clump_S.as_from_date
         end
-        if ( date_clump_S.as_thru_date.not_blank? ) then
-            from_thru_date_H[ K.end ] = date_clump_S.as_thru_date 
-            if ( self.min_date == '' or self.min_date > date_clump_S.as_thru_date ) then
-                self.min_date = date_clump_S.as_thru_date
-            end
-            if ( self.max_date == '' or self.max_date < date_clump_S.as_thru_date ) then
-                self.max_date = date_clump_S.as_thru_date
-            end 
-        else
-            from_thru_date_H[ K.end ] = date_clump_S.as_from_date
+
+        from_thru_date_H[ K.end ] = date_clump_S.as_thru_date( :else_from_date )
+        if ( self.min_date == '' or self.min_date > from_thru_date_H[ K.end ] ) then
+            self.min_date = from_thru_date_H[ K.end ]
         end
+        if ( self.max_date == '' or self.max_date < from_thru_date_H[ K.end ]) then
+            self.max_date = from_thru_date_H[ K.end ]
+        end 
         from_thru_date_H[ K.bulk ]      = date_clump_S.bulk 
         from_thru_date_H[ K.certainty ] = date_clump_S.certainty 
         from_thru_date_H[ K.expression] = self.aspace_O.format_date_expression( from_date: from_thru_date_H[ K.begin ], 

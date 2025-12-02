@@ -1,11 +1,12 @@
 
 class Object
    
-    def deep_copy( )
+    def nested_copy( )
         return Marshal.load( Marshal.dump( self ) )
     end
-    alias_method :copy_by_value, :deep_copy
-    alias_method :cbv, :deep_copy
+    alias_method :copy_by_value, :nested_copy
+    alias_method :cbv,           :nested_copy
+    alias_method :deep_copy,     :nested_copy
 
     def not_nil?
         return ! self.nil?
@@ -23,8 +24,12 @@ class Object
         return ! self.match?( p1 )
     end
     
+    def not_include?( p1 )
+        return ! self.include?( p1 )
+    end
+    
     def in?( *args )
-        args.flatten.include?( self )
+        return args.flatten.include?( self )
     end
     def not_in?( *args )
         return ! self.in?( args )

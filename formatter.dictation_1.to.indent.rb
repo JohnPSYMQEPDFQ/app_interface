@@ -33,6 +33,10 @@ def scrape_off_container( input_record, shelf_id_O, from_thru_date_H_A)
         
         container_H = K.fmtr_empty_container_H
         input_record.sub!( K.container_and_child_types_RE, ' ' )
+        if ( $~[ :trailing_del ].last == ']' ) then
+            SE.puts "#{SE.lineno}: WARNING: ']' chopped of due to container.sub! statement."
+        end 
+        
         container_num = container_match_O[ :container_num ]
         container_A = container_num.split( /#{K.container_type_separators_RES}/ )
         if ( container_A.length > 1) then
@@ -74,18 +78,18 @@ def scrape_off_container( input_record, shelf_id_O, from_thru_date_H_A)
                 raise               
             end
             
-            container_is_a_child_H = {}
+            orphan_child_H = {}
             container_type = container_match_O[ :container_type ].downcase.sub( /([^s])s$/, '\1' )
             case true
             when container_type.match?( /^#{K.valid_child_types_RES}/i )
-                container_is_a_child_H[ K.type ]      = container_type                 
-                container_is_a_child_H[ K.indicator ] = container_H[ K.indicator ].dup
-                container_H[ K.type ]                 = nil
+                orphan_child_H[ K.type ]      = container_type                 
+                orphan_child_H[ K.indicator ] = container_H[ K.indicator ].dup
+                container_H[ K.type ]         = nil
             when container_type == K.box
-                container_H[ K.type ]                 = K.box
+                container_H[ K.type ]         = K.box
             when container_type == 'ov'
-                container_H[ K.type ]                 = K.box
-                container_H[ K.indicator ]           << ' OV'
+                container_H[ K.type ]         = K.box
+                container_H[ K.indicator ]   << ' OV'
             else
                 SE.puts "#{SE.lineno}: Invalid container_type: '#{container_match_O[ :container_type ]}'"
                 SE.q {[ 'container_match_O' ]}
@@ -108,19 +112,19 @@ def scrape_off_container( input_record, shelf_id_O, from_thru_date_H_A)
             end
 
             if ( container_match_O[ :child_type ].nil? ) then
-                if ( container_is_a_child_H.not_empty? ) then
+                if ( orphan_child_H.not_empty? ) then
                     container_H[ K.type ]        = K.box
                     container_H[ K.indicator ]   = 'Unknown'
-                    container_H[ K.type_2 ]      = container_is_a_child_H[ K.type ]                
-                    container_H[ K.indicator_2 ] = container_is_a_child_H[ K.indicator ]
+                    container_H[ K.type_2 ]      = orphan_child_H[ K.type ]                
+                    container_H[ K.indicator_2 ] = orphan_child_H[ K.indicator ]
                 end                
             else
-                if ( container_is_a_child_H.not_empty? ) then
+                if ( orphan_child_H.not_empty? ) then
                     SE.puts "#{SE.lineno}: Got child-data for the container match, but also got a child match"
                     SE.puts "#{SE.lineno}: I can't handle the complexity of it all..."  
                     SE.q {'input_record'}
                     SE.q {'container_match_O'}
-                    SE.q {'container_is_a_child_H'}
+                    SE.q {'orphan_child_H'}
                     SE.q {'container_A'}
                     raise                    
                 end
@@ -212,17 +216,13 @@ def scrape_off_dates( input_record )
         if ( self.max_date == '' or self.max_date < date_clump_S.as_from_date ) then
             self.max_date = date_clump_S.as_from_date
         end
-        if ( date_clump_S.as_thru_date.not_blank? ) then
-            from_thru_date_H[ K.end ] = date_clump_S.as_thru_date 
-            if ( self.min_date == '' or self.min_date > date_clump_S.as_thru_date ) then
-                self.min_date = date_clump_S.as_thru_date
-            end
-            if ( self.max_date == '' or self.max_date < date_clump_S.as_thru_date ) then
-                self.max_date = date_clump_S.as_thru_date
-            end 
-        else
-            from_thru_date_H[ K.end ] = date_clump_S.as_from_date
+        from_thru_date_H[ K.end ] = date_clump_S.as_thru_date( :else_from_date )
+        if ( self.min_date == '' or self.min_date > from_thru_date_H[ K.end ] ) then
+            self.min_date = from_thru_date_H[ K.end ]
         end
+        if ( self.max_date == '' or self.max_date < from_thru_date_H[ K.end ] ) then
+            self.max_date = from_thru_date_H[ K.end ]
+        end 
         from_thru_date_H[ K.bulk ]      = date_clump_S.bulk_TF
         from_thru_date_H[ K.certainty ] = date_clump_S.certainty 
         from_thru_date_H[ K.expression] = date_clump_S.as_date_expression
@@ -336,7 +336,7 @@ OptionParser.new do |option|
             SE.puts ''
             SE.puts msg
             SE.ap "Find_Dates_in_String default options:"
-            SE.ap Find_Dates_in_String.new( ).option_H
+            SE.ap Find_Dates_in_String.new( ).option_H.ai
             raise
         end
     end
@@ -384,21 +384,23 @@ marker_of_begining_of_record_before_prepend = '~~BOR~~'
 self.auto_group_H = { :text => '', :cnt => 0 }
 shelf_id_O = nil 
 
-self.find_dates_with_4digit_years_O = Find_Dates_in_String.new( self.aspace_O,
-                                                                { :morality_replace_option => { :good  => :remove_from_end },
-                                                                  :pattern_name_RES => '.',
-                                                                  :date_string_composition => :dates_in_text,
-                                                                  :yyyymmdd_min_value => '1800',
-                                                                }.merge( self.cmdln_option_H[ :find_dates_option_H ] ) )
+self.find_dates_with_4digit_years_O = 
+    Find_Dates_in_String.new( { :morality_replace_option => { :good  => :remove_from_end },
+                                :pattern_name_RES => '.',
+                                :date_string_composition => :dates_in_text,
+                                :yyyymmdd_min_value => '1800',
+                               }.merge( self.cmdln_option_H[ :find_dates_option_H ] ),
+                               self.aspace_O )
 
-self.find_dates_with_2digit_years_O = Find_Dates_in_String.new( self.aspace_O,
-                                                                { :morality_replace_option => { :good  => :keep },
-                                                                  :pattern_name_RES => '.',
-                                                                  :date_string_composition => :dates_in_text,
-                                                                  :default_century_pivot_ccyymmdd => '1900',
-                                                                }.merge( self.cmdln_option_H[ :find_dates_option_H ] ) )  \
-                                                                if ( self.cmdln_option_H[ :default_century_pivot_ccyymmdd ].empty? )
-                                                            
+self.find_dates_with_2digit_years_O = 
+    Find_Dates_in_String.new( { :morality_replace_option => { :good  => :keep },
+                                :pattern_name_RES => '.',
+                                :date_string_composition => :dates_in_text,
+                                :default_century_pivot_ccyymmdd => '1900',
+                               }.merge( self.cmdln_option_H[ :find_dates_option_H ] ),
+                               self.aspace_O ) \
+                         if ( self.cmdln_option_H[ :default_century_pivot_ccyymmdd ].empty? )
+                            
 self.min_date = +''
 self.max_date = +''
 self.note_cnt = 0

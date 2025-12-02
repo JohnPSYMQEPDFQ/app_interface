@@ -13,15 +13,15 @@ module Date_Clumps_judge_each_clump
                 day    = date_match_S.ymd_S.day.dup
                 
                 if ( year.nil? or ( month.nil? and day )) then
-                    SE.puts "#{SE.lineno}: I shouldn't be here: #{date_match_S.pattern_name}, idx=#{date_match_idx}: "+
-                                         "'#{date_match_S.all_pieces}' -> "+
+                    SE.puts "#{SE.lineno}: I shouldn't be here: #{date_match_S.pattern_name}, idx=#{date_match_idx}: " +
+                                         "'#{date_match_S.all_pieces}' -> " +
                                          "'#{date_match_S.piece( 1 )}' year.nil? or ( month.nil? and day)!"
                     SE.q { 'date_clump_S' }
                     raise
                 end
                 
                 if ( day and day.integer? and day.length == 4 and year.length.between?( 1, 2 ) ) then       
-                    stringer = "#{SE.lineno}: Swapped day and year: #{date_match_S.pattern_name}, idx=#{date_match_idx}: "+                                            
+                    stringer = "#{SE.lineno}: Swapped day and year: #{date_match_S.pattern_name}, idx=#{date_match_idx}: " +                                            
                                             "'#{date_match_S.piece( 1 )}' -> " + year + ' ' + month + ' ' + day
                     date_clump_S.judge_date( nil, stringer )
                     year, day               = day, year
@@ -30,16 +30,16 @@ module Date_Clumps_judge_each_clump
                 end
                 
                 if ( year.length < 2 or year.length == 3 or year.length > 4 ) then
-                    stringer = "#{SE.lineno}: bad date: #{date_match_S.pattern_name}, idx=#{date_match_idx}: "+
-                                            "'#{date_match_S.all_pieces}' -> "+
+                    stringer = "#{SE.lineno}: bad date: #{date_match_S.pattern_name}, idx=#{date_match_idx}: " +
+                                            "'#{date_match_S.all_pieces}' -> " +
                                             "'#{date_match_S.piece( 1 )}' bad year length."
                     SE.puts "#{SE.lineno}: #{self.original_text}"                        
                     date_clump_S.judge_date( :bad, stringer )
                     next
                 end
                 if ( month and month.integer? and month.length > 2 ) then
-                    stringer = "#{SE.lineno}: bad date: #{date_match_S.pattern_name}, idx=#{date_match_idx}: "+
-                                            "'#{date_match_S.all_pieces}' -> "+
+                    stringer = "#{SE.lineno}: bad date: #{date_match_S.pattern_name}, idx=#{date_match_idx}: " +
+                                            "'#{date_match_S.all_pieces}' -> " +
                                             "'#{date_match_S.piece( 1 )}' bad numeric month length"
                     date_clump_S.judge_date( :bad, stringer )
                     SE.puts "#{SE.lineno}: #{self.original_text}"
@@ -47,16 +47,16 @@ module Date_Clumps_judge_each_clump
                 end
 
                 if ( day and day.not_integer? ) then
-                    stringer = "#{SE.lineno}: bad date: #{date_match_S.pattern_name}, idx=#{date_match_idx}: "+
-                                            "'#{date_match_S.all_pieces}' -> "+
+                    stringer = "#{SE.lineno}: bad date: #{date_match_S.pattern_name}, idx=#{date_match_idx}: " +
+                                            "'#{date_match_S.all_pieces}' -> " +
                                             "'#{date_match_S.piece( 1 )}' day not numeric: '#{day}'"
                     SE.puts "#{SE.lineno}: #{self.original_text}"
                     date_clump_S.judge_date( :bad, stringer )
                     next
                 end
                 if ( year.not_integer? ) then
-                    stringer = "#{SE.lineno}: bad date: #{date_match_S.pattern_name}, idx=#{date_match_idx}: "+
-                                            "'#{date_match_S.all_pieces}' -> "+
+                    stringer = "#{SE.lineno}: bad date: #{date_match_S.pattern_name}, idx=#{date_match_idx}: " +
+                                            "'#{date_match_S.all_pieces}' -> " +
                                             "'#{date_match_S.piece( 1 )}' year not numeric: '#{year}'"
                     SE.puts "#{SE.lineno}: #{self.original_text}"
                     date_clump_S.judge_date( :bad, stringer )
@@ -101,25 +101,25 @@ module Date_Clumps_judge_each_clump
                 end
                 date_match_S.strptime_O = do_strptime( testdate, strptime_fmt )
                 if ( date_match_S.strptime_O.nil? ) then
-                    stringer = "#{SE.lineno}: bad date: #{date_match_S.pattern_name}, idx=#{date_match_idx}: "+
-                                            "'#{date_match_S.all_pieces}' -> "+
-                                            "'#{date_match_S.piece( 1 )}' -> "+
+                    stringer = "#{SE.lineno}: bad date: #{date_match_S.pattern_name}, idx=#{date_match_idx}: " +
+                                            "'#{date_match_S.all_pieces}' -> " +
+                                            "'#{date_match_S.piece( 1 )}' -> " +
                                             "'#{testdate}' -> '#{strptime_fmt}' strptime conversion failed"
                     SE.puts "#{SE.lineno}: #{self.original_text}"
                     date_clump_S.judge_date( :bad, stringer )
                     next
                 end
                 if ( date_match_S.strptime_O.year < 0 ) then
-                    stringer = "#{SE.lineno}: bad date: #{date_match_S.pattern_name}, idx=#{date_match_idx}: "+
-                                            "'#{date_match_S.all_pieces}' -> "+
+                    stringer = "#{SE.lineno}: bad date: #{date_match_S.pattern_name}, idx=#{date_match_idx}: " +
+                                            "'#{date_match_S.all_pieces}' -> " +
                                             "'#{date_match_S.piece( 1 )}' -> '#{date_match_S.strptime_O}' negative year"
                     SE.puts "#{SE.lineno}: #{self.original_text}"
                     date_clump_S.judge_date( :bad, stringer )
                     next
                 end
                 if ( day.nil? and date_match_S.strptime_O.day != 1 ) then
-                    SE.puts "#{SE.lineno}: I shouldn't be here: #{date_match_S.pattern_name}, idx=#{date_match_idx}: "+
-                                         "'#{date_match_S.all_pieces}' -> "+
+                    SE.puts "#{SE.lineno}: I shouldn't be here: #{date_match_S.pattern_name}, idx=#{date_match_idx}: " +
+                                         "'#{date_match_S.all_pieces}' -> " +
                                          "'#{date_match_S.piece( 1 )}' -> '#{date_match_S.strptime_O} day != 1"
                     SE.puts "#{SE.lineno}: #{self.original_text}"
                     raise
@@ -154,8 +154,8 @@ module Date_Clumps_judge_each_clump
                  date_clump_S.date_match_S__from.ymd_S.month.nil? and 
                  date_clump_S.date_match_S__from.ymd_S.day.nil? 
                 ) then
-                stringer = "#{SE.lineno}: probable bad date: #{date_clump_S.date_match_S__from.pattern_name}: "+
-                                        "'#{date_clump_S.date_match_S__from.all_pieces}' -> "+
+                stringer = "#{SE.lineno}: probable bad date: #{date_clump_S.date_match_S__from.pattern_name}: " +
+                                        "'#{date_clump_S.date_match_S__from.all_pieces}' -> " +
                                         "'#{date_clump_S.date_match_S__from.piece( 1 )}' isolated 2 digit number."
                 SE.puts "#{SE.lineno}: #{self.original_text}"
                 date_clump_S.judge_date( :bad, stringer )
@@ -170,16 +170,16 @@ module Date_Clumps_judge_each_clump
                     raise
                 end
                 if ( date_clump_S.date_match_S__from.strptime_O < self.option_H[ :yyyymmdd_min_value] ) then
-                    stringer = "#{SE.lineno}: Date dropped: " 
-                                            "'#{date_clump_S.as_from_date}' -> "+
+                    stringer = "#{SE.lineno}: Date dropped: " +
+                                            "'#{date_clump_S.as_from_date}' -> " +
                                             "date LT min value '#{self.option_H[ :yyyymmdd_min_value]}'"
                     SE.puts "#{SE.lineno}: #{self.original_text}"
                     date_clump_S.judge_date( :bad, stringer )
                     next
                 end
                 if ( date_clump_S.date_match_S__from.strptime_O > self.option_H[ :yyyymmdd_max_value] ) then
-                    stringer = "#{SE.lineno}: Date dropped: "+
-                                            "'#{date_clump_S.as_from_date}' -> "+
+                    stringer = "#{SE.lineno}: Date dropped: " +
+                                            "'#{date_clump_S.as_from_date}' -> " +
                                             "date GT max value '#{self.option_H[ :yyyymmdd_max_value]}'"
                     SE.puts "#{SE.lineno}: #{self.original_text}"
                     date_clump_S.judge_date( :bad, stringer )
@@ -206,7 +206,7 @@ module Date_Clumps_judge_each_clump
                 end
                 if ( date_clump_S.date_match_S__from.strptime_O < self.option_H[ :yyyymmdd_min_value] ) then
                     stringer = "#{SE.lineno}: Date dropped: " +
-                                            "'#{date_clump_S.as_from_date}' -> "+
+                                            "'#{date_clump_S.as_from_date}' -> " +
                                             "from date LT min value '#{self.option_H[ :yyyymmdd_min_value]}'"
                     SE.puts "#{SE.lineno}: #{self.original_text}"
                     date_clump_S.judge_date( :bad, stringer )
@@ -214,7 +214,7 @@ module Date_Clumps_judge_each_clump
                 end
                 if ( date_clump_S.date_match_S__thru.strptime_O > self.option_H[ :yyyymmdd_max_value] ) then
                     stringer = "#{SE.lineno}: Date dropped: " +
-                                            "'#{date_clump_S.as_thru_date}' -> "+
+                                            "'#{date_clump_S.as_thru_date}' -> " +
                                             "thru date GT max value '#{self.option_H[ :yyyymmdd_max_value]}'"
                     SE.puts "#{SE.lineno}: #{self.original_text}"
                     date_clump_S.judge_date( :bad, stringer )
