@@ -16,17 +16,26 @@ Variable Abbreviations:
         _Q = Query
         _C = Class of Struct
         _S = Structure of _C 
-        __ = reads as: 'in a(n)', e.g.: record_H__A = 'record' Hash "in an" Array.
+        __ = reads as: 'of'
 
 =end
+module These_Constants
+
+#   Main entry points.
+    REPOSITORIES        = 'repositories'          
+    RESOURCES           = 'resources'
+    ARCHIVAL_OBJECTS    = 'archival_objects'
+    TOP_CONTAINERS      = 'top_containers'
+    LOCATIONS           = 'locations'
+end
+include These_Constants
 
 module K
     def K.acqinfo; return 'acqinfo'; end                                    # notes (Immediate Source of Acquisition)
     def K.active_restrictions; return 'active_restrictions'; end            # top_container
     def K.ancestors; return 'ancestors'; end                                # archival_object
     def K.approximate; return 'approximate'; end                            # dates
-    def K.archival_object; return 'archival_object'; end                    # root
-    def K.archival_objects; return 'archival_objects'; end                  # <<<< Danger Plural
+    def K.archival_object; return 'archival_object'; end                    # root. DANGER: Singular, see above for plural
     def K.area; return 'area'; end                                          # location
     def K.barcode; return 'barcode'; end                                    # top_container location
     def K.begin; return 'begin'; end                                        # dates
@@ -93,6 +102,7 @@ module K
     def K.finding_aid_series_statement; return 'finding_aid_series_statement'; end      # resource
     def K.finding_aid_status; return 'finding_aid_status'; end                          # resource
     def K.finding_aid_title; return 'finding_aid_title'; end                            # resource
+    def K.first_page; return 'first_page'; end                              # repository /search
     def K.floor; return 'floor'; end                                        # location
     def K.fmtr_auto_group; return '__AUTOGROUP__'; end                      # formatter auto_group record type
     def K.fmtr_container; return '__CONTAINER__'; end                       # formatter
@@ -143,11 +153,13 @@ module K
     def K.is_slug_auto; return 'is_slug_auto'; end                          # archival_object, resource
     def K.item; return 'item'; end                                          # top_containers
     def K.jsonmodel_type; return 'jsonmodel_type'; end                      # everything
+    def K.json; return 'json'; end                                          # repository /search
     def K.label; return 'label'; end                                        # dates
     def K.language; return 'language'; end                                  # language_and_script
     def K.language_and_script; return 'language_and_script'; end            # lang_materials
     def K.lang_materials; return 'lang_materials'; end                      # archival_object, resource
     def K.last_modified_by; return 'last_modified_by'; end
+    def K.last_page; return 'last_page'; end                                # repository /search
     def K.level; return 'level'; end                                        # archival_object, resource
     def K.linked_agents; return 'linked_agents'; end                        # archival_object, resource
     def K.linked_events; return 'linked_events'; end                        # archival_object, resourcr
@@ -169,6 +181,9 @@ module K
     def K.offset; return 'offset'; end                                      # tree
     def K.otherlevel; return 'otherlevel'; end                              # archival_object (value for 'level' field)
     def K.other_level; return 'other_level'; end                            # archival_object (field name for 'otherlevel' value, eg "group")
+    def K.owner_repo; return 'owner_repo'; end                              # locations (owner_repository)
+    def K.page; return 'page'; end                                          # repository /search
+    def K.page_size; return 'page_size'; end                                # resository /search
     def K.p_physdesc; return 'p_physdesc'; end                              # Spreadsheet only: physical description note publish
     def K.parent; return 'parent'; end
     def K.parent_id; return 'parent_id'; end                                # tree
@@ -192,6 +207,7 @@ module K
     def K.repository; return 'repository'; end
     def K.resource; return 'resource'; end                                  # archival_object
     def K.resource_tree; return 'resource_tree'; end
+    def K.results; return 'results'; end                                    # repository /search
     def K.restrictions; return 'restrictions'; end                          # resource
     def K.restrictions_apply; return 'restrictions_apply'; end              # archival_object
     def K.revision_statements; return 'revision_statements'; end            # resource
@@ -216,6 +232,7 @@ module K
     def K.system_mtime; return 'system_mtime'; end
     def K.title; return 'title'; end                                        # archival_object, resource
     def K.top_container; return 'top_container'; end                        # sub_container
+    def K.total; return 'total'; end                                        # Resource /search
     def K.tree; return 'tree'; end                                          # resource
     def K.type; return 'type'; end                                          # top_container, notes, and dates in the INDEX.
                                                                             #                       Also see: date_type (above).   
@@ -352,4 +369,19 @@ module K
         return stringer
     end
    
+    def K.comparison_filter_A
+   #        For comparison of two resources, remove anything that might
+#           legitimately be different.
+        arr = [ K.created_by, K.last_modified_by, K.create_time, K.system_mtime, K.user_mtime,  # From read filter
+                K.ref, K.uri, K.lock_version, 
+                K.repository, K.resource,
+                K.ancestors, K.ead_id, K.id_0, K.parent, 
+                K.position, K.persistent_id, K.is_slug_auto, K.slugged_url, K.ref_id, 
+             # From the index_record:
+                K.parent_id, K.tree, K.waypoints, K.waypoint_size, 
+             # Maybe optional ones:
+                K.publish, K.has_unpublished_ancestor,
+               ]
+        return arr
+    end 
 end

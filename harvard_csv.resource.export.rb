@@ -97,18 +97,18 @@ SUPPORTED_NOTE_TYPES = %w[
 # ------------------------------
 options = {}
 OptionParser.new do |opts|
-  opts.banner = "Usage: ruby harvard_export.rb --res-num NNN --ead EADID [--base-url URL --user USER --password PASS]"
+  opts.banner = "Usage: ruby harvard_export.rb --res-num NNN --ead EADID [--base-uri URL --user USER --password PASS]"
 
   opts.on("--res-num N", Integer, "Resource number (required)") { |v| options[:res_num] = v }
   opts.on("--ead ID", String, "EAD ID string (required)")       { |v| options[:ead] = v }
-  opts.on("--base-url URL", String, "ArchivesSpace backend URL (default #{DEFAULT_BASE_URL})") { |v| options[:base_url] = v }
+  opts.on("--base-uri URL", String, "ArchivesSpace backend URL (default #{DEFAULT_BASE_URL})") { |v| options[:base_uri] = v }
   opts.on("--user USER", String, "Username (default #{DEFAULT_USER})") { |v| options[:user] = v }
   opts.on("--password PASS", String, "Password (default #{DEFAULT_PASS})") { |v| options[:password] = v }
 end.parse!
 
 abort("ERROR: Both --res-num and --ead are required.") unless options[:res_num] && options[:ead]
 
-BASE_URL   = options[:base_url] || ENV[ 'ASPACE_URI_BASE' ]
+BASE_URL   = options[:base_uri] || ENV[ 'ASPACE_URI_BASE' ]
 USERNAME   = options[:user]     || DEFAULT_USER
 PASSWORD   = options[:password] || DEFAULT_PASS
 RESOURCE_ID= options[:res_num]
@@ -128,8 +128,8 @@ def aspace_login
 end
 
 def get_json(path_or_uri )
-  url = path_or_uri.start_with?('http') ? path_or_uri : "#{BASE_URL}#{path_or_uri}"
-  uri = URI(url)
+  uri = path_or_uri.start_with?('http') ? path_or_uri : "#{BASE_URL}#{path_or_uri}"
+  uri = URI(uri)
   req = Net::HTTP::Get.new(uri)
   req['X-ArchivesSpace-Session'] = SESSION
   res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') { |http| http.request(req) }
@@ -180,7 +180,7 @@ end
 def fetch_top_container(sub_container, tc_query_O)
   ref = sub_container.dig("top_container", "ref")
   return nil unless ref
-  tc = tc_query_O.record_H_of_uri_num( ref )
+  tc = tc_query_O.record_H__of_uri_id_num( ref )
   if ( tc.nil? ) then
     raise "Invalid tc ref '#{ref}'"
   end

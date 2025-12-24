@@ -1,23 +1,3 @@
-=begin
-
-Variable Abbreviations:
-        AO = Archival Object ( Resources are an AO too, but they have their own structure. )
-        AS = ArchivesSpace
-        IT = Instance Type
-        TC = Top Container
-        SC = Sub-Container
-        _H = Hash
-        _J = Json string
-        _RES = Regular Expression String, e.g: find_bozo_RES = '\s+bozo\s+'
-        _RE  = Regular Expression, e.g.: find_bozo_RE = /#{find_bozo_RES}/
-        _A = Array
-        _O = Object
-        _Q = Query
-        _C = Class of Struct
-        _S = Structure of _C 
-        __ = reads as: 'in a(n)', e.g.: record_H__A = 'record' Hash "in an" Array.
-
-=end
 
 class Record_Format < Buffer_Base
     def initialize( jsonmodel_type )
@@ -51,7 +31,7 @@ class Record_Format < Buffer_Base
         return h
     end
 
-    def container_locations
+    def container_locations                 # Part of 'Top_Container' below
         h = {   
                 K.status => K.current ,
                 K.start_date => K.undefined ,
@@ -79,18 +59,7 @@ class Record_Format < Buffer_Base
         return h
     end
 
-    def single_date           
-        h = {
-              K.label => K.undefined, 
-              K.date_type => K.single, 
-              K.begin => K.undefined,
-              K.expression => ''
-            }
-        @record_H.merge!( h )
-        return h
-    end
-   
-    def inclusive_dates  
+    def inclusive_dates                         # Also see 'single_date'
         h =  {
                 K.label => K.undefined, 
                 K.certainty => '',
@@ -132,18 +101,17 @@ class Record_Format < Buffer_Base
     def location 
         h = {
                 K.jsonmodel_type => K.location,
+                K.area => K.undefined,
                 K.building => K.undefined,
-                K.floor => "",
-                K.room => "",
-                K.area => "",
-                K.barcode => "",
-                K.classification => K.undefined,
+                K.floor => K.undefined,
+                K.room => K.undefined,
                 K.coordinate_1_label => "",
                 K.coordinate_1_indicator => "",
                 K.coordinate_2_label => "",
                 K.coordinate_2_indicator => "",
                 K.coordinate_3_label => "",
                 K.coordinate_3_indicator => "",
+                K.title => K.undefined
             }
         @record_H.merge!( h )
         return h
@@ -210,6 +178,17 @@ class Record_Format < Buffer_Base
         @record_H.merge!( h )
         return h
     end
+
+    def single_date                             # Also see 'inclusive_date'
+        h = {
+              K.label => K.undefined, 
+              K.date_type => K.single, 
+              K.begin => K.undefined,
+              K.expression => ''
+            }
+        @record_H.merge!( h )
+        return h
+    end
     
     def sub_container       
         h = {   
@@ -232,10 +211,10 @@ class Record_Format < Buffer_Base
                 K.resource => { 
                     K.ref => K.undefined
                 } ,
-                K.type => K.undefined ,       # 'box', 'folder', etc...
-                K.indicator => K.undefined ,  #  identifier, sequence number, etc...
+                K.type => K.undefined ,                     # 'box', 'folder', etc...
+                K.indicator => K.undefined ,                #  identifier, sequence number, etc...
                 K.created_for_collection => K.undefined,    # Ref to resource
-                K.container_locations => {} ,
+                K.container_locations => {} ,               # Defined above
                 K.collection => []
             } 
         @record_H.merge!( h )

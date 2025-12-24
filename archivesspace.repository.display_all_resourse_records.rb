@@ -48,8 +48,8 @@ rep_O = Repository.new( aspace_O, rep_num )
 
 #   id_0 is called the unitid in the XML EAD file.
 puts "res_num, title, id_0/unitid, ead_id"
-Repository_Query.new( rep_O ).get_all_Resource.buf_A.each do | res_buf_O |
-    puts "#{res_buf_O.res_O.num}: #{res_buf_O.record_H[ K.title ]} '#{res_buf_O.record_H[ K.id_0 ]}' '#{res_buf_O.record_H[ K.ead_id ]}'"
+rep_O.query( RESOURCES ).get_all__record_H_A.result_A.each do | record_H |
+    puts "#{record_H[ K.uri ].trailing_digits}: #{record_H[ K.title ]} '#{record_H[ K.id_0 ]}' '#{record_H[ K.ead_id ]}'"
 end
 
 

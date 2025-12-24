@@ -317,7 +317,7 @@ if ( cmdln_option_H[ :inmagic ] ) then
                     find_dates_O.good__date_clump_S__A.each do | date_clump_S | 
                         extent_date_H = { K.begin          => date_clump_S.as_from_date, 
                                           K.date_type      => K.inclusive, 
-                                          K.end            => date_clump_S.as_thru_date( :else_from_date ) 
+                                          K.end            => date_clump_S.as_thru_date( :else_from_date ), 
                                           K.certainty      => date_clump_S.certainty,
                                           K.expression     => date_clump_S.as_date_expression, 
                                           K.jsonmodel_type => K.date, 
@@ -351,7 +351,7 @@ else
 end 
 
 
-resource_H = csrm_collection( repository_uri: rep_O.uri,
+resource_H = csrm_collection( repository_uri: rep_O.uri_addr,
                               ead_id: ead_id,
                               collection_name: collection_name,
                               scope_and_content: scope_and_content,

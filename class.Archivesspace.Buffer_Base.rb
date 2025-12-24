@@ -1,35 +1,15 @@
-=begin
-
-Variable Abbreviations:
-        AO = Archival Object ( Resources are an AO too, but they have their own structure. )
-        AS = ArchivesSpace
-        IT = Instance Type
-        TC = Top Container
-        SC = Sub-Container
-        _H = Hash
-        _J = Json string
-        _RES = Regular Expression String, e.g: find_bozo_RES = '\s+bozo\s+'
-        _RE  = Regular Expression, e.g.: find_bozo_RE = /#{find_bozo_RES}/
-        _A = Array
-        _O = Object
-        _Q = Query
-        _C = Class of Struct
-        _S = Structure of _C 
-        __ = reads as: 'in a(n)', e.g.: record_H__A = 'record' Hash "in an" Array.
-
-=end
-
-require 'class.Hash.extend.rb'
 
 class Buffer_Base
     
     def initialize(  )
         @record_H = Hash__where__store_calls_writer.new( self.method( 'record_H=') )
+      # SE.puts "#{SE.lineno}, called from: #{SE.my_caller}" 
+      # SE.puts "@record_H.class=#{@record_H.class}, @record_H.object_id=#{@record_H.object_id}"
         @cant_change_A = [ ]
         @cant_change_A << K.jsonmodel_type 
-        @cant_change_A << K.persistent_id
+        @cant_change_A << K.persistent_id     
     end
-    attr_reader :cant_change_A, :record_H
+    attr_reader :cant_change_A  
     
     def hash_comp_key_type( h_before, h_after )
 #       SE.puts "Before: #{h_before}"
@@ -50,7 +30,15 @@ class Buffer_Base
     end
     private :hash_comp_key_type
     
+    def record_H
+      # SE.puts "#{SE.lineno}, called from: #{SE.my_caller}" 
+      # SE.puts "@record_H.class=#{@record_H.class}, @record_H.object_id=#{@record_H.object_id}"
+        return @record_H
+    end
+    
     def record_H=( set_values_H )
+      # SE.puts "#{SE.lineno}, called from: #{SE.my_caller}" 
+      # SE.puts "@record_H.class=#{@record_H.class}, @record_H.object_id=#{@record_H.object_id}"
         if ( set_values_H.is_not_a?( Hash ) ) then
             SE.puts "#{SE.lineno}: ======================================"
             SE.puts "I was expecting set_values_H to be a HASH, instead it's a '#{set_values_H.class}'"
@@ -64,9 +52,7 @@ class Buffer_Base
             end
         end
         pre_change_record_H = Hash.new.merge( @record_H )
-#       SE.q {'pre_change_record_H'}
-        @record_H = @record_H.deep_merge( set_values_H )  
-#       SE.q {[ '@record_H' ]}
+        @record_H.merge!( @record_H.deep_merge( set_values_H ) )  # This keeps @record_H object_id the same.
         h = hash_comp_key_type( pre_change_record_H, @record_H )
         if ( h.not_empty? )
             SE.puts "#{SE.lineno}: ======================================"

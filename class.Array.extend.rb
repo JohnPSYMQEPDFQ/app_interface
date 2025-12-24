@@ -9,13 +9,6 @@ class Array
     end
     
 #
-#   Return column N
-#
-    def column( n )
-        self.map{ | row | row[ n ] }
-    end
-#
-#
 #       The maximum depth of all the arrays in the arrays.
 #
     def maxdepth( n=0 )

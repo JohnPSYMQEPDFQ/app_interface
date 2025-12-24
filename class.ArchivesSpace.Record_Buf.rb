@@ -1,24 +1,3 @@
-=begin
-
-Variable Abbreviations:
-        AO = Archival Object ( Resources are an AO too, but they have their own structure. )
-        AS = ArchivesSpace
-        IT = Instance Type
-        TC = Top Container
-        SC = Sub-Container
-        _H = Hash
-        _J = Json string
-        _RES = Regular Expression String, e.g: find_bozo_RES = '\s+bozo\s+'
-        _RE  = Regular Expression, e.g.: find_bozo_RE = /#{find_bozo_RES}/
-        _A = Array
-        _O = Object
-        _Q = Query
-        _C = Class of Struct
-        _S = Structure of _C 
-        __ = reads as: 'in a(n)', e.g.: record_H__A = 'record' Hash "in an" Array.
-
-=end
-
 
 class Record_Buf < Buffer_Base
     def initialize( p1_aspace_O )
@@ -103,7 +82,7 @@ class Record_Buf < Buffer_Base
         if (!(  external_record_H[K.jsonmodel_type] and external_record_H[K.jsonmodel_type] == @rec_jsonmodel_type)) then 
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "I was expecting a #{@rec_jsonmodel_type} jsonmodel_type record."
-            SE.puts "@uri = #{@uri}"
+            SE.puts "@uri_addr = #{@uri_addr}"
             SE.ap "external_record_H:", external_record_H
             raise
         end 
@@ -111,19 +90,19 @@ class Record_Buf < Buffer_Base
         if (  external_record_H.has_no_key?( K.jsonmodel_type ) ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Was expecting a jsonmodel_type in external_record_H"
-            SE.puts "@uri = #{@uri}"
+            SE.puts "@uri_addr = #{@uri_addr}"
             SE.ap "external_record_H:", external_record_H
             raise
         end
         
         #   Don't check for the existance of 'external_record_H[ K.uri ]' as new records won't have one.
-        if ( @uri.nil? ) then
-            @uri = external_record_H[ K.uri ]  # if there's no 'K.uri' (like for a new record) this will still leave @uri nil.
+        if ( @uri_addr.nil? ) then
+            @uri_addr = external_record_H[ K.uri ]  # if there's no 'K.uri' (like for a new record) this will still leave @uri_addr nil.
         else
-            if ( @uri != external_record_H[ K.uri ] ) then
+            if ( @uri_addr != external_record_H[ K.uri ] ) then
                 SE.puts "#{SE.lineno}: =============================================="
-                SE.puts "@uri != external_record_H[ K.uri ]"
-                SE.puts "@uri = #{@uri}"
+                SE.puts "@uri_addr != external_record_H[ K.uri ]"
+                SE.puts "@uri_addr = #{@uri_addr}"
                 SE.ap "external_record_H:", external_record_H
                 raise            
             end
@@ -142,14 +121,14 @@ class Record_Buf < Buffer_Base
     end
     
     def read( filter_record_B = false )
-        http_response_body_H = @http_calls_O.get( @uri )
+        http_response_body_H = @http_calls_O.get( @uri_addr )
 #       SE.puts "#{SE.lineno}"
 #       SE.ap "http_response_body_H:", http_response_body_H
 #       SE.ap "filter_jsonmodel_template_H:", filter_jsonmodel_template_H
         if (!(  http_response_body_H[K.jsonmodel_type] and http_response_body_H[K.jsonmodel_type] == @rec_jsonmodel_type)) then 
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "I was expecting a #{@rec_jsonmodel_type} jsonmodel_type record."
-            SE.puts "@uri = #{@uri}"
+            SE.puts "@uri_addr = #{@uri_addr}"
             SE.ap "http_response_body_H:", http_response_body_H
             raise
         end 
@@ -167,23 +146,23 @@ class Record_Buf < Buffer_Base
         if (!(  @record_H[K.jsonmodel_type] and @record_H[K.jsonmodel_type] == @rec_jsonmodel_type)) then 
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "I was expecting a #{@rec_jsonmodel_type} jsonmodel_type record."
-            SE.puts "@uri = #{@uri}"
+            SE.puts "@uri_addr = #{@uri_addr}"
             SE.ap "@record_H:", @record_H
             raise
         end 
-        if (@record_H == nil or ( @record_H.has_key?( K.uri) and @record_H[ K.uri ] != @uri )) then
+        if (@record_H == nil or ( @record_H.has_key?( K.uri) and @record_H[ K.uri ] != @uri_addr )) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Current @record_H[ K.uri ] != @uri"
-            SE.puts "@uri = #{@uri}"
+            SE.puts "Current @record_H[ K.uri ] != @uri_addr"
+            SE.puts "@uri_addr = #{@uri_addr}"
             SE.ap "Current @record_H:", @record_H
             raise
         end
         if ( @http_calls_O.aspace_O.allow_updates ) then
-            http_response_body_H = @http_calls_O.post_with_body( @uri, @record_H )
+            http_response_body_H = @http_calls_O.post_with_body( @uri_addr, @record_H )
             if ( ! http_response_body_H[K.status].in?( [ 'Created', 'Updated' ] ) ) then 
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.puts "Store failed!"
-                SE.puts "@uri = #{@uri}"
+                SE.puts "@uri_addr = #{@uri_addr}"
                 SE.puts "@record_H:", @record_H
                 SE.ap "http_response_body_H:", http_response_body_H
                 raise
@@ -198,23 +177,23 @@ class Record_Buf < Buffer_Base
         if (!(  @record_H[K.jsonmodel_type] and @record_H[K.jsonmodel_type] == @rec_jsonmodel_type)) then 
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "I was expecting a #{@rec_jsonmodel_type} jsonmodel_type record."
-            SE.puts "@uri = #{@uri}"
+            SE.puts "@uri_addr = #{@uri_addr}"
             SE.ap "@record_H:", @record_H
             raise
         end 
-        if (@record_H == nil or not ( @record_H.has_key?( K.uri) and @record_H[ K.uri ] == @uri )) then
+        if (@record_H == nil or not ( @record_H.has_key?( K.uri) and @record_H[ K.uri ] == @uri_addr )) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Current @record_H[ K.uri ] != @uri"
-            SE.puts "@uri = #{@uri}"
+            SE.puts "Current @record_H[ K.uri ] != @uri_addr"
+            SE.puts "@uri_addr = #{@uri_addr}"
             SE.ap "Current @record_H:", @record_H
             raise
         end
         if ( @http_calls_O.aspace_O.allow_updates ) then
-            http_response_body_H = @http_calls_O.delete( @uri, { } )
+            http_response_body_H = @http_calls_O.delete( @uri_addr, { } )
             if ( http_response_body_H[K.status] != 'Deleted' ) then 
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.puts "Delete failed!"
-                SE.puts "@uri = #{@uri}"
+                SE.puts "@uri_addr = #{@uri_addr}"
                 SE.ap "http_response_body_H:", http_response_body_H
                 raise
             end

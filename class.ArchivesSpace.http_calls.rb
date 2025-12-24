@@ -1,23 +1,3 @@
-=begin
-
-Variable Abbreviations:
-        AO = Archival Object ( Resources are an AO too, but they have their own structure. )
-        AS = ArchivesSpace
-        IT = Instance Type
-        TC = Top Container
-        SC = Sub-Container
-        _H = Hash
-        _J = Json string
-        _RES = Regular Expression String, e.g: find_bozo_RES = '\s+bozo\s+'
-        _RE  = Regular Expression, e.g.: find_bozo_RE = /#{find_bozo_RES}/
-        _A = Array
-        _O = Object
-        _Q = Query
-        _C = Class of Struct
-        _S = Structure of _C 
-        __ = reads as: 'in a(n)', e.g.: record_H__A = 'record' Hash "in an" Array.
-
-=end
 
 require 'net/http'
 require 'uri'
@@ -65,16 +45,20 @@ class Http_Calls
         else
             headers = { "Content-type" => "application/json" , 'X-ArchivesSpace-Session' => self.aspace_O.session}
         end
-        response_O = http.request( Net::HTTP::Post.new( uri.request_uri, headers ))    
-        if ( response_O.code != "200" ) then 
-            SE.puts "#{SE.lineno}: =============================================="
-            SE.q { [ 'p1_uri', 'p2_params' ] }
-            SE.q { [ 'http' ] }
-            SE.q { [ 'response_O.code' ] }
-            SE.q { [ 'response_O.body' ] }
-            raise
+        if ( @aspace_O.allow_updates || p1_uri.end_with?( '/login' ) ) then   # the login uses this method.
+            response_O = http.request( Net::HTTP::Post.new( uri.request_uri, headers ))    
+            if ( response_O.code != "200" ) then 
+                SE.puts "#{SE.lineno}: =============================================="
+                SE.q { [ 'p1_uri', 'p2_params' ] }
+                SE.q { [ 'http' ] }
+                SE.q { [ 'response_O.code' ] }
+                SE.q { [ 'response_O.body' ] }
+                raise
+            end
+            response_body = JSON.parse( response_O.body )
+        else
+            response_body = {K.uri => "NO UPDATE MODE"}
         end
-        response_body = JSON.parse( response_O.body )
         return response_body
     end
 
@@ -86,16 +70,20 @@ class Http_Calls
         headers = { "Content-type" => "application/json" , 'X-ArchivesSpace-Session' => self.aspace_O.session}
         input_O = Net::HTTP::Post.new( uri.request_uri, headers )
         input_O.body = p2_input_H.to_json
-        response_O = http.request( input_O )
-        if ( response_O.code != "200" ) then
-            SE.puts "#{SE.lineno}: =============================================="
-            SE.q { [ 'p1_uri' ] }
-            SE.q { [ 'p2_input_H' ] }
-            SE.q { [ 'response_O.code' ] }
-            SE.q { [ 'response_O.body' ] }
-            raise
+        if ( @aspace_O.allow_updates ) then
+            response_O = http.request( input_O )  
+            if ( response_O.code != "200" ) then
+                SE.puts "#{SE.lineno}: =============================================="
+                SE.q { [ 'p1_uri' ] }
+                SE.q { [ 'p2_input_H' ] }
+                SE.q { [ 'response_O.code' ] }
+                SE.q { [ 'response_O.body' ] }
+                raise
+            end
+            response_body = JSON.parse( response_O.body )        
+        else
+            response_body = {K.uri => "NO UPDATE MODE"}
         end
-        response_body = JSON.parse( response_O.body )
     #   SE.q {'response_body'}
         return response_body;
     end 
@@ -105,17 +93,21 @@ class Http_Calls
         uri.query = URI.encode_www_form( p2_params )  # Params are after the ? in the URL
         http = Net::HTTP.new( uri.host, uri.port )
         http.use_ssl = ( self.aspace_O.api_uri_base[ 0, 6 ] == 'https:' ) 
-    #   http.set_debug_output( $stderr )    
-        headers = { "Content-type" => "application/json" , 'X-ArchivesSpace-Session' => self.aspace_O.session}  
-        response_O = http.request( Net::HTTP::Delete.new( uri.request_uri, headers ))
-        if ( response_O.code != "200" ) then 
-            SE.puts "#{SE.lineno}: =============================================="
-            SE.q { [ 'p1_uri', 'p2_params' ] }
-            SE.q { [ 'response_O.code' ] }
-            SE.q { [ 'response_O.body' ] }
-            raise
+    #   http.set_debug_output( $stderr )   
+        if ( @aspace_O.allow_updates ) then    
+            headers = { "Content-type" => "application/json" , 'X-ArchivesSpace-Session' => self.aspace_O.session}  
+            response_O = http.request( Net::HTTP::Delete.new( uri.request_uri, headers ))
+            if ( response_O.code != "200" ) then 
+                SE.puts "#{SE.lineno}: =============================================="
+                SE.q { [ 'p1_uri', 'p2_params' ] }
+                SE.q { [ 'response_O.code' ] }
+                SE.q { [ 'response_O.body' ] }
+                raise
+            end
+            response_body = JSON.parse( response_O.body )
+        else
+            response_body = {K.uri => "NO UPDATE MODE"}
         end
-        response_body = JSON.parse( response_O.body )
         return response_body
     end
 end

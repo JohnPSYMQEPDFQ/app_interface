@@ -1,6 +1,6 @@
 =begin
 
-    Display all the Archival-Objects of a Resource, with a few different 
+    Display all the Top-Containers of a Resource, with a few different 
     print options.
 
 =end
@@ -77,15 +77,14 @@ print__record_H = lambda{ | record_H, cnt |
         puts "#{record_H[ K.display_string ]}"
     when cmdln_option[ :display ].not_nil?
         if ( cmdln_option[ :filter ] ) then
-        
-#           The --filter option is useful for comparison of two resources, so remove anything that might
-#           legitimately be different.
-
-            remove_A = [ K.created_by, K.last_modified_by, K.create_time, K.system_mtime, K.user_mtime,  # From read filter
-                         K.ref, K.uri, K.lock_version, 
-                         K.collection, K.created_for_collection, K.display_string, K.long_display_string, K.identifier, 
-                       ]          
-            record_H.nested_except!( remove_A )      
+#           This could also be:
+#               record_H.deep_yield!( yield_to: [ Hash ] ) 
+#                   and the 'next y if y.is_not_a?( Hash )' wouldn't be needed.
+            record_H.deep_yield! do | y |
+                    next y if y.is_not_a?( Hash )     ####  NOTICE >>> next y   
+                    y.delete_if { | key, value | K.comparison_filter_A.include?( key ) }
+                    next y
+                end
         end
         case cmdln_option[ :display ]
         when 'string'
@@ -109,7 +108,7 @@ print__record_H = lambda{ | record_H, cnt |
 aspace_O = ASpace.new
 rep_O = Repository.new( aspace_O, rep_num )
 res_O = Resource.new( rep_O, res_num )
-res_query_O = AO_Query_of_Resource.new( res_O, true )
+res_query_O = AO_Query_of_Resource.new( res_O: res_O, get_full_ao_record_TF: true )
 
 cnt = 0
 TC_Query_of_Resource.new( res_query_O ).record_H_A.each do | record_H |

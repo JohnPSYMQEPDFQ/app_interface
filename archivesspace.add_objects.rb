@@ -63,7 +63,7 @@ require 'class.Archivesspace.Resource.rb'
 
 class Res_Q < AO_Query_of_Resource
 
-    def uri_of( title )  # Find the URI with the matching title
+    def uri__of_title( title )  # Find the URI with the matching title
         a1 = [ ]
         self.index_H_A.each do | index_H |
             if ( index_H[ K.title ].downcase == title.downcase and index_H[ K.level ] != K.file ) then
@@ -181,18 +181,18 @@ if ( cmdln_option[ :res_title ].downcase != res_buf_O.record_H[ K.title ].downca
 end
 
 
-res_Q_O = Res_Q.new( res_O, false )
+res_Q_O = Res_Q.new( res_O: res_O, get_full_ao_record_TF: false )
 parent_ref_stack_A = [ ]
 if ( cmdln_option[ :ao_num ] ) then
     if ( cmdln_option[ :ao_title ] ) then
         SE.puts "#{SE.lineno}: The '--ao-num' and 'ao-title' options are mutually exclusive"
         raise
     end
-    parent_ref_stack_A << res_Q_O.index_H_of_uri_num( cmdln_option[ :ao_num ] )[ K.uri ]
+    parent_ref_stack_A << res_Q_O.index_H__of_uri_id_num( cmdln_option[ :ao_num ] )[ K.uri ]
     SE.puts "#{SE.lineno}: initial parent uri = #{parent_ref_stack_A[ 0 ]} (From the cmd_line)"
 else
     if ( cmdln_option[ :ao_title ] ) then
-        parent_ref_stack_A << res_Q_O.uri_of_title( cmdln_option[ :ao_title ] )
+        parent_ref_stack_A << res_Q_O.uri_addr__of_title( cmdln_option[ :ao_title ] )
         SE.puts "#{SE.lineno}: initial parent AO uri = #{parent_ref_stack_A[ 0 ]} (From the cmd_line)"
     else
         parent_ref_stack_A << res_buf_O.record_H[ K.uri ]
@@ -277,7 +277,7 @@ for argv in ARGV do
                     SE.q {[ 'input_record_H' ]}
                     raise
                 end                
-                parent_ref_stack_A[ 0 ] = res_Q_O.uri_of( input_record_H[ K.fmtr_record ][ K.title ] )
+                parent_ref_stack_A[ 0 ] = res_Q_O.uri_addr__of_title( input_record_H[ K.fmtr_record ][ K.title ] )
                 SE.puts "#{SE.lineno}: New parent: #{parent_ref_stack_A[ 0 ]}"
                 next
             end
@@ -323,7 +323,7 @@ for argv in ARGV do
                         tc_buf_O.record_H = { K.type => type }
                         tc_buf_O.record_H = { K.indicator => indicator }
                         tc_buf_O.store
-                        tc_uri_H__by_type_and_indicator[ unique_TC_key ] = tc_buf_O.uri
+                        tc_uri_H__by_type_and_indicator[ unique_TC_key ] = tc_buf_O.uri_addr
                       # SE.q {'tc_uri_H__by_type_and_indicator'}
                     end
 
@@ -343,7 +343,7 @@ for argv in ARGV do
 
           # SE.q {'ao_buf_O.record_H'}
             ao_buf_O.store
-            last_AO_uri_created = ao_buf_O.uri
+            last_AO_uri_created = ao_buf_O.uri_addr
             next
         end
         SE.puts "#{SE.lineno}: I should't be here!"

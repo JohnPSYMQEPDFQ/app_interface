@@ -18,19 +18,23 @@ END {}
 
 myself_name = File.basename( $0 )
 
-cmdln_option = { :rep_num => 2  ,
+cmdln_option_H = { :rep_num => 2  ,
                  :res_num => nil  ,
-                 :filter => false }
+                 :filter => false ,
+                 :flattened => false }
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} --res-num n [res] [(res|ao|tc|loc|index) n,n,...]..."
     option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
-        cmdln_option[ :rep_num ] = opt_arg
+        cmdln_option_H[ :rep_num ] = opt_arg
     end
     option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
-        cmdln_option[ :res_num ] = opt_arg
+        cmdln_option_H[ :res_num ] = opt_arg
     end
     option.on( "--filter", "Apply read filter" ) do |opt_arg|
-        cmdln_option[ :filter ] = true
+        cmdln_option_H[ :filter ] = true
+    end
+    option.on( "--flattened", "--flatten", "Flatten the record and ap(awesome-print) it." ) do |opt_arg|
+        cmdln_option_H[ :flattened ] = true
     end
     option.on( "-h","--help" ) do
         SE.puts option
@@ -40,22 +44,26 @@ end.parse!  # Bang because ARGV is altered
 
 aspace_O = ASpace.new
  
-record_filter_B = cmdln_option[ :filter ] 
-if ( cmdln_option[ :rep_num ] ) then
-    rep_num = cmdln_option[ :rep_num ]
+if ( cmdln_option_H[ :rep_num ] ) then
+    rep_num = cmdln_option_H[ :rep_num ]
     rep_O = Repository.new( aspace_O, rep_num )
 else
     SE.puts "The --rep-num option is required."
     raise
 end
-if ( cmdln_option[ :res_num ] ) then
-    res_num = cmdln_option[ :res_num ]
+if ( cmdln_option_H[ :res_num ] ) then
+    res_num = cmdln_option_H[ :res_num ]
     res_O = Resource.new( rep_O, res_num )
-    res_buf_O = res_O.new_buffer.read( record_filter_B )
+    res_buf_O = res_O.new_buffer.read( cmdln_option_H[ :filter ] )
 end
 
-#SE.pom(rep_O)
-#SE.pov(rep_O)
+
+print_thingy = lambda{ | thingy | 
+    if ( cmdln_option_H[ :flattened ] ) then
+        thingy = thingy.deep_yield { | y | y.to_composite_key_h }
+    end
+    puts thingy.ai
+}
 
 ao_query_O = nil
 current_record_type = K.undefined
@@ -80,25 +88,31 @@ ARGV.each do | element |
     case current_record_type
     when 'res' 
         puts "Resource: #{res_num}:"
-        puts res_buf_O.record_H.ai
+        print_thingy.( res_buf_O.record_H )
     when 'ao'
         puts "Archival_Object: #{element}:"
-        ao_buf_O = Archival_Object.new( res_buf_O, element ).new_buffer.read( record_filter_B )
-        puts ao_buf_O.record_H.ai
-    when 'index'
+        ao_buf_O = Archival_Object.new( res_buf_O, element )
+                                  .new_buffer
+                                  .read( cmdln_option_H[ :filter ] )
+        print_thingy.( ao_buf_O.record_H )
+    when 'index' 
         puts "Index for Archival_Object: #{element}:"
         if ( ao_query_O.nil? ) then
             ao_query_O = AO_Query_of_Resource.new( res_O )
         end
-        puts ao_query_O.index_H_of_uri_num( element ).ai
+        print_thingy.( ao_query_O.index_H__of_uri_id_num( element ) )
     when 'tc'
         puts "Top_Container: #{element}:"
-        tc_buf_O = Top_Container.new( res_buf_O, element ).new_buffer.read( record_filter_B )
-        puts tc_buf_O.record_H.ai
+        tc_buf_O = Top_Container.new( res_buf_O, element )
+                                .new_buffer
+                                .read( cmdln_option_H[ :filter ] )
+        print_thingy.( tc_buf_O.record_H )
     when 'loc'
         puts "Location: #{element}:"
-        loc_buf_O = Location.new( aspace_O, element ).new_buffer.read( record_filter_B )
-        puts loc_buf_O.record_H.ai
+        loc_buf_O = Location.new( aspace_O, element )
+                            .new_buffer
+                            .read( cmdln_option_H[ :filter ] )
+        print_thingy.( loc_buf_O.record_H )
     else
         puts "Unknown record_type: #{current_record_type}"
     end 

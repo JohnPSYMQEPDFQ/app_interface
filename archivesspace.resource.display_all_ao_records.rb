@@ -26,6 +26,7 @@ cmdln_option = { :rep_num => 2  ,
                  :print_uri => true ,              
                  :print_title_only => false ,
                  :print_res_rec => false,
+                 :flattened => false,
                  :display => nil,
                 }
 OptionParser.new do |option|
@@ -51,9 +52,13 @@ OptionParser.new do |option|
     option.on( "--print-res-rec", "Print the resource record too." ) do |opt_arg|
         cmdln_option[ :print_res_rec ] = true
     end
+    option.on( "--flattened", "--flatten", "Flatten the record and ap(awesome-print) it." ) do |opt_arg|
+        cmdln_option[ :flattened ] = true
+        cmdln_option[ :display ] = 'ap'
+    end
     option.on( "--display X", "X = 'string|json|ap(awesome-print)]', output the AO's as 'X'" ) do |opt_arg|
         if ( opt_arg.not_in?( [ 'string', 'json', 'ap' ] ) ) then
-            SE.puts "Was expecting [ 'string', 'json', 'ap' ] for the --display option value"
+            SE.puts "Was expecting [ 'string', 'json', 'ap' ] for the --display option value, not '#{opt_arg}'."
             raise
         end
         cmdln_option[ :display ] = opt_arg
@@ -84,24 +89,21 @@ print__record_H = lambda{ | record_H, cnt |
         puts "#{record_H[ K.title ]}"
     when cmdln_option[ :display ].not_nil?
         print "#{record_H[ K.title ].gsub( '&amp;', '&' )} "    # This 'print' is to get the title printed first.
-        
+        record_H.delete( K.title )
         if ( cmdln_option[ :filter ] ) then
-        
-#           The --filter option is useful for comparison of two resources, so remove anything that might
-#           legitimately be different.
 
-            remove_A = [ K.created_by, K.last_modified_by, K.create_time, K.system_mtime, K.user_mtime,  # From read filter
-                         K.ref, K.uri, K.lock_version, 
-                         K.title,            # removed because it's printed first (above)
-                         K.repository, K.resource,
-                         K.ancestors, K.ead_id, K.id_0, K.parent, 
-                         K.position, K.persistent_id, K.is_slug_auto, K.slugged_url, K.ref_id, 
-                     # From the index_record:
-                         K.parent_id, K.tree, K.waypoints, K.waypoint_size, 
-                     # Maybe optional ones:
-                         K.publish, K.has_unpublished_ancestor,
-                       ]
-            record_H.nested_except!( remove_A )
+#           This could also be:
+#               record_H.deep_yield!( yield_to: [ Hash ] ) 
+#                   and the 'next y if y.is_not_a?( Hash )' wouldn't be needed.
+            record_H.deep_yield! do | y |
+                    next y if y.is_not_a?( Hash )     ####  NOTICE >>> next y   
+                    y.delete_if { | key, value | K.comparison_filter_A.include?( key ) }
+                    next y
+                end
+
+        end
+        if ( cmdln_option[ :flattened ] ) then
+            record_H = record_H.deep_yield { | y | y.to_composite_key_h }
         end
         case cmdln_option[ :display ]
         when 'string'
@@ -118,6 +120,7 @@ print__record_H = lambda{ | record_H, cnt |
     else
         print "#{cnt} "
         print "#{record_H[ K.uri ]} " if ( cmdln_option[ :print_uri ] )
+        print "#{record_H[ K.ancestors ].length} " if ( record_H[ K.ancestors ] )
         print "#{record_H[ K.position ]} "
         print "#{record_H[ K.level ]} "
         print "#{record_H[ K.publish ]} " if ( cmdln_option[ :get_full_ao_record_TF ] )
@@ -134,7 +137,8 @@ if ( cmdln_option[ :print_res_rec ] ) then
 end
 
 cnt = 0
-AO_Query_of_Resource.new( res_O, cmdln_option[ :get_full_ao_record_TF ] ).record_H_A.each do | record_H |
+AO_Query_of_Resource.new( res_O: res_O, get_full_ao_record_TF: cmdln_option[ :get_full_ao_record_TF ] )
+                    .record_H_A( index_ok_TF: true ).each do | record_H |
     cnt += 1
     print__record_H.call( record_H, cnt )
 end

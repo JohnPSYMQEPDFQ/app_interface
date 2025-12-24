@@ -114,7 +114,7 @@ if ( self.cmdln_option_H[ :ao_num ] ) then
         SE.puts "#{SE.lineno}: The '--ao-num' and 'ao-title' options are mutually exclusive"
         raise
     end
-    uri = "#{self.rep_O.uri}/#{K.archival_objects}/#{self.cmdln_option_H[ :ao_num ]}"
+    uri = "#{self.rep_O.uri_addr}/#{K.archival_objects}/#{self.cmdln_option_H[ :ao_num ]}"
     arr = index_H_with_children_A.select { | h | h[ K.uri ] == uri }
     if ( arr.length > 1 ) then
         SE.puts "#{SE.lineno}: Found more than 1 record with a uri = '#{uri}' (which is a really bad thing...)"

@@ -63,14 +63,16 @@ rep_O = Repository.new( aspace_O, cmdln_option[ :rep_num ] )
 
 SE.puts "Finding Top_Containers (which takes some time) ..."
 time_begin = Time.now
-all_TC_S = TC_Query_of_Repository.new( rep_O ).get_all_TC_S
+record_H_A = rep_O.query( TOP_CONTAINERS ).record_H_A__all.result_A
 elapsed_seconds = Time.now - time_begin
 SE.puts "Elapsed seconds = #{elapsed_seconds}"
-# SE.q {[ 'all_TC_S.record_H_A' ]}
-SE.puts "Total TC's = #{all_TC_S.record_H_A.length}, page_cnt = #{all_TC_S.page_cnt}"
 
-all_TC_S.for_unused__record_H_A.each do | record_H |
-    print "Delete top_container: #{record_H[ K.uri ]}, "
-    puts Top_Container.new( rep_O, record_H[ K.uri ] ).new_buffer.delete 
+SE.puts "Total TC's = #{record_H_A.length}"
+
+record_H_A.each do | record_H |
+    if ( not ( record_H.key?( K.collection ) && record_H[ K.collection ].count > 0 )) then
+        print "Delete top_container: #{record_H[ K.uri ]}, "
+        puts Top_Container.new( rep_O, record_H[ K.uri ] ).new_buffer.delete 
+    end
 end
 
