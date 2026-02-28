@@ -12,7 +12,7 @@ module SE
         end
     end
     def self.ap(*params)
-        self.puts "#{SE.lineno(1)}:"
+        self.puts "#{self.lineno(1)}:"
         params.each do |e|
             $stderr.puts e.ai( ( $stderr.isatty ) ? {} : { :plain => true } )
         end
@@ -45,12 +45,12 @@ module SE
     end
 
     def self.pov( p1_O )  # Print Object's Variables
-        self.puts "#{SE.lineno(1)}:#{p1_O.class.name} Variables:"
+        self.puts "#{self.lineno(1)}:#{p1_O.class.name} Variables:"
         self.q {'p1_O.instance_variables.map{ |var| [ var, p1_O.instance_variable_get( var ) ].join( "=" )}' }
     end
     def self.pom( p1_O )  # Print Object's Methods
-        self.puts "#{SE.lineno(1)}:#{p1_O.class.name} Methods:"
-        self.q {'( p1_O.methods - Object.methods ).map{ | m | m = "#{p1_O.class.name}::#{m}"}.sort' }
+        self.puts "#{self.lineno(1)}:#{p1_O.class.name} Methods:"
+        self.q {'( p1_O.private_methods( false ) - Object.methods ).map{ | m | m = "#{p1_O.class.name}::#{m}"}.sort' }
     end
     def self.lineno( e = 0 )
         s = caller[ e ].sub(/^.*\//,"").sub(/:in .* in /,":in ").gsub(/[`']/,"")
@@ -78,9 +78,9 @@ module SE
         return self.my_source_code_path.sub( /.*\//, '' )
     end
 
-  # def self.ap_stack()
-      # self.ap( self.stack( 1 ) )
-  # end
+    def self.ap_stack()
+        self.ap( self.stack( 1 ) )
+    end
     def self.my_caller(  )
         return self.stack[ 2 ]
     end
@@ -98,7 +98,7 @@ module SE
         when ( p1.is_a?( Regexp ) )
             param_regexp = p1
         else
-            self.puts "#{SE.lineno}: ERROR: unexpected param1 class type of '#{p1.class}'"
+            self.puts "#{self.lineno}: ERROR: unexpected param1 class type of '#{p1.class}'"
         end
         arr = []
         caller.each_with_index do | e, idx |
@@ -114,19 +114,19 @@ module SE
     
     def self.debug_on_the_range( thing_to_test, debug_range )
         if ( not debug_range.is_a?( Range )) then
-            self.puts "#{SE.lineno}: Was expecting param2 to be a Range, instead it's a #{debug_range.class}"
+            self.puts "#{self.lineno}: Was expecting param2 to be a Range, instead it's a #{debug_range.class}"
             raise
         end
 #       SE.q {[ 'thing_to_test', 'debug_range', 'debug_range === thing_to_test' ]}
         if ( $DEBUG ) then
             if ( not debug_range === thing_to_test ) then   # The range MUST be on the left of the ===  !!!
-                self.puts "#{SE.lineno}: DEBUG off !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                self.puts "#{self.lineno}: DEBUG off !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 $DEBUG = false
                 self.ap_stack
             end
         else
             if ( debug_range === thing_to_test  ) then
-                self.puts "#{SE.lineno}: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                self.puts "#{self.lineno}: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 $DEBUG = true
                 self.ap_stack
             end
@@ -140,12 +140,16 @@ module SE
         end
         private attr_accessor :loop_cnt, :loop_limit
         
-        def loop
+        def loop( *argv )
             if ( self.loop_cnt > self.loop_limit ) then
-                raise "LOOP DETECTOR: Abort ( loops=#{self.loop_cnt}, limit=#{self.loop_limit} )"
+                self.puts "LOOP DETECTOR: Abort ( loops=#{self.loop_cnt}, limit=#{self.loop_limit} )"
+                argv.each_with_index do | argv, idx |
+                    self.puts "argv #{idx}: #{argv}"
+                end
+                raise
             end
             if ( self.loop_cnt >= self.loop_limit ) then
-                self.puts "#{SE.lineno}: LOOP DETECTOR: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                self.puts "#{self.lineno}: LOOP DETECTOR: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 $DEBUG = true
                 self.ap_stack
             end

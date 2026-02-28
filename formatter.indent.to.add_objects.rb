@@ -103,7 +103,7 @@ def put_record( p1_calculated_indent_level, p2_record_H__stack_A, p3_current_rec
     if ( note_A && note_A.maxindex >= 0 ) then
         note_A.each do | note |
             note.strip!
-            regexp = /^(\{(.*)\}[: ])/
+            regexp = /^([{<](.+?)[}>][: ])/
             m_O = note.match( regexp ) 
             if ( m_O.nil?  ) then
                 if ( output_record_H[ K.fmtr_record ][ K.level ].in?( [ K.series, K.subseries, K.recordgrp, K.group ] )) then
@@ -114,6 +114,13 @@ def put_record( p1_calculated_indent_level, p2_record_H__stack_A, p3_current_rec
             else
                 note.sub!( regexp, '' ) 
                 note_type = m_O[ 2 ]
+            end
+            note.strip!
+            if ( note.not_match?(/\A[[:alnum:]]/) ) then
+                SE.puts "#{SE.lineno}: 1st char of note is not a letter or number."
+                SE.q {'note'}
+                SE.q {'note_type'}
+                raise
             end
             note.gsub!( '|', "\n\n" )
             note.strip!
@@ -154,7 +161,7 @@ def put_record( p1_calculated_indent_level, p2_record_H__stack_A, p3_current_rec
 #   output_record_H[ K.fmtr_record ][ K.title ] = arr1[ -1 ].strip
     if ( output_record_H[ K.fmtr_record ][ K.title ].blank? ) then
         if ( date_H_A && date_H_A.maxindex >= 0 ) then
-            output_record_H[ K.fmtr_record ][ K.title ] = +'[By date]'
+            output_record_H[ K.fmtr_record ][ K.title ] = +'[Dated]'
         else
             if ( p3_current_record_H[ K.fmtr_record_indent_keys ].empty? ) then
                 output_record_H[ K.fmtr_record ][ K.title ] = +'[Item]'

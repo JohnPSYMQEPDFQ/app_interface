@@ -236,7 +236,7 @@ aspace_O = ASpace.new
 aspace_O.allow_updates = cmdln_option_H[ :update ]
 rep_O = Repository.new( aspace_O, rep_num )
 
-find_dates_O = Find_Dates_in_String.new( {  :morality_replace_option => { :good  => :remove },
+find_dates_O = Find_Dates_in_String.new( {  Find_Dates_in_String::MORALITY_OPTION => { :good  => Find_Dates_in_String::REMOVE_ALL },
                                             :date_string_composition => :dates_in_text,
 #                                           :default_century_pivot_ccyymmdd => '1900',
                                             :sort => false,

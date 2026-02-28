@@ -58,7 +58,7 @@ module Set_Options
                     SE.q { 'param__option_H' }
                     raise
                 end               
-            when :morality_replace_option
+            when Find_Dates_in_String::MORALITY_OPTION
                 if ( not self.option_H[ option_H_key ].is_a?( Hash ) ) then
                     SE.puts "#{SE.lineno}: Expected '#{option_H_key}' to be a type Hash, not '#{self.option_H[ option_H_key ].class}'"
                     SE.q { 'param__option_H' }
@@ -67,19 +67,19 @@ module Set_Options
                 self.option_H[ option_H_key ].each_pair do | key, value |
                     case key
                     when :good
-                        if ( not ( value.is_a?( Symbol ) and value.in?( [ :keep, :replace, :remove, :remove_from_end ] ) ) ) then
-                            SE.puts "#{SE.lineno}: param__option_H[ :morality_replace_option ][ #{key} ] should be [ :keep, :replace, :remove, :remove_from_end ]"
+                        if ( not ( value.is_a?( Symbol ) and value.in?( [ Find_Dates_in_String::KEEP_ALL, Find_Dates_in_String::REPLACE_ALL, Find_Dates_in_String::REMOVE_ALL, Find_Dates_in_String::REMOVE_FROM_END ] ) ) ) then
+                            SE.puts "#{SE.lineno}: param__option_H[ Find_Dates_in_String::MORALITY_OPTION ][ #{key} ] should be [ Find_Dates_in_String::KEEP_ALL, Find_Dates_in_String::REPLACE_ALL, Find_Dates_in_String::REMOVE_ALL, Find_Dates_in_String::REMOVE_FROM_END ]"
                             SE.q { 'param__option_H' }
                             raise
                         end
                     when :bad
-                        if ( not ( value.is_a?( Symbol ) and value.in?( [ :keep, :remove ] ) ) ) then
-                            SE.puts "#{SE.lineno}: param__option_H[ :morality_replace_option ][ #{key} ] should be [ :keep, :remove ]"
+                        if ( not ( value.is_a?( Symbol ) and value.in?( [ Find_Dates_in_String::KEEP_ALL, Find_Dates_in_String::REMOVE_ALL ] ) ) ) then
+                            SE.puts "#{SE.lineno}: param__option_H[ Find_Dates_in_String::MORALITY_OPTION ][ #{key} ] should be [ Find_Dates_in_String::KEEP_ALL, Find_Dates_in_String::REMOVE_ALL ]"
                             SE.q { 'param__option_H' }
                             raise
                         end
                     else
-                        SE.puts "#{SE.lineno}: unknown :morality_replace_option '#{key}', it should either be :good or :bad (obviously)"
+                        SE.puts "#{SE.lineno}: unknown Find_Dates_in_String::MORALITY_OPTION '#{key}', it should either be :good or :bad (obviously)"
                         SE.q { 'param__option_H' }
                         raise
                     end
@@ -211,14 +211,14 @@ module Set_Options
         if ( not self.option_H.key?( :debug_options ) )
             self.option_H[ :debug_options ] = []
         end
-        if ( not self.option_H.key?( :morality_replace_option ) )
-            self.option_H[ :morality_replace_option ] = { }
+        if ( not self.option_H.key?( Find_Dates_in_String::MORALITY_OPTION ) )
+            self.option_H[ Find_Dates_in_String::MORALITY_OPTION ] = { }
         end
-        if ( not self.option_H[ :morality_replace_option ].key?( :good ) ) then
-            self.option_H[ :morality_replace_option ][ :good ] = :remove_from_end
+        if ( not self.option_H[ Find_Dates_in_String::MORALITY_OPTION ].key?( :good ) ) then
+            self.option_H[ Find_Dates_in_String::MORALITY_OPTION ][ :good ] = Find_Dates_in_String::REMOVE_FROM_END
         end
-        if ( not self.option_H[ :morality_replace_option ].key?( :bad ) ) then
-            self.option_H[ :morality_replace_option ][ :bad ] = :keep
+        if ( not self.option_H[ Find_Dates_in_String::MORALITY_OPTION ].key?( :bad ) ) then
+            self.option_H[ Find_Dates_in_String::MORALITY_OPTION ][ :bad ] = Find_Dates_in_String::KEEP_ALL
         end
         if ( not self.option_H.key?( :thru_date_separators ) ) then
             self.option_H[ :thru_date_separators ] = '[-]| to | thru | through '    # Beware of different dashes in the data! Do:  echo '-—–' | od -ctx1

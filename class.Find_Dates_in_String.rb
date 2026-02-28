@@ -36,6 +36,18 @@ class Find_Dates_in_String
     include Date_Clumps_convert_back_to_text_dates
     include Date_Clumps_classify_by_good_and_bad_morality
             
+    MORALITY_ACTION         = :morality_action
+    DATE_KEPT               = :date_kept
+    DATE_REMOVED            = :date_removed
+    DATE_REPLACED           = :date_replaced
+    DATE_REMOVED_FROM_END   = :date_removed_from_end
+    
+    MORALITY_OPTION         = :morality_option
+    KEEP_ALL                = :keep_all
+    REMOVE_ALL              = :remove_all
+    REPLACE_ALL             = :replace_all
+    REMOVE_FROM_END         = :remove_from_end
+
     
     def initialize( p1_param__option_H = {}, p2_param_aspace_O = nil )    
         binding.pry if ( respond_to? :pry )       

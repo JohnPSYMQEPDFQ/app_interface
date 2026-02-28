@@ -30,6 +30,7 @@ module These_Constants
 end
 include These_Constants
 
+#   ArchivesSpace konstants.   See below for formatter (fmtr) konstants.
 module K
     def K.acqinfo; return 'acqinfo'; end                                    # notes (Immediate Source of Acquisition)
     def K.active_restrictions; return 'active_restrictions'; end            # top_container
@@ -65,6 +66,7 @@ module K
     def K.created_for_collection; return 'created_for_collection'; end      # top_container
     def K.create_time; return 'create_time'; end
     def K.creation; return 'creation'; end                                  # dates
+    def K.current; return 'current'; end                                    # container_location of Top_Container
     def K.date; return 'date'; end                  # <<<< Danger Singular  # revision_statements                       
     def K.date_certainty; return 'date_certainty'; end                      # spreadsheet column header for K.certainty
     def K.date_type; return 'date_type'; end                                # DANGER!!!  This is the date_type
@@ -82,6 +84,7 @@ module K
     def K.ead_location; return 'ead_location'; end                          # resource
     def K.embedded_CRLF; return '+++CRLF+++'; end                           # used in text of formatters
     def K.end; return 'end'; end                                            # dates
+    def K.end_date; return 'end_date'; end                                  # container_location of Top_Container
     def K.era; return 'era'; end                                            # dates
     def K.existence; return 'existence'; end                                # dates
     def K.exported_to_ils; return 'exported_to_ils'; end                    # top_container
@@ -104,33 +107,6 @@ module K
     def K.finding_aid_title; return 'finding_aid_title'; end                            # resource
     def K.first_page; return 'first_page'; end                              # repository /search
     def K.floor; return 'floor'; end                                        # location
-    def K.fmtr_auto_group; return '__AUTOGROUP__'; end                      # formatter auto_group record type
-    def K.fmtr_container; return '__CONTAINER__'; end                       # formatter
-    def K.fmtr_drop; return 'drop'; end                                     # formatter
-    def K.fmtr_indent; return '__INDENT__'; end                             # formatter
-    def K.fmtr_end_group; return '__END_GROUP__'; end                       # formatter 
-    def K.fmtr_forced_indent; return '__FORCED_INDENT__'; end               # formatter
-    def K.fmtr_inmagic_detail; return 'detail'; end                         # InMagic formatter column-use
-    def K.fmtr_inmagic_recordgrp; return 'recordgrp'; end                   # InMagic formatter column-use
-    def K.fmtr_inmagic_series; return 'series'; end                         # InMagic formatter column-use
-    def K.fmtr_inmagic_seriesdate; return 'seriesdate'; end                 # InMagic formatter column-use
-    def K.fmtr_inmagic_seriesnote; return 'seriesnote'; end                 # InMagic formatter column-use
-    def K.fmtr_left; return '__LEFT__'; end                                 # formatter
-    def K.fmtr_new_parent; return '__NEW_PARENT__'; end                     # formatter
-    def K.fmtr_prefix; return 'prefix'; end                                 # formatter
-    def K.fmtr_prepend; return 'prepend'; end                               # formatter
-    def K.fmtr_record; return '__RECORD__'; end                             # formatter
-    def K.fmtr_record_indent_keys; return '__RECORD_INDENT_KEYS__'; end     # formatter
-    def K.fmtr_record_num; return '__RECORD_NUM__'; end                     # formatter
-    def K.fmtr_record_original; return '__RECORD_ORIGINAL__'; end           # formatter
-    def K.fmtr_record_sort_keys; return '__RECORD_SORT_KEYS__'; end         # formatter
-    def K.fmtr_record_values; return '__RECORD_VALUES__'; end               # formatter
-    def K.fmtr_record_values__text_idx; return 0; end                       # formatter
-    def K.fmtr_record_values__dates_idx; return 1; end                      # formatter
-    def K.fmtr_record_values__notes_idx; return 2; end                      # formatter
-    def K.fmtr_record_values__container_idx; return 3; end                  # formatter
-    def K.fmtr_right; return '__RIGHT__'; end                               # formatter
-    def K.fmtr_shelf_box; return '__SHELF_BOX__'; end                       # formatter
     def K.folder; return 'folder'; end
     def K.group; return 'group'; end                                        # archive_object: other_level field.
     def K.has_unpublished_ancestor; return 'has_unpublished_ancestor'; end
@@ -172,7 +148,8 @@ module K
     def K.no; return 'no'; end   
     def K.node_type; return 'node_type'; end                                # tree
     def K.node_uri; return 'node_uri'; end                                  # tree
-    def K.notes; return 'notes'; end                                        # archival_object, lang_materials, resource, formatter
+    def K.note; return 'note'; end                                          # SINGULAR: container_location
+    def K.notes; return 'notes'; end                                        # PLURAL:   archival_object, lang_materials, resource, formatter
     def K.note_multipart; return 'note_multipart'; end   
     def K.note_singlepart; return 'note_singlepart'; end   
     def K.note_text; return 'note_text'; end
@@ -200,14 +177,14 @@ module K
     def K.publish; return 'publish'; end
     def K.recordgrp; return 'recordgrp'; end                                # archival_object
     def K.recordgrp_text; return 'Record Group'; end                        # formatters
-    def K.record_uri; return 'record_uri'; end
+    def K.record_uris; return 'record_uris'; end                            # used in some /batch... requests
     def K.ref; return 'ref'; end                                            # archival_object, sub_container
     def K.ref_id; return 'ref_id'; end                                      # archival_object
     def K.related_accessions; return 'related_accessions'; end              # resource
     def K.repository; return 'repository'; end
     def K.resource; return 'resource'; end                                  # archival_object
     def K.resource_tree; return 'resource_tree'; end
-    def K.results; return 'results'; end                                    # repository /search
+    def K.results; return 'results'; end                                    # repository /search /batch_delete
     def K.restrictions; return 'restrictions'; end                          # resource
     def K.restrictions_apply; return 'restrictions_apply'; end              # archival_object
     def K.revision_statements; return 'revision_statements'; end            # resource
@@ -217,10 +194,10 @@ module K
     def K.script; return 'script'; end                                      # language_and_script
     def K.series; return 'series'; end                                      # archival_object
     def K.session; return 'session'; end
-    def K.shelf; return 'shelf'; end                                        # Someday (maybe) the shelf that the box is located on.  
     def K.single; return 'single'; end
     def K.slugged_url; return 'slugged_url'; end                            # archival_object
-    def K.status; return 'status'; end                                      # http
+    def K.start_date; return 'start_date'; end                              # container_location of Top_Container
+    def K.status; return 'status'; end                                      # http response
     def K.subjects; return 'subjects'; end                                  # archival_object, resource
     def K.subnotes; return 'subnotes'; end
     def K.subseries; return 'subseries'; end                                # As text, it's Sub-series;  see K.sub_series_text   
@@ -238,6 +215,7 @@ module K
                                                                             #                       Also see: date_type (above).   
     def K.type_2; return 'type_2'; end                                      # sub_container
     def K.type_3; return 'type_3'; end                                      # sub_container
+    def K.types; return 'types'; end                                        # <<< PLURAL,  search results
     def K.undefined; return '__UNDEFINED__'; end                            # used everywhere
     def K.uri; return 'uri'; end
     def K.user_mtime; return 'user_mtime'; end
@@ -245,7 +223,147 @@ module K
     def K.waypoints; return 'waypoints'; end                                # trees
     def K.waypoint_size; return 'waypoint_size'; end                        # trees
     def K.yes; return 'yes'; end
+
+
+#   Formatter konstants.   See below for "common" konstants.
+
+    def K.fmtr_auto_group; return '__AUTOGROUP__'; end                      # auto_group record type
+    def K.fmtr_container; return '__CONTAINER__'; end                       
+    def K.fmtr_drop; return 'drop'; end                                     
+    def K.fmtr_indent; return '__INDENT__'; end   
+    def K.fmtr_empty_container_H
+        h = { K.type => nil,
+              K.indicator => nil,
+              K.type_2 => '' ,
+              K.indicator_2 => '' ,
+              K.type_3 => '' ,
+              K.indicator_3 => '' ,
+              }.freeze
+        return {}.merge( h )
+    end     
+    def K.fmtr_end_group; return '__END_GROUP__'; end                       
+    def K.fmtr_forced_indent; return '__FORCED_INDENT__'; end               
+    def K.fmtr_inmagic_detail; return 'detail'; end                         # InMagic formatter column-use
+    def K.fmtr_inmagic_recordgrp; return 'recordgrp'; end                   # InMagic formatter column-use
+    def K.fmtr_inmagic_series; return 'series'; end                         # InMagic formatter column-use
+    def K.fmtr_inmagic_seriesdate; return 'seriesdate'; end                 # InMagic formatter column-use
+    def K.fmtr_inmagic_seriesnote; return 'seriesnote'; end                 # InMagic formatter column-use
+    def K.fmtr_left; return '__LEFT__'; end                  
+    def K.fmtr_inmagic_location_RES
+        stringer = '(?<left_del>[\[ ])(?<prefix>SMCC|shelf)\s+(?<location>[GHI]\d+[.]\d\d\d[.][A-Z]\d{1,2})(?<right_del>[\] ;.,:])'
+        return stringer
+    end
+    def K.fmtr_inmagic_location_RE
+        return /#{K.fmtr_inmagic_location_RES}/i
+    end    
+    def K.fmtr_new_parent; return '__NEW_PARENT__'; end     
+    def K.fmtr_oversize; return 'oversize'; end           
+    def K.fmtr_prefix; return 'prefix'; end                                 
+    def K.fmtr_prepend; return 'prepend'; end                               
+    def K.fmtr_record; return '__RECORD__'; end                             
+    def K.fmtr_record_indent_keys; return '__RECORD_INDENT_KEYS__'; end     
+    def K.fmtr_record_num; return '__RECORD_NUM__'; end                     
+    def K.fmtr_record_original; return '__RECORD_ORIGINAL__'; end           
+    def K.fmtr_record_sort_keys; return '__RECORD_SORT_KEYS__'; end         
+    def K.fmtr_record_values; return '__RECORD_VALUES__'; end               
+    def K.fmtr_record_values__text_idx; return 0; end                       
+    def K.fmtr_record_values__dates_idx; return 1; end                      
+    def K.fmtr_record_values__notes_idx; return 2; end                      
+    def K.fmtr_record_values__container_idx; return 3; end                  
+    def K.fmtr_right; return '__RIGHT__'; end  
+    def K.fmtr_unk; return 'unk'; end                               # The Unknown Box Indicator value   
+
+
+    def K.min_length_for_indent_key; return 3; end                  # Used in class.formatter.Record_Grouping_Indent.rb
+    def K.skip_these_values_for_indent_key_A                        # Used in class.formatter.Record_Grouping_Indent.rb
+        arr = [ 'ov', K.box, K.folder, K.volume, K.item, K.file ].freeze
+        return arr
+    end    
+
+    def K.bracketed_word_RES
+        stringer = '\[\s*(?<bracketed_word>(.*?))\s*\]'  
+        return stringer
+    end
+    def K.bracketed_word_RE
+        return /#{K.bracketed_word_RES}/
+    end
     
+    def K.any_fmtr_group_record_RES
+        stringer = "(#{K.series}|#{K.recordgrp_text}|#{K.subseries}|#{K.sub_series_text}|#{K.group})"   #Used to have the number and an extra set of parentheeseses
+        return stringer
+    end
+    
+#   Top Container patterns used in formatter programs.
+    
+    def K.container_type_separators_RES
+        stringer = '(\s+and\s+|\s*,\s*|\s+(thru|through|to)\s+|\s*-\s|\s-\s*)'  
+            #  NOTE:  Having '-' as a seperator
+            #  messes up 'K.indicator_num_RES'
+            #  pattern. Be careful!
+        return stringer
+    end
+    
+    def K.valid_container_types_RES
+        return '(ov |box(s|es)?)'
+    end
+    
+    def K.valid_child_types_RES
+        return '(folders?|vol[.]|volumes?|items?)'
+    end
+    
+    def K.valid_grandchild_types_RES
+        return '(volumes?|files?)'
+    end  
+    
+    def K.indicator_num_RES
+        return '(' + K.fmtr_unk + '|([0-9]([0-9a-z./-])*))'  # NOTE!!!   See note on 'K.container_type_separators_RES'
+    end
+    
+    def K.container_and_child_types_RES   
+        # stringer = '(?<begin_del>(\A|\s+|\[\s*))' +     # MUST use the /x option on the regex!!!
+                   # '(?<inside_the_dels>' + 
+                       # '(' +
+                           # '(?<container_type>'       + "(#{K.valid_container_types_RES}|#{K.valid_child_types_RES})" + ')((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>[0-9]+                (' + K.container_type_separators_RES + '[0-9]+)?),?' + 
+                           # '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
+                           # '(\s+(?<child_type>      ' + K.valid_child_types_RES                                       + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     ([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
+                           # '(\s+(?<grandchild_type> ' + K.valid_grandchild_types_RES                                  + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
+                       # ')' +
+                   # ')' +
+                   # '(?<end_del>(\Z|\.|,|:|\s*\]|\s+))'    
+        # stringer = '(\A|\s+|\[\s*)\K' +                #\K = The behavior of \K is similar to a positive lookbehind assertion (?<=...), but with the key advantage of allowing variable-length lookbehind
+                                                       # # MUST use the /x option on the regex!!!
+                   # '(?<inside_the_dels>' + 
+                       # '(' +
+                           # '(?<container_type>'       + "(#{K.valid_container_types_RES}|#{K.valid_child_types_RES})" + ')((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>[0-9./]+         (' + K.container_type_separators_RES + '[0-9./]+)*),?' + 
+                           # '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
+                           # '(\s+(?<child_type>      ' + K.valid_child_types_RES                                       + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     [0-9]+[a-z]?(' + K.container_type_separators_RES + '[0-9]+[a-z]?)?  ))?  )?' +
+                           # '(\s+(?<grandchild_type> ' + K.valid_grandchild_types_RES                                  + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>[0-9]+[a-z]?(' + K.container_type_separators_RES + '[0-9]+[a-z]?)?  ))?  )?' +
+                       # ')' +
+                   # ')' +
+                   # '(?<trailing_del>(\Z|\s*[.,;:\]]|\s+))'        
+        stringer = '(\A|\s+|\[\s*)\K' +                #\K = The behavior of \K is similar to a positive lookbehind assertion (?<=...), but with the key advantage of allowing variable-length lookbehind
+                                                       # MUST use the /x option on the regex!!!
+                   '(?<inside_the_dels>' + 
+                       '(' +
+                           '(?<container_type>'       + "(#{K.valid_container_types_RES}|#{K.valid_child_types_RES})" + ')((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>'  + K.indicator_num_RES + '(' + K.container_type_separators_RES + K.indicator_num_RES + '+)*  )[,;:]?' + 
+                           '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
+                           '(\s+(?<child_type>      ' + K.valid_child_types_RES                                       + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     ' + K.indicator_num_RES + '(' + K.container_type_separators_RES + K.indicator_num_RES + '+)?  ))?  )?' +
+                           '(\s+(?<grandchild_type> ' + K.valid_grandchild_types_RES                                  + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>' + K.indicator_num_RES + '(' + K.container_type_separators_RES + K.indicator_num_RES + '+)?  ))?  )?' +
+                       ')' +
+                   ')' +
+                   '(?<trailing_del>(\Z|\s*[.,;:\]]|\s+))'       
+#       When adding or changing stuff (like the '<container_type_modifier>') don't forget to add them to 
+#       the 'formatter.dictation_1.to.indent.rb' program.        
+        return stringer
+    end    
+    def K.container_and_child_types_RE
+        return /#{K.container_and_child_types_RES}/ix
+    end    
+    
+#   Stuff below here might be used anywhere
+#
+#   Date patterns
+
     def K.alpha_month_RES
         stringer = '(january|february|march|april|may|june|july|august|september|october|november|december' +
                    '|jan\\.|feb\\.|mar\\.|apr\\.|may\\.|jun\\.|jul\\.|aug\\.|sep\\.|oct\\.|nov\\.|dec\\.' +
@@ -284,90 +402,8 @@ module K
     def K.year2_RE
         return /#{K.year2_RES}/
     end 
-    
-    def K.fmtr_empty_container_H
-        h = { K.shelf => nil,                                               # Use this to (someday) lookup a location.
-              K.type => nil,
-              K.indicator => nil,
-              K.type_2 => '' ,
-              K.indicator_2 => '' ,
-              K.type_3 => '' ,
-              K.indicator_3 => '' ,
-              }.freeze
-        return {}.merge( h )
-    end    
-    
-    def K.container_type_separators_RES
-        return '(\s+and\s+|\s*-\s*|\s*,\s*)'
-    end
-    
-    def K.valid_container_types_RES
-        return '(ov |box(s|es)?)'
-    end
-    def K.valid_child_types_RES
-        return '(folders?|volumes?|items?)'
-    end
-    def K.valid_grandchild_types_RES
-        return '(volumes?|files?)'
-    end    
+ 
 
-    def K.min_length_for_indent_key; return 3; end                  # Used in class.formatter.Record_Grouping_Indent.rb
-    def K.skip_these_values_for_indent_key_A                        # Used in class.formatter.Record_Grouping_Indent.rb
-        arr = [ 'ov', K.box, K.folder, K.volume, K.item, K.file ].freeze
-        return arr
-    end
-    
-    def K.container_and_child_types_RES   
-        # stringer = '(?<begin_del>(\A|\s+|\[\s*))' +     # MUST use the /x option on the regex!!!
-                   # '(?<inside_the_dels>' + 
-                       # '(' +
-                           # '(?<container_type>(ov |box(s|es)?))((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>[0-9]+(' + K.container_type_separators_RES + '[0-9]+)?),?' + 
-                           # '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
-                           # '(\s+(?<child_type>      (folders?|volumes?|items?))     (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     ([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
-                           # '(\s+(?<grandchild_type> (volumes?|files?))              (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
-                       # ')' +
-                   # ')' +
-                   # '(?<end_del>(\Z|\.|,|:|\s*\]|\s+))'           
-        # stringer = '(?<begin_del>(\A|\s+|\[\s*))' +     # MUST use the /x option on the regex!!!
-                   # '(?<inside_the_dels>' + 
-                       # '(' +
-                           # '(?<container_type>'       + "(#{K.valid_container_types_RES}|#{K.valid_child_types_RES})" + ')((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>[0-9]+                (' + K.container_type_separators_RES + '[0-9]+)?),?' + 
-                           # '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
-                           # '(\s+(?<child_type>      ' + K.valid_child_types_RES                                       + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     ([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
-                           # '(\s+(?<grandchild_type> ' + K.valid_grandchild_types_RES                                  + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
-                       # ')' +
-                   # ')' +
-                   # '(?<end_del>(\Z|\.|,|:|\s*\]|\s+))'    
-        stringer = '(\A|\s+|\[\s*)\K' +                #\K = The behavior of \K is similar to a positive lookbehind assertion (?<=...), but with the key advantage of allowing variable-length lookbehind
-                                                       # MUST use the /x option on the regex!!!
-                   '(?<inside_the_dels>' + 
-                       '(' +
-                           '(?<container_type>'       + "(#{K.valid_container_types_RES}|#{K.valid_child_types_RES})" + ')((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>[0-9]+         (' + K.container_type_separators_RES + '[0-9]+)?),?' + 
-                           '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
-                           '(\s+(?<child_type>      ' + K.valid_child_types_RES                                       + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     [0-9]+[a-z]?(' + K.container_type_separators_RES + '[0-9]+[a-z]?)?  ))?  )?' +
-                           '(\s+(?<grandchild_type> ' + K.valid_grandchild_types_RES                                  + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>[0-9]+[a-z]?(' + K.container_type_separators_RES + '[0-9]+[a-z]?)?  ))?  )?' +
-                       ')' +
-                   ')' +
-                   '(?<trailing_del>(\Z|\s*[.,;:\]]|\s+))'        
-#       When adding or changing stuff (like the '<container_type_modifier>') don't forget to add them to 
-#       the 'formatter.dictation_1.to.indent.rb' program.        
-        return stringer
-    end
-    def K.container_and_child_types_RE
-        return /#{K.container_and_child_types_RES}/ix
-    end
-    def K.container_bracketed_word_RES
-        stringer = '\[\s*(?<bracketed_word>(volumes?|letterpress))\s*\]'
-        return stringer
-    end
-    def K.container_bracketed_word_RE
-        return /#{K.container_bracketed_word_RES}/i
-    end
-
-    def K.any_fmtr_group_record_RES
-        stringer = "(#{K.series}|#{K.recordgrp_text}|#{K.subseries}|#{K.sub_series_text}|#{K.group})"   #Used to have the number and an extra set of parentheeseses
-        return stringer
-    end
    
     def K.comparison_filter_A
    #        For comparison of two resources, remove anything that might

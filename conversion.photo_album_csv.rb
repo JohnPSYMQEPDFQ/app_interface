@@ -175,7 +175,7 @@ END{}
 
 self.myself_name = File.basename( $0 )
 self.aspace_O = ASpace.new
-self.find_dates_with_4digit_years_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :remove_from_end },
+self.find_dates_with_4digit_years_O = Find_Dates_in_String.new( { Find_Dates_in_String::MORALITY_OPTION => { :good  => Find_Dates_in_String::REMOVE_FROM_END },
                                                                   :pattern_name_RES => '.',
                                                                   :date_string_composition => :dates_in_text,
                                                                   :yyyymmdd_min_value => '1800',

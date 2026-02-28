@@ -67,12 +67,22 @@ record_H_A = rep_O.query( TOP_CONTAINERS ).record_H_A__all.result_A
 elapsed_seconds = Time.now - time_begin
 SE.puts "Elapsed seconds = #{elapsed_seconds}"
 
-SE.puts "Total TC's = #{record_H_A.length}"
+SE.puts "#{record_H_A.length} Top Containers."
 
+tc_delete_uri_A = []
 record_H_A.each do | record_H |
-    if ( not ( record_H.key?( K.collection ) && record_H[ K.collection ].count > 0 )) then
-        print "Delete top_container: #{record_H[ K.uri ]}, "
-        puts Top_Container.new( rep_O, record_H[ K.uri ] ).new_buffer.delete 
-    end
+    next if ( record_H.key?( K.collection ) && record_H[ K.collection ].count > 0 )
+    tc_delete_uri_A.push( record_H[ K.uri ] )        
 end
+SE.puts "#{tc_delete_uri_A.length} to be deleted."
+delete_cnt = rep_O.batch_delete( tc_delete_uri_A ).deleted_cnt
+if ( delete_cnt != tc_delete_uri_A.length ) then
+    SE.puts "#{SE.lineno}: Expected number of TC's not deleted!"
+    SE.puts "delete_cnt != tc_delete_uri_A.length"
+    SE.q {[ 'delete_cnt', 'tc_delete_uri_A.length']}
+    raise
+end
+SE.puts "#{delete_cnt} deleted."
+
+
 

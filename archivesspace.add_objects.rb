@@ -90,40 +90,40 @@ END {}
 binding.pry if ( respond_to? :pry )
 myself_name = File.basename( $0 )
 
-cmdln_option = { :rep_num => 2  ,
-                 :res_num => nil,
-                 :res_title => nil,
-                 :ao_num => nil,
-                 :ao_title => nil ,
-                 :reuse_TCs => false ,
-                 :update => false ,
-                 :last_record_num => nil ,
-                 }
+cmdln_option_H = { :rep_num => 2  ,
+                   :res_num => nil,
+                   :res_title => nil,
+                   :ao_num => nil,
+                   :ao_title => nil ,
+                   :reuse_TCs => false ,
+                   :update => false ,
+                   :last_record_num => nil ,
+                   }
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [options] FILE"
     option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
-        cmdln_option[ :rep_num ] = opt_arg
+        cmdln_option_H[ :rep_num ] = opt_arg
     end
     option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
-        cmdln_option[ :res_num ] = opt_arg
+        cmdln_option_H[ :res_num ] = opt_arg
     end
     option.on( "--res-title x", "Resource Title ( required )" ) do |opt_arg|
-        cmdln_option[ :res_title ] = opt_arg
+        cmdln_option_H[ :res_title ] = opt_arg.strip
     end
     option.on( "--ao-num n", OptionParser::DecimalInteger, "Initial parent AO URI number ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
-        cmdln_option[ :ao_num ] = opt_arg
+        cmdln_option_H[ :ao_num ] = opt_arg
     end
     option.on( "--ao-title x", "Initial parent AO Title  ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
-        cmdln_option[ :ao_title ] = opt_arg
+        cmdln_option_H[ :ao_title ] = opt_arg
     end
     option.on( "--reuse-tcs", "Reuse TC records." ) do |opt_arg|
-        cmdln_option[ :reuse_TCs ] = true
+        cmdln_option_H[ :reuse_TCs ] = true
     end
     option.on( "--update", "Do updates" ) do |opt_arg|
-        cmdln_option[ :update ] = true
+        cmdln_option_H[ :update ] = true
     end
     option.on( "--last-record-num n", OptionParser::DecimalInteger, "Stop after record N" ) do |opt_arg|
-        cmdln_option[ :last_record_num ] = opt_arg
+        cmdln_option_H[ :last_record_num ] = opt_arg
     end
     option.on( "-h","--help" ) do
         SE.puts option
@@ -150,49 +150,70 @@ if not File.exist?( ARGV[ 0 ] ) then
     raise
 end
 
-# SE.q {[ 'cmdln_option' ]}
+# SE.q {[ 'cmdln_option_H' ]}
 
-if ( cmdln_option[ :rep_num ].nil? ) then
+if ( cmdln_option_H[ :rep_num ].nil? ) then
     SE.puts "The --rep-num option is required."
     raise
 end
-if ( cmdln_option[ :res_num ].nil? ) then
+if ( cmdln_option_H[ :res_num ].nil? ) then
     SE.puts "The --res-num option is required."
     raise
 end
-if ( cmdln_option[ :res_title ].nil? ) then
+if ( cmdln_option_H[ :res_title ].nil? ) then
     SE.puts "The --res-title option is required."
     raise
 end
 
 aspace_O = ASpace.new
-aspace_O.allow_updates=cmdln_option[ :update ] 
+aspace_O.allow_updates=cmdln_option_H[ :update ] 
 
-rep_O = Repository.new( aspace_O, cmdln_option[ :rep_num ] )
+rep_O = Repository.new( aspace_O, cmdln_option_H[ :rep_num ] )
 
-res_O = Resource.new( rep_O, cmdln_option[ :res_num ] )
+res_O = Resource.new( rep_O, cmdln_option_H[ :res_num ] )
 res_buf_O = res_O.new_buffer.read
-
-if ( cmdln_option[ :res_title ].downcase != res_buf_O.record_H[ K.title ].downcase ) then
-    SE.puts "#{SE.lineno}: The --res-title value must match the title of --res-num #{cmdln_option[ :res_num ]}. They don't:"
-    SE.q {[ 'cmdln_option[ :res_title ]' ]}
+res_title = res_buf_O.record_H[ K.title ]
+if ( cmdln_option_H[ :res_title ].downcase != res_title.downcase[ 0, cmdln_option_H[ :res_title ].length ] ) then
+    SE.puts "#{SE.lineno}: The --res-title value must start with the title of --res-num #{cmdln_option_H[ :res_num ]}. They don't:"
+    SE.q {[ 'cmdln_option_H[ :res_title ]' ]}
     SE.q {[ 'res_buf_O.record_H[ K.title ]' ]}
     raise
 end
+search_text = %Q|title:"#{cmdln_option_H[ :res_title ]}"|
+res_search_H_A = rep_O.search( record_type: K.resource, search_text: search_text, result_field_A: [ K.title ] ).result_A
+raise "res_search_H_A.empty?" if res_search_H_A.empty?
+if ( res_search_H_A.length > 1 ) then
+    multiple_titles_A = res_search_H_A.map{ | res_search_H | res_search_H.fetch( K.title ) }
+    cnt = multiple_titles_A.count { | title | title == "#{cmdln_option_H[ :res_title ]}" and
+                                              title == res_title }
+    if ( cnt != 1 ) then
+        SE.puts "#{SE.lineno}: =============================="
+        SE.puts "Multiple Resource titles found for option: --res_title '#{cmdln_option_H[ :res_title ]}'"
+        SE.q {'multiple_titles_A'}
+        raise
+    end
+end
+raise "res_search_H_A.empty?" if ( res_search_H_A.empty? )
+if ( res_search_H_A.first.fetch( K.title ) != res_title ) then
+    SE.puts "#{SE.lineno}: =============================="
+    SE.puts "res_search_H_A.first.fetch( K.title ) != res_title'"
+    SE.q {'res_search_H_A.first.fetch( K.title )'}
+    SE.q {'res_title'}
+    raise 
+end
 
-
-res_Q_O = Res_Q.new( res_O: res_O, get_full_ao_record_TF: false )
+res_Q_O = Res_Q.new( resource_O: res_O, get_full_ao_record_TF: false )
 parent_ref_stack_A = [ ]
-if ( cmdln_option[ :ao_num ] ) then
-    if ( cmdln_option[ :ao_title ] ) then
+if ( cmdln_option_H[ :ao_num ] ) then
+    if ( cmdln_option_H[ :ao_title ] ) then
         SE.puts "#{SE.lineno}: The '--ao-num' and 'ao-title' options are mutually exclusive"
         raise
     end
-    parent_ref_stack_A << res_Q_O.index_H__of_uri_id_num( cmdln_option[ :ao_num ] )[ K.uri ]
+    parent_ref_stack_A << res_Q_O.index_H__of_uri( cmdln_option_H[ :ao_num ] )[ K.uri ]
     SE.puts "#{SE.lineno}: initial parent uri = #{parent_ref_stack_A[ 0 ]} (From the cmd_line)"
 else
-    if ( cmdln_option[ :ao_title ] ) then
-        parent_ref_stack_A << res_Q_O.uri_addr__of_title( cmdln_option[ :ao_title ] )
+    if ( cmdln_option_H[ :ao_title ] ) then
+        parent_ref_stack_A << res_Q_O.uri_addr__of_title( cmdln_option_H[ :ao_title ] )
         SE.puts "#{SE.lineno}: initial parent AO uri = #{parent_ref_stack_A[ 0 ]} (From the cmd_line)"
     else
         parent_ref_stack_A << res_buf_O.record_H[ K.uri ]
@@ -206,7 +227,7 @@ if ( parent_ref_stack_A.maxindex != 0 ) then
 end
 
 tc_uri_H__by_type_and_indicator = {}
-if ( cmdln_option[ :reuse_TCs ] ) then
+if ( cmdln_option_H[ :reuse_TCs ] ) then
     SE.puts "Finding Top_Containers (which takes some time) ..."
     time_begin = Time.now
     all_TC_S = TC_Query.new( rep_O ).get_all_TC_S
@@ -230,7 +251,7 @@ record_level_cnt = Hash.new( 0 )  # h.default works too...
 last_AO_uri_created = ""
 for argv in ARGV do
     File.foreach( argv ) do |input_record_J|
-        if (cmdln_option[ :last_record_num ] != nil and $. >cmdln_option[ :last_record_num ] ) then 
+        if (cmdln_option_H[ :last_record_num ] != nil and $. >cmdln_option_H[ :last_record_num ] ) then 
             break
         end
         input_record_J.chomp!
@@ -265,7 +286,7 @@ for argv in ARGV do
             record_level = input_record_H[ K.fmtr_record ][ K.level ]
             record_level_cnt[ record_level ] += 1
             if ( record_level == K.fmtr_new_parent ) then
-                if (cmdln_option[ :ao_num ] or cmdln_option[ :ao_title ] ) then
+                if (cmdln_option_H[ :ao_num ] or cmdln_option_H[ :ao_title ] ) then
                     SE.puts "#{SE.lineno}: Hit 'new_parent' record, but"
                     SE.puts "the --ao-num and --ao-title options aren't allowed for this record type."
                     raise

@@ -6,18 +6,13 @@ class String
     end
     alias_method :maxindex, :maxoffset     # But I had code already using maxindex so I'm leaving it for now
 
-    def blank?( )
-        return self.to_s.strip.empty?
-    end
-    def not_blank?( )
-        return ! self.blank?
-    end
     def first( n = 1 )
         return self[ 0, n ]
     end
     def last( n = 1 )
         return self[ -1, n ]
     end
+    
     def leading_digits
         match = self.match(/^(\d+)/)
         return match ? match[ 1 ] : ''
@@ -26,6 +21,16 @@ class String
         match = self.match(/(\d+)$/)
         return match ? match[ 1 ] : ''
     end
+    
+    def integer?( all_your_base_are_belong_to_us = 10 )
+        val = Integer( self, all_your_base_are_belong_to_us ) rescue nil
+        return false if ( val.nil? ) 
+        return true
+    end
+    def not_integer?( all_your_base_are_belong_to_us = 10 )
+        return ! self.integer?( all_your_base_are_belong_to_us )
+    end
+            
 end
 
 class String_with_before_after_STORE_and_ASSIGN_methods

@@ -23,19 +23,19 @@ class Http_Calls
     #   http.set_debug_output( $stderr )         
         headers = { "Content-type" => "application/json", "X-ArchivesSpace-Session" => self.aspace_O.session }
         response_O = http.request( Net::HTTP::Get.new( uri.request_uri, headers ))
+        response_body = JSON.parse( response_O.body )
         if ( response_O.code != "200" ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.q { [ 'p1_uri', 'p2_params' ] }
             SE.q { [ 'response_O.code' ] }
-            SE.q { [ 'response_O.body' ] }
+            SE.q { [ 'response_body' ] }
             raise
         end
-        response_body = JSON.parse( response_O.body )
         return response_body
     end           
     
     def post_with_params( p1_uri, p2_params = { } )  
-        uri = URI.parse( "#{self.aspace_O.api_uri_base}/#{p1_uri}" )
+        uri = URI.parse( "#{self.aspace_O.api_uri_base}#{p1_uri}" )
         uri.query = URI.encode_www_form( p2_params )  # Params are after the ? in the URL
         http = Net::HTTP.new( uri.host, uri.port )
         http.use_ssl = ( self.aspace_O.api_uri_base[ 0, 6 ] == 'https:' ) 
@@ -46,16 +46,16 @@ class Http_Calls
             headers = { "Content-type" => "application/json" , 'X-ArchivesSpace-Session' => self.aspace_O.session}
         end
         if ( @aspace_O.allow_updates || p1_uri.end_with?( '/login' ) ) then   # the login uses this method.
-            response_O = http.request( Net::HTTP::Post.new( uri.request_uri, headers ))    
+            response_O = http.request( Net::HTTP::Post.new( uri.request_uri, headers ))  
+            response_body = JSON.parse( response_O.body )            
             if ( response_O.code != "200" ) then 
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.q { [ 'p1_uri', 'p2_params' ] }
                 SE.q { [ 'http' ] }
                 SE.q { [ 'response_O.code' ] }
-                SE.q { [ 'response_O.body' ] }
+                SE.q { [ 'response_body' ] }
                 raise
             end
-            response_body = JSON.parse( response_O.body )
         else
             response_body = {K.uri => "NO UPDATE MODE"}
         end
@@ -72,15 +72,15 @@ class Http_Calls
         input_O.body = p2_input_H.to_json
         if ( @aspace_O.allow_updates ) then
             response_O = http.request( input_O )  
+            response_body = JSON.parse( response_O.body ) 
             if ( response_O.code != "200" ) then
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.q { [ 'p1_uri' ] }
                 SE.q { [ 'p2_input_H' ] }
                 SE.q { [ 'response_O.code' ] }
-                SE.q { [ 'response_O.body' ] }
+                SE.q { [ 'response_body' ] }
                 raise
-            end
-            response_body = JSON.parse( response_O.body )        
+            end       
         else
             response_body = {K.uri => "NO UPDATE MODE"}
         end
@@ -89,7 +89,7 @@ class Http_Calls
     end 
     
     def delete( p1_uri, p2_params = { } )  
-        uri = URI.parse( "#{self.aspace_O.api_uri_base}/#{p1_uri}" )
+        uri = URI.parse( "#{self.aspace_O.api_uri_base}#{p1_uri}" )
         uri.query = URI.encode_www_form( p2_params )  # Params are after the ? in the URL
         http = Net::HTTP.new( uri.host, uri.port )
         http.use_ssl = ( self.aspace_O.api_uri_base[ 0, 6 ] == 'https:' ) 
@@ -97,14 +97,14 @@ class Http_Calls
         if ( @aspace_O.allow_updates ) then    
             headers = { "Content-type" => "application/json" , 'X-ArchivesSpace-Session' => self.aspace_O.session}  
             response_O = http.request( Net::HTTP::Delete.new( uri.request_uri, headers ))
+            response_body = JSON.parse( response_O.body )
             if ( response_O.code != "200" ) then 
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.q { [ 'p1_uri', 'p2_params' ] }
                 SE.q { [ 'response_O.code' ] }
-                SE.q { [ 'response_O.body' ] }
+                SE.q { [ 'response_body' ] }
                 raise
-            end
-            response_body = JSON.parse( response_O.body )
+            end            
         else
             response_body = {K.uri => "NO UPDATE MODE"}
         end

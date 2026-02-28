@@ -6,7 +6,7 @@ class Resource
       there's a 'new_buffer' method that will do it from inside here too, eg:
           resource_buffer_Obj = Resource.new(repository_Obj, resource-num|uri).new_buffer[.read|create]
 =end
-    attr_reader :rep_O, :uri_id_num, :uri_addr
+    attr_reader :rep_O, :uri_num, :uri_addr
     def initialize( p1_rep_O, p2_res_identifier = nil )
         if ( p1_rep_O.nil? or p1_rep_O.is_not_a?( Repository ) ) then
             SE.puts "#{SE.lineno}: =============================================="
@@ -16,15 +16,15 @@ class Resource
         @rep_O = p1_rep_O
         case true
         when p2_res_identifier.nil? 
-            @uri_id_num = nil
+            @uri_num = nil
             @uri_addr = nil
         when p2_res_identifier.integer? 
-            @uri_id_num = p2_res_identifier
-            @uri_addr = "#{@rep_O.uri_addr}/#{RESOURCES}/#{@uri_id_num}"
+            @uri_num = p2_res_identifier
+            @uri_addr = "#{@rep_O.uri_addr}/#{RESOURCES}/#{@uri_num}"
         when p2_res_identifier.start_with?( "#{@rep_O.uri_addr}/#{ARCHIVAL_OBJECTS}" ) 
             @uri_addr = p2_res_identifier
-            @uri_id_num = p2_res_identifier.trailing_digits
-            if ( ! @uri_id_num.integer? ) then
+            @uri_num = p2_res_identifier.trailing_digits
+            if ( ! @uri_num.integer? ) then
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.puts "Invalid param2: #{p2_res_identifier}"
                 raise
@@ -49,9 +49,12 @@ class Resource
                                                    )
     end
     
-    def search( record_type:, search_text:, search_uri: '/search' )
-        return Resource_Search.new( self.rep_O.aspace_O, self.rep_O, self, record_type, search_uri )
-                              .record_H_A__having_the_text( search_text )
+    def search( record_type:, search_text:, search_uri: '/search', result_field_A: [] )
+        return Resource_Search.new( self.rep_O.aspace_O, self.rep_O, self, record_type, search_uri, search_text, result_field_A )
+    end
+    
+    def batch_delete( delete_uri_A )
+        return Resource_Batch_Delete.new( self.rep_O.aspace_O, self.rep_O, self, delete_uri_A )
     end
     
     def query_search_filter( query_O )
@@ -113,10 +116,10 @@ class Resource_Record_Buf < Record_Buf
         @rec_jsonmodel_type =  K.resource
         @res_O = p1_res_O
         @uri_addr = @res_O.uri_addr
-        @uri_id_num = @res_O.uri_id_num
+        @uri_num = @res_O.uri_num
         super( @res_O.rep_O.aspace_O )
     end
-    attr_reader :uri_id_num, :uri_addr, :res_O
+    attr_reader :uri_num, :uri_addr, :res_O
     
     def create
         @record_H.merge!( Record_Format.new( @rec_jsonmodel_type ).record_H )
@@ -146,7 +149,7 @@ class Resource_Record_Buf < Record_Buf
         if ( @record_H.key?( @rec_jsonmodel_type ) and  @record_H[ @rec_jsonmodel_type ].key?( K.ref )) then
             if ( ! ( @record_H[ @rec_jsonmodel_type ][ K.ref ] == "#{@uri_addr}" ) ) then
                 SE.puts "#{SE.lineno}: =============================================="
-                SE.puts "uri is not part of resource '#{@uri_id_num}'"
+                SE.puts "uri is not part of resource '#{@uri_num}'"
                 SE.puts "resource => uri = '#{@uri_addr}'"
                 SE.q { [ '@record_H' ] }
                 raise
@@ -172,7 +175,7 @@ class Resource_Record_Buf < Record_Buf
             SE.puts "#{SE.lineno}: Updated Resource, uri = #{http_response_body_H[ K.uri ]}";
         end
         @uri_addr = http_response_body_H[ K.uri ] 
-        @uri_id_num = @uri_addr.trailing_digits
+        @uri_num = @uri_addr.trailing_digits
     end
 end   
 
@@ -214,7 +217,7 @@ class Repository_Query__for_Resource < Repository_Query
 end
 
 class Repository_Search__for_Resource < Repository_Search   
-    def initialize( aspace_O, rep_O, my_creator_O, record_type, search_uri = '/search' )
+    def initialize( aspace_O, rep_O, my_creator_O, record_type, search_uri, search_text, result_field_A )
         if ( rep_O.is_not_a?( Repository ) )
             SE.puts "#{SE.lineno}: Was expecting param 'rep_O' to be a Repository not a '#{rep_O.class}'"
             SE.q {[ 'rep_O', 'my_creator_O' ]}
@@ -228,12 +231,34 @@ class Repository_Search__for_Resource < Repository_Search
             end
             self.uri_addr = "#{rep_O.uri_addr}#{search_uri}"
         end
-        super
-    end
-    def record_H_A__having_the_text( search_text )
         search_O = super
         rep_O.query_search_filter( search_O )
         return self
+    end
+end
+
+class Resource_Batch_Delete < Repository_Batch_Delete
+    def initialize( aspace_O, rep_O, my_creator_O, delete_uri_A )
+        if ( rep_O.is_not_a?( Repository ) )
+            SE.puts "#{SE.lineno}: Was expecting param 'rep_O' to be a Repository not a '#{rep_O.class}'"
+            SE.q {[ 'rep_O', 'my_creator_O' ]}
+            raise
+        end
+
+        if ( my_creator_O.is_not_a?( Resource ) )
+            SE.puts "#{SE.lineno}: Was expecting param 'my_creator_O' to be a Resource not a '#{my_creator_O.class}'"
+            SE.q {[ 'rep_O', 'my_creator_O' ]}
+            raise
+        end
+
+        aspace_O.http_calls_O.get( res_O.uri_addr )
+        delete_uri_A.each_with_idx do | delete_uri, idx |
+            next if delete_uri.start_with?( "#{res_O.uri_addr}/" ) 
+            SE.put "#{SE.lineno}: Found a delete_uri without a res:id prefix"
+            SE.q {['delete_uri', 'idx', 'res_O.uri_addr']}
+            raise
+        end
+        super       
     end
 end
 

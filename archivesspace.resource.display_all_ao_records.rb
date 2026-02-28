@@ -103,7 +103,7 @@ print__record_H = lambda{ | record_H, cnt |
 
         end
         if ( cmdln_option[ :flattened ] ) then
-            record_H = record_H.deep_yield { | y | y.to_composite_key_h }
+            record_H = record_H.to_composite_key_h 
         end
         case cmdln_option[ :display ]
         when 'string'
@@ -137,7 +137,7 @@ if ( cmdln_option[ :print_res_rec ] ) then
 end
 
 cnt = 0
-AO_Query_of_Resource.new( res_O: res_O, get_full_ao_record_TF: cmdln_option[ :get_full_ao_record_TF ] )
+AO_Query_of_Resource.new( resource_O: res_O, get_full_ao_record_TF: cmdln_option[ :get_full_ao_record_TF ] )
                     .record_H_A( index_ok_TF: true ).each do | record_H |
     cnt += 1
     print__record_H.call( record_H, cnt )

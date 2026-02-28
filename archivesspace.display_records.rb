@@ -60,7 +60,7 @@ end
 
 print_thingy = lambda{ | thingy | 
     if ( cmdln_option_H[ :flattened ] ) then
-        thingy = thingy.deep_yield { | y | y.to_composite_key_h }
+        thingy = thingy.to_composite_key_h 
     end
     puts thingy.ai
 }
@@ -98,9 +98,9 @@ ARGV.each do | element |
     when 'index' 
         puts "Index for Archival_Object: #{element}:"
         if ( ao_query_O.nil? ) then
-            ao_query_O = AO_Query_of_Resource.new( res_O )
+            ao_query_O = AO_Query_of_Resource.new( resource_O: res_O )
         end
-        print_thingy.( ao_query_O.index_H__of_uri_id_num( element ) )
+        print_thingy.( ao_query_O.index_H__of_uri( element ) )
     when 'tc'
         puts "Top_Container: #{element}:"
         tc_buf_O = Top_Container.new( res_buf_O, element )

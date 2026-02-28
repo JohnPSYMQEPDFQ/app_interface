@@ -31,7 +31,7 @@ class Record_Format < Buffer_Base
         return h
     end
 
-    def container_locations                 # Part of 'Top_Container' below
+    def container_location                  # Part of 'Top_Container' below, see container_locations  Array with an 's'
         h = {   
                 K.status => K.current ,
                 K.start_date => K.undefined ,
@@ -101,17 +101,18 @@ class Record_Format < Buffer_Base
     def location 
         h = {
                 K.jsonmodel_type => K.location,
-                K.area => K.undefined,
+                K.area => nil,
                 K.building => K.undefined,
-                K.floor => K.undefined,
-                K.room => K.undefined,
-                K.coordinate_1_label => "",
-                K.coordinate_1_indicator => "",
-                K.coordinate_2_label => "",
-                K.coordinate_2_indicator => "",
-                K.coordinate_3_label => "",
-                K.coordinate_3_indicator => "",
-                K.title => K.undefined
+                K.floor => nil,
+                K.room => nil,
+                K.coordinate_1_label => nil,
+                K.coordinate_1_indicator => nil,
+                K.coordinate_2_label => nil,
+                K.coordinate_2_indicator => nil,
+                K.coordinate_3_label => nil,
+                K.coordinate_3_indicator => nil,
+                K.classification => nil,
+#               K.title => K.undefined            #  This is generated from everything else
             }
         @record_H.merge!( h )
         return h
@@ -214,7 +215,7 @@ class Record_Format < Buffer_Base
                 K.type => K.undefined ,                     # 'box', 'folder', etc...
                 K.indicator => K.undefined ,                #  identifier, sequence number, etc...
                 K.created_for_collection => K.undefined,    # Ref to resource
-                K.container_locations => {} ,               # Defined above
+                K.container_locations => {} ,               # Defined above, see container_location SINGULAR
                 K.collection => []
             } 
         @record_H.merge!( h )

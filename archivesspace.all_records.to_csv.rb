@@ -85,7 +85,7 @@ query_O.result_A.each do | record_H |
                     else
                         y
                     end
-                    end.deep_yield { | y | y.to_composite_key_h }
+                    end.to_composite_key_h 
                        .transform_keys { | k | k.join( header_separator ) }
     composite_key_record_A << hash
     hash.each_key do | key | 

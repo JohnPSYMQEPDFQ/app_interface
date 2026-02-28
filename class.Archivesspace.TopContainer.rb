@@ -6,7 +6,7 @@ class Top_Container
       there's a 'new_buffer' method that will do it from inside here too, eg:
           tc_buffer_Obj = Top_Container.new(resource_Obj, tc-num|uri).new_buffer[.read|create]
 =end
-    attr_reader :res_O, :rep_O, :uri_id_num, :uri_addr
+    attr_reader :res_O, :rep_O, :uri_num, :uri_addr
     def initialize( p1_O, p2_TC_identifier = nil )
         case true        
         when p1_O.is_a?( Resource_Record_Buf ) 
@@ -26,15 +26,15 @@ class Top_Container
 
         case true
         when p2_TC_identifier.nil? 
-            @uri_id_num = nil
+            @uri_num = nil
             @uri_addr = nil
         when p2_TC_identifier.integer? 
-            @uri_id_num = p2_TC_identifier
-            @uri_addr = "#{@rep_O.uri_addr}/#{TOP_CONTAINERS}/#{@uri_id_num}"
+            @uri_num = p2_TC_identifier
+            @uri_addr = "#{@rep_O.uri_addr}/#{TOP_CONTAINERS}/#{@uri_num}"
         when p2_TC_identifier.start_with?( "#{@rep_O.uri_addr}/#{TOP_CONTAINERS}" ) 
             @uri_addr = p2_TC_identifier
-            @uri_id_num = p2_TC_identifier.trailing_digits
-            if (! @uri_id_num.integer? ) then
+            @uri_num = p2_TC_identifier.trailing_digits
+            if (! @uri_num.integer? ) then
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.puts "Invalid param2: #{p2_TC_identifier}"
                 raise
@@ -66,10 +66,10 @@ class TC_Record_Buf < Record_Buf
         @rec_jsonmodel_type =  K.top_container
         @tc_O = tc_O
         @uri_addr = @tc_O.uri_addr
-        @uri_id_num = @tc_O.uri_id_num
+        @uri_num = @tc_O.uri_num
         super( @tc_O.rep_O.aspace_O )
     end
-    attr_reader :tc_O, :uri_id_num, :uri_addr
+    attr_reader :tc_O, :uri_num, :uri_addr
     
     def create  
         if ( @tc_O.res_O.nil? ) then
@@ -127,11 +127,16 @@ class TC_Record_Buf < Record_Buf
             SE.q {[ '@record_H' ]}
             raise
         end
-        if ( @record_H[K.resource][K.ref] != @tc_O.res_O.uri_addr ) then
+        if not (    ( @record_H[ K.collection ].any?{ | collection | collection[ K.ref ] == @tc_O.res_O.uri_addr  } ) or
+                    ( @record_H.fetch( K.resource, {} ).fetch( K.ref, '' ) == @tc_O.res_O.uri_addr )
+               ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Top_Container doesn't belong to current Resource."
-            SE.puts "@record_H[K.resource][K.ref] != @tc_O.res_O.uri_addr"
-            SE.puts "#{@record_H[K.resource][K.ref]} != #{@tc_O.res_O.uri_addr}"
+            SE.puts "Top_Container doesn't belong to current Collection."
+            SE.puts '@record_H[ K.collection ].any?{ | collection | collection[ K.ref ] == @tc_O.res_O.uri_addr  }'
+            SE.puts '@record_H.fetch( K.resource, {} ).fetch( K.ref, '' ) == @tc_O.res_O.uri_addr'
+            SE.q {'@tc_O.res_O.uri_addr'}
+            SE.q {'@record_H[ K.collection ]'}
+            SE.q {'@record_H'}
             raise
         end
         if ( @uri_addr.nil? ) then
@@ -139,14 +144,11 @@ class TC_Record_Buf < Record_Buf
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Created TopContainer, uri = #{http_response_body_H[ K.uri ]}"
         else
-            SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "#{SE.lineno}: I shouldn't be updating a TopContainer"
-            raise
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Updated top_container, uri = #{http_response_body_H[ K.uri ]}"
         end
         @uri_addr = http_response_body_H[ K.uri ] 
-        @uri_id_num = @uri_addr.trailing_digits
+        @uri_num = @uri_addr.trailing_digits
         return self
     end
         
@@ -180,24 +182,24 @@ class TC_Record_Buf < Record_Buf
 end
 
 class TC_Query_of_Resource
-    attr_accessor :res_query_O,  :uri_addr,  :tc_display_order_H,  :record_H_A
-    private       :res_query_O=, :uri_addr=, :tc_display_order_H=, :record_H_A=
+    attr_accessor :ao_query_O,  :uri_addr,  :tc_display_order_H,  :record_H_A
+    private       :ao_query_O=, :uri_addr=, :tc_display_order_H=, :record_H_A=
     
-    def initialize( p1_res_query_O )
-        if ( p1_res_query_O.is_not_a?( AO_Query_of_Resource ) ) then
+    def initialize( p1_ao_query_O )
+        if ( p1_ao_query_O.is_not_a?( AO_Query_of_Resource ) ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 is not a 'AO_Query_of_Resource' class object, it's: '#{p1_res_query_O.class}'"
+            SE.puts "Param 1 is not a 'AO_Query_of_Resource' class object, it's: '#{p1_ao_query_O.class}'"
             raise
         end    
-        self.res_query_O = p1_res_query_O
-        self.uri_addr = "#{p1_res_query_O.res_O.rep_O.uri_addr}/#{TOP_CONTAINERS}"    
-        if ( p1_res_query_O.record_H_A.nil? ) then
+        self.ao_query_O = p1_ao_query_O
+        self.uri_addr = "#{p1_ao_query_O.res_O.rep_O.uri_addr}/#{TOP_CONTAINERS}"    
+        if ( p1_ao_query_O.record_H_A.nil? ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "p1_res_query_O.record_H_A is nil, was the get_full_ao_buf boolean set?"
+            SE.puts "p1_ao_query_O.record_H_A is nil, was the get_full_ao_buf boolean set?"
             raise
         end
         tc_ao_instance_xref_H_A_H = {}
-        p1_res_query_O.record_H_A.each_with_index do | record_H, ao_display_order |
+        p1_ao_query_O.record_H_A.each_with_index do | record_H, ao_display_order |
             if ( record_H.has_no_key?( K.instances ) ) then
                 next
             end
@@ -215,22 +217,24 @@ class TC_Query_of_Resource
                     SE.q { 'record_H' }
                     raise
                 end
-                tc_uri_id_num = instance[ K.sub_container ][ K.top_container ][ K.ref ].delete_prefix( "#{self.uri_addr}/" ).to_i
+                tc_uri_num = instance[ K.sub_container ][ K.top_container ][ K.ref ].delete_prefix( "#{self.uri_addr}/" ).to_i
+                raise 'tc_uri_num == 0' if ( tc_uri_num == 0 )
                 
-                if ( tc_ao_instance_xref_H_A_H.has_no_key?( tc_uri_id_num ) ) then
-                    tc_ao_instance_xref_H_A_H[ tc_uri_id_num ] = []
+                if ( tc_ao_instance_xref_H_A_H.has_no_key?( tc_uri_num ) ) then
+                    tc_ao_instance_xref_H_A_H[ tc_uri_num ] = []
                 end       
-                tc_ao_instance_xref_H_A_H[ tc_uri_id_num ].push( { K.title           => record_H[ K.title ],
+                tc_ao_instance_xref_H_A_H[ tc_uri_num ].push( { K.title           => record_H[ K.title ],
                                                                 :ao_display_order => ao_display_order,
+                                                                K.uri             => record_H[ K.uri ],
                                                                 K.instance        => instance[ K.sub_container ] } )
                 
             end
         end
         
-        #   Make a hash by tc_uri_id_num with the lowest (minimum) :ao_display_order value...
+        #   Make a hash by tc_uri_num with the lowest (minimum) :ao_display_order value...
         tmp_H = {}
-        tc_ao_instance_xref_H_A_H.each_pair do | tc_uri_id_num, ao_instance_xref_H_A |
-             tmp_H[ tc_uri_id_num ] = ao_instance_xref_H_A.map { | h | h[ :ao_display_order ] }.min
+        tc_ao_instance_xref_H_A_H.each_pair do | tc_uri_num, ao_instance_xref_H_A |
+             tmp_H[ tc_uri_num ] = ao_instance_xref_H_A.map { | h | h[ :ao_display_order ] }.min
         end
         #   Then sort the tmp_H by that lowest value, but sequence the hash 1..N for the actual order.
         self.tc_display_order_H = tmp_H.sort_by { |_, v| v }.each_with_index.to_h { |(k, _), i| [k, i] }
@@ -242,14 +246,15 @@ class TC_Query_of_Resource
         end
         
         self.record_H_A = Array.new( self.tc_display_order_H.length )
-        p1_res_query_O.res_O.rep_O.query( TOP_CONTAINERS )
-                            .record_H_A__of_id_A( self.tc_display_order_H.keys.sort )
-                            .result_A.each do | record_H |
-            tc_uri_id_num = record_H[ K.uri ].delete_prefix( "#{self.uri_addr}/" ).to_i
-            tc_display_order = self.tc_display_order_H[ tc_uri_id_num ]
+        p1_ao_query_O.res_O.rep_O.query( TOP_CONTAINERS )
+                           .record_H_A__of_id_A( self.tc_display_order_H.keys.sort )
+                           .result_A.each do | record_H |
+            tc_uri_num = record_H[ K.uri ].delete_prefix( "#{self.uri_addr}/" ).to_i
+            raise 'tc_uri_num == 0' if ( tc_uri_num == 0 )
+            tc_display_order = self.tc_display_order_H[ tc_uri_num ]
             if ( tc_display_order.nil? ) then
                  SE.puts "#{SE.lineno}: =============================================="
-                 SE.puts "self.tc_display_order_H[ tc_uri_id_num ] is nil?"
+                 SE.puts "self.tc_display_order_H[ tc_uri_num ] is nil?"
                  SE.q {'record_H[ K.uri ]'}
                  SE.q {'self.tc_display_order_H'}
                  raise
@@ -262,7 +267,7 @@ class TC_Query_of_Resource
                  SE.q {'self.tc_display_order_H'}
                  raise
             end 
-            record_H[ "~__RELATED_AO's__~" ] = tc_ao_instance_xref_H_A_H[ tc_uri_id_num ]
+            record_H[ "~__RELATED_AO's__~" ] = tc_ao_instance_xref_H_A_H[ tc_uri_num ]
             self.record_H_A[ tc_display_order ] = record_H
         end
         if ( self.record_H_A.length != self.tc_display_order_H.keys.length ) then
@@ -280,19 +285,30 @@ class TC_Query_of_Resource
         return self
     end
     
-    def record_H__of_uri_id_num( p1_tc_uri_id_num )
+    def record_H__of_uri( p1_tc_uri_addr_OR_id_num )
         case true
-        when p1_tc_uri_id_num.is_a?( String ) 
-            tc_uri_id_num = p1_tc_uri_id_num.delete_prefix( "#{self.uri_addr}/" ).to_i
-        when p1_tc_uri_id_num.integer?
-            tc_uri_id_num = p1_tc_uri_id_num.to_i
+        when p1_tc_uri_addr_OR_id_num.is_a?( String ) 
+            stringer = p1_tc_uri_addr_OR_id_num.delete_prefix( "#{self.uri_addr}/" )
+            if ( stringer.not_integer? ) then
+                SE.puts "#{SE.lineno}: =============================================="
+                SE.puts "Param 'p1_tc_uri_addr_OR_id_num' won't convert to an integer."
+                if ( p1_tc_uri_addr_OR_id_num[ 0 ] == '/' ) then
+                    SE.puts "It's probably because the URI doesn't start with '#{self.uri_addr}'"
+                end
+                SE.q {['p1_tc_uri_addr_OR_id_num','stringer','self.uri_addr']}
+                raise
+            end
+            tc_uri_num = stringer.to_i
+        when p1_tc_uri_addr_OR_id_num.integer?
+            tc_uri_num = p1_tc_uri_addr_OR_id_num.to_i
         else
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Was expecting param 'p1_tc_uri_id_num' to be a URI String or integer"
-            SE.q {'p1_tc_uri_id_num'}
+            SE.puts "Was expecting param 'p1_tc_uri_addr_OR_id_num' to be a URI String or integer"
+            SE.q {'p1_tc_uri_addr_OR_id_num'}
             raise
         end
-        tc_display_order = self.tc_display_order_H[ tc_uri_id_num ]
+        raise 'tc_uri_num == 0' if ( tc_uri_num == 0 )
+        tc_display_order = self.tc_display_order_H[ tc_uri_num ]
         if ( tc_display_order.nil? ) then
             return nil
         end

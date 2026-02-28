@@ -19,7 +19,7 @@ myself_name = File.basename( $0 )
 
 cmdln_option_H = { :find_dates_option_H => { },
                  }
-formatter_morality_option = '{ :morality_replace_option => { :bad => :keep, :good => :remove_from_end } }'
+formatter_morality_option = '{ Find_Dates_in_String::MORALITY_OPTION => { :bad => Find_Dates_in_String::KEEP_ALL, :good => Find_Dates_in_String::REMOVE_FROM_END } }'
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [options]"
     option.on( "-f", "--formatter", "Short for --find_dates_option_H '#{formatter_morality_option}' " ) do 
@@ -112,7 +112,7 @@ expected_cnt_H = {                      #  As-of 11/19/2024
     }
 
 SE.puts "input_string  = #{input_string.ai}"
-find_dates_O = Find_Dates_in_String.new( {  :morality_replace_option => { :good  => :remove },
+find_dates_O = Find_Dates_in_String.new( {  Find_Dates_in_String::MORALITY_OPTION => { :good  => Find_Dates_in_String::REMOVE_ALL },
                                             :date_string_composition => :dates_in_text,
 #                                           :default_century_pivot_ccyymmdd => '1900',
                                             :sort => false,

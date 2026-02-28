@@ -93,7 +93,7 @@ if ( self.cmdln_option_H[ :res_title ].downcase != self.res_buf_O.record_H[ K.ti
     raise
 end
 
-ao_query_O = AO_Query_of_Resource.new( self.res_O, false )
+ao_query_O = AO_Query_of_Resource.new( resource_O: self.res_O )
 
 index_orig_count = ao_query_O.index_H_A.count
 index_H_with_children_A = ao_query_O.index_H_A.select { | h | h[ K.child_count ] > 0 }
@@ -164,7 +164,11 @@ if ( parent_uri.nil? ) then
 end
 
 SE.puts "#{SE.lineno}: PRE-SORT"
-ao_query_O = AO_Query_of_Resource.new( self.res_O, true, parent_uri, false )
+ao_query_O = AO_Query_of_Resource.new( resource_O: self.res_O, 
+                                       get_full_ao_record_TF: true, 
+                                       starting_node_uri: parent_uri, 
+                                       recurse_index_children_TF: false 
+                                      )
 SE.q {[ 'ao_query_O.record_H_A.length' ]}
 
 # current_min_position = ao_query_O.record_H_A.min_by { | h | h[ K.position ] }[ K.position ]

@@ -48,6 +48,7 @@ def create_H_of_all_possible_notes( input_column_H )
             SE.q {'input_column_H'}
             raise
         end
+        stringer.tr!( '{}', '<>' )
         notes_H[ column_name ] = stringer
     end
     return notes_H
@@ -262,26 +263,28 @@ def put_column( column_idx = 0 )
         notes = +''
         if ( sub_column_value.sub!( /\s+note:(.*)$/i, '' ) ) then
             stringer = $&
-            stringer.gsub!( /\s\s+/, ' ' )
             stringer.strip!
+            stringer.gsub!( /\s\s+/, ' ' )
             stringer.sub!( /./,&:upcase )
+            stringer.tr!( '{}', '<>' )
             stringer << ' '
-            notes << stringer
+            notes << stringer                       # The note is put back AFTER the box logic
         end
-        if ( sub_column_value.sub!( /(\(.*?\))\s*$/, '' ) ) then    # Inmagic column detail notes are enclosed in ()       
+        if ( sub_column_value.sub!( /(\(.*?\))\s*$/, ' ' ) ) then    # Inmagic column detail notes are enclosed in ()       
             if ( notes.not_blank? ) then
                 SE.puts "#{SE.lineno}: WARNING: multiple notes found on one line"
                 SE.q {'$&'}
                 SE.q {'sub_column_value_unaltered'}
                 SE.q {'notes'}
             end
-            stringer = $&                           # The note is put back AFTER the box logic
+            stringer = $&                           
             stringer.gsub!( /[()]/, '' )
             stringer.gsub!( /\s\s+/, ' ' )
             stringer.strip!
             stringer.sub!( /./,&:upcase )
+            stringer.tr!( '{}', '<>' )
             stringer << ' '
-            notes << "NOTE: #{stringer}"
+            notes << "NOTE: #{stringer}"            # The note is put back AFTER the box logic
         end
 
 #               Get all the containers into an array           
@@ -327,7 +330,7 @@ def put_column( column_idx = 0 )
         if ( type_match_O_A.length > 0 ) then
             loop do
                 #   Move the bracketed words to the front of the record without the bracket. 
-                sub_column_value.sub!( K.container_bracketed_word_RE, ' ' ) # <<  This must be a ' '
+                sub_column_value.sub!( K.bracketed_word_RE, ' ' )   # <<  This must be a ' '
                 break if ( $~.nil? )
                 rearranged_sub_column_value << $~[ :bracketed_word ] + ' '
             end  
@@ -345,22 +348,42 @@ def put_column( column_idx = 0 )
 #           [  shelf XXXX ] 
 #       at the end of the record.
      
-        if ( sub_column_value.sub!( /(\[\s* shelf\s.*?\])\s*$/i, '' ) ) then    # Inmagic column shelf notes are enclosed in [ ]
-            if ( notes.not_blank? ) then
-                SE.puts "#{SE.lineno}: WARNING: multiple notes found on one line"
-                SE.q {'$&'}
+        # if ( sub_column_value.sub!( /(\[\s* shelf\s.*?\])\s*$/i, '' ) ) then    # Inmagic column shelf notes are sometimes enclosed in [ ]
+            # if ( notes.not_blank? ) then
+                # SE.puts "#{SE.lineno}: WARNING: multiple notes found on one line"
+                # SE.q {'$&'}
+                # SE.q {'sub_column_value_unaltered'}
+                # SE.q {'notes'}
+            # end
+            # stringer = $&                           # The note is put back AFTER the box logic
+            # stringer.gsub!( /[\[\]]/, '' )
+            # stringer.gsub!( /\s\s+/, ' ' )
+            # stringer.sub!( /\.$/, '' )
+            # stringer.strip!
+            # stringer.sub!( /./,&:upcase )
+            # stringer.tr!( '{}', '<>' )
+            # stringer << ' '
+            # notes << "NOTE: {physloc} #{stringer}"
+        # end   
+        
+        if ( sub_column_value.sub!( K.fmtr_inmagic_location_RE, ' ' ) ) then    # Inmagic location info into a note.    
+            match_O = $~
+            if ( ( match_O[ :left_del ] == '[' or match_O[ :right_del ] == ']' ) and
+                   match_O[ :left_del ] + match_O[ :right_del ] != '[]' )  then
+                SE.puts "#{SE.lineno}: mismatched '[]' on container stuff."
+                SE.q {'match_O'}
+                SE.q {'sub_column_value'}
                 SE.q {'sub_column_value_unaltered'}
-                SE.q {'notes'}
+                raise
             end
-            stringer = $&                           # The note is put back AFTER the box logic
-            stringer.gsub!( /[\[\]]/, '' )
+            stringer = match_O[ :location ]                        
             stringer.gsub!( /\s\s+/, ' ' )
-            stringer.sub!( /\.$/, '' )
             stringer.strip!
             stringer.sub!( /./,&:upcase )
+            stringer.tr!( '{}', '<>' )
             stringer << ' '
-            notes << "NOTE: {physloc} #{stringer}"
-        end              
+            notes << "NOTE: {physloc} SMCC #{stringer}"   # The note is put back AFTER the box logic
+        end        
        
         sub_column_value = box_only_line_logic( sub_column_value, notes )
         
@@ -878,7 +901,7 @@ tmp3_F.each_line do | input_column_J |
         when K.fmtr_inmagic_seriesdate
             if ( series_column_name.nil? ) then
                 SE.puts "#{SE.lineno}: Couldn't find the 'series_column_name' for column-use: #{column_use}, for column: #{column_name}"
-                SE.puts "#{SE.lineno}: Note: this is probably the 'extent' column.  If there are NO series records, it's the Resource date"
+                SE.puts "#{SE.lineno}: Note: This is probably the 'extent' column, but if there are NO series records, it's the Resource date"
                 SE.q {[ 'self.used_column_header_A' ]}
                 SE.q {[ 'column_name' ]}
                 raise

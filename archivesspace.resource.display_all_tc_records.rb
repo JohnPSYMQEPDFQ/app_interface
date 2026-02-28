@@ -25,6 +25,7 @@ cmdln_option = { :rep_num => 2  ,
                  :filter => false ,
                  :print_uri => true ,
                  :print_display_string_only => false ,
+                 :flattened => false,
                  :display => nil,
                 }
 OptionParser.new do |option|
@@ -43,6 +44,10 @@ OptionParser.new do |option|
     end
     option.on( "--print-display_string-only", "Only print the display_string." ) do |opt_arg|
         cmdln_option[ :print_display_string_only ] = true
+    end
+    option.on( "--flattened", "--flatten", "Flatten the record and ap(awesome-print) it." ) do |opt_arg|
+        cmdln_option[ :flattened ] = true
+        cmdln_option[ :display ] = 'ap'
     end
     option.on( "--display X", "X = 'string|json|ap(awesome-print)]', output the AO's as 'X'" ) do |opt_arg|
         if ( opt_arg.not_in?( [ 'string', 'json', 'ap' ] ) ) then
@@ -86,6 +91,9 @@ print__record_H = lambda{ | record_H, cnt |
                     next y
                 end
         end
+        if ( cmdln_option[ :flattened ] ) then
+            record_H = record_H.to_composite_key_h
+        end
         case cmdln_option[ :display ]
         when 'string'
             print  [ record_H ].join(" ").gsub( '&amp;', '&' )            
@@ -108,7 +116,7 @@ print__record_H = lambda{ | record_H, cnt |
 aspace_O = ASpace.new
 rep_O = Repository.new( aspace_O, rep_num )
 res_O = Resource.new( rep_O, res_num )
-res_query_O = AO_Query_of_Resource.new( res_O: res_O, get_full_ao_record_TF: true )
+res_query_O = AO_Query_of_Resource.new( resource_O: res_O, get_full_ao_record_TF: true )
 
 cnt = 0
 TC_Query_of_Resource.new( res_query_O ).record_H_A.each do | record_H |

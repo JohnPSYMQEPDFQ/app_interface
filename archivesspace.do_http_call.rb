@@ -15,6 +15,11 @@ require 'module.SE.rb'
 require 'class.Archivesspace.rb'
 require 'class.ArchivesSpace.http_calls.rb'
 
+=begin
+    Some examples:
+        <this_program> get '/repositories/2/search?q=title:"BROTHERHOOD"&{"type[]":"resource"}&{"page":1}&fields[]=title,uri'
+        <this_program> get '/locations/12654'
+=end
 
 BEGIN {}
 END {}
@@ -25,7 +30,10 @@ myself_name = File.basename( $0 )
 cmdln_option = { "repository-num" => 2  ,
                }
 OptionParser.new do |option|
-    option.banner = "Usage: #{myself_name} [ options ] Http_Calls.method (e.g get) uri[?params]"
+    option.banner = "Usage: #{myself_name} [ options ] (get|post|etc...) uri[?param][&param]...\n" +
+                    "Params can be k=v pairs, or json.  A string that starts with a '{' will be run through JSON.parse.\n" +
+                    'e.g. ?key=value or ?{"key": "value"}' +
+                    ''
     option.on( "-h","--help" ) do
         SE.puts option
         exit
@@ -61,17 +69,24 @@ else
 #   There can be many 'ref_id[]=value' strings.            
        
     arr1[ 1 ].split( '&' ) do | e | 
-        k, v = e.split( '=' ).map( &:to_s ).map( &:strip )
-        if ( v.is_not_a?( String ) ) then
-            SE.q { 'v' }
-            raise "'v' is not a string"
-        end
-        param_H[ k ] = ( v.integer? ) ? v.to_i : v       
+        if ( e.match?( /^\s*\{/ ) ) then
+            j = JSON.parse( e )
+            param_H.merge!( j )
+        else
+            k, v = e.split( '=' ).map( &:to_s ).map( &:strip )
+            if ( v.is_not_a?( String ) ) then
+                SE.q { 'v' }
+                raise "'v' is not a string"
+            end
+        param_H[ k ] = ( v.integer? ) ? v.to_i : v 
+        end      
     end
 end
 
 uri.sub!( ':repo_id', rep_num.to_s )
-puts "uri=#{uri}, param_H=#{param_H}"
+puts ''
+puts "uri=#{uri}, param_H=" + param_H.ai
+puts ''
 stringer = http_O.method( method ).call( uri, param_H ) 
 puts stringer.ai
 

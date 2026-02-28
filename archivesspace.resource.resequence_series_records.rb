@@ -58,7 +58,7 @@ aspace_O.allow_updates = cmdln_option[ :update ]
 rep_O = Repository.new( aspace_O, rep_num )
 res_O = Resource.new( rep_O, res_num )
 series_uri_A = []
-cnt = 0; AO_Query_of_Resource.new( res_O ).record_H_A.each do | record_H |
+cnt = 0; AO_Query_of_Resource.new( resource_O: res_O ).record_H_A.each do | record_H |
     if ( ! record_H[ K.level ].in?( [ K.series, K.subseries ] ) ) then
         next
     end

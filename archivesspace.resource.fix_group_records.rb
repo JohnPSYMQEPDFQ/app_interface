@@ -55,7 +55,7 @@ aspace_O = ASpace.new
 aspace_O.allow_updates = cmdln_option[ :update ]
 rep_O = Repository.new( aspace_O, rep_num )
 res_O = Resource.new( rep_O, res_num )
-cnt = 0; AO_Query_of_Resource.new( res_O ).record_H_A.each do | query_record_H |
+cnt = 0; AO_Query_of_Resource.new( resource_O: res_O ).record_H_A.each do | query_record_H |
     if ( ! query_record_H[ K.level ].in?( [ K.recordgrp ] ) ) then
         next
     end

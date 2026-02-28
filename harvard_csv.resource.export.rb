@@ -180,7 +180,7 @@ end
 def fetch_top_container(sub_container, tc_query_O)
   ref = sub_container.dig("top_container", "ref")
   return nil unless ref
-  tc = tc_query_O.record_H__of_uri_id_num( ref )
+  tc = tc_query_O.record_H__of_uri( ref )
   if ( tc.nil? ) then
     raise "Invalid tc ref '#{ref}'"
   end
@@ -292,7 +292,7 @@ rep_O = Repository.new( aspace_O, 2 )
 res_O = Resource.new( rep_O, RESOURCE_ID )
 resource = fetch_resource()
 collection_id = resource_identifier_string(resource)
-res_query_O = AO_Query_of_Resource.new( res_O, true )
+res_query_O = AO_Query_of_Resource.new( resource_O: res_O, get_full_ao_record_TF: true )
 tc_query_O = TC_Query_of_Resource.new( res_query_O )
 rows = []
 res_query_O.record_H_A.each do | ao |

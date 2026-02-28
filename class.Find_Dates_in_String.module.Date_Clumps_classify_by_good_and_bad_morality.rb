@@ -40,10 +40,10 @@ module Date_Clumps_classify_by_good_and_bad_morality
             prev_date = ''
             self.good__date_clump_S__A.each_with_index do | date_clump_S, idx |
                 if ( date_clump_S.as_from_date < prev_date ) then
-                    SE.puts "#{SE.lineno}: Warning: Dates overlap! good from-date '#{date_clump_S.as_from_date} at element #{idx} "+
-                            "< previous date #{prev_date}, there may be others."
-                    SE.puts self.original_text
-                    SE.puts ''
+#                   SE.puts "#{SE.lineno}: Warning: Dates overlap! good from-date '#{date_clump_S.as_from_date} at element #{idx} "+
+#                           "< previous date #{prev_date}, there may be others."
+#                   SE.puts self.original_text
+#                   SE.puts ''
                     break
                 end
                 prev_date = date_clump_S.as_thru_date( :else_from_date )

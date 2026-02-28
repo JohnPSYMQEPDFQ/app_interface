@@ -34,6 +34,7 @@ module Date_Clumps_parse_text_dates
                         :morality,
                         :error_msg,
                         :aspace_O,              # Needed for the format_date_expression
+                        :morality_action,
                         keyword_init: true
                         )   do
                 def judge_date( judgement, input_error_msg, print = true )    
@@ -283,7 +284,8 @@ module Date_Clumps_parse_text_dates
                                                   date_match_S__A: date_match_S__A,
                                                   certainty: '',
                                                   bulk_TF: false,
-                                                  aspace_O: self.aspace_O
+                                                  aspace_O: self.aspace_O,
+                                                  morality_action: nil
                                                  )
             self.date_clump_S__A << date_clump_S
             

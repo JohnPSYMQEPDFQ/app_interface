@@ -60,7 +60,7 @@ template_record_H = {
     'accession_number_2' => nil,
     'accession_number_3' => nil,
     'accession_number_4' => nil,
-    'accession_accession_date' => nil,
+    'accession_date' => nil,
     'date_1_label' => nil,
     'date_1_expression' => nil,
     'date_1_begin' => nil,
@@ -108,7 +108,7 @@ def template_date_formatter( as_date, date_column_num )
 end
 
 
-find_dates_O = Find_Dates_in_String.new( { :morality_replace_option => { :good  => :replace },
+find_dates_O = Find_Dates_in_String.new( { Find_Dates_in_String::MORALITY_OPTION => { :good  => Find_Dates_in_String::REPLACE_ALL },
                                            :pattern_name_RES => '.',
                                            :date_string_composition => :dates_in_text,
                                            :yyyymmdd_min_value => '1960',
@@ -214,7 +214,7 @@ csv_input.each do | input_ROW |
             end
             
           # SE.q {[ 'aspace_date_A' ]}
-            record_H[ 'accession_accession_date' ] = aspace_date_A.shift if ( aspace_date_A.length > 0 and aspace_date_A[ 0 ].length == 10 )
+            record_H[ 'accession_date' ] = aspace_date_A.shift if ( aspace_date_A.length > 0 and aspace_date_A[ 0 ].length == 10 )
             template_date_formatter( aspace_date_A.shift, 1 )            if ( aspace_date_A.length > 0 )
             template_date_formatter( aspace_date_A.shift, 2 )            if ( aspace_date_A.length > 0 )
             anomaly_A.push( "More than 3 dates. Extras are: " + aspace_date_A.join( ' + ' ) ) if ( aspace_date_A.length > 0 )

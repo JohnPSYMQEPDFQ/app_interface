@@ -67,7 +67,7 @@ res_O = Resource.new( rep_O, res_num )
 update_cnt = 0
 record_cnt = 0
 date_cnt = 0    
-AO_Query_of_Resource.new( res_O ).index_H_A.each do | index_H |
+AO_Query_of_Resource.new( resource_O: res_O ).index_H_A.each do | index_H |
     record_cnt += 1
     if ( ! ( index_H.key?( K.dates ) and index_H[ K.dates ].length > 0 )) then
         next

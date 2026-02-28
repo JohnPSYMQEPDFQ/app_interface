@@ -115,6 +115,7 @@ input_csv_O.each_with_index do | input_row_CSV, row_num |
     end   
     record_H_H[ modified_title ] = record_H
 end
+SE.puts "#{record_H_H.length} location records loaded from csv file."
 # header_A = input_csv_O.headers.to_a
 # SE.puts header_A.join( ',' )
 input_csv_O.close
@@ -137,6 +138,8 @@ input_csv_O.close
 =end
 
 loc_query_O = self.rep_O.query( LOCATIONS ).record_H_A__all
+location_delete_uri_A = [ ]
+SE.puts "#{loc_query_O.result_A.length} location records in ASpace."
 loc_query_O.result_A.each do | record_H |
     modified_title = record_H[ K.title ].gsub( /\s+/, '' ).downcase
     if ( record_H_H.has_key?( modified_title ) ) then
@@ -144,15 +147,28 @@ loc_query_O.result_A.each do | record_H |
 #       SE.puts "Same: #{record_H[ K.title ]}"
         next
     end
-    SE.puts "Delete: #{record_H[ K.title ]}"
-    SE.puts Location.new( rep_O, record_H[ K.uri ] ).new_buffer.delete
+#   SE.puts "Delete: #{record_H[ K.title ]}"
+    location_delete_uri_A.push( record_H[ K.uri ] )
+end
+deleted_cnt = 0
+if location_delete_uri_A.length > 0
+    SE.puts "#{location_delete_uri_A.length} records to be deleted."
+    deleted_cnt += self.aspace_O.batch_delete( location_delete_uri_A ).deleted_cnt
+end
+if self.aspace_O.allow_updates && location_delete_uri_A.length != deleted_cnt
+    SE.puts "location_delete_uri_A.length != deleted_cnt"
+    SE.q {[ 'location_delete_uri_A.length', 'deleted_cnt' ]}
+    raise
 end
 
-
-record_H_H.each_with_index do | ( key, record_H ), cnt |
+created_cnt = 0
+record_H_H.each_pair do | modified_title, record_H |
     SE.puts "Create: #{record_H[ K.title ]}"
     Location.new( rep_O, record_H[ K.uri ] ).new_buffer.create.load( record_H ).store   
+    created_cnt += 1
 end
+SE.puts "#{deleted_cnt} records deleted."
+SE.puts "#{created_cnt} records created."
 
 
 

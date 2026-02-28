@@ -1,7 +1,7 @@
 
 class Repository
-    attr_reader         :aspace_O, :uri_id_num, :uri_addr
-    private attr_writer :aspace_O, :uri_id_num, :uri_addr
+    attr_reader         :aspace_O, :uri_num, :uri_addr
+    private attr_writer :aspace_O, :uri_num, :uri_addr
     
     def initialize( p1_aspace_O, p2_rep_num )
         if ( not p1_aspace_O.is_a?( ASpace ) ) then
@@ -16,9 +16,9 @@ class Repository
             raise
         end
         @aspace_O = p1_aspace_O
-        @uri_id_num      = p2_rep_num
-        @uri_addr      = "/#{REPOSITORIES}/#{@uri_id_num}"
-#       SE.puts "#{SE.lineno}: ================ In Repository:initialize,@uri_id_num=#{@uri_id_num}"
+        @uri_num      = p2_rep_num
+        @uri_addr      = "/#{REPOSITORIES}/#{@uri_num}"
+#       SE.puts "#{SE.lineno}: ================ In Repository:initialize,@uri_num=#{@uri_num}"
     end
 #
 #   NOTE!  'what_to_query' is the SUB-object NOT this object.
@@ -27,9 +27,12 @@ class Repository
         return Repository_Query.new( self.aspace_O, self, self, what_to_query )
     end
     
-    def search( record_type:, search_text:, search_uri: '/search' )
-        return Repository_Search.new( self.aspace_O, self, self, record_type, search_uri )
-                                .record_H_A__having_the_text( search_text )
+    def search( record_type:, search_text:, search_uri: '/search', result_field_A: [] )
+        return Repository_Search.new( self.aspace_O, self, self, record_type, search_uri, search_text, result_field_A )
+    end
+    
+    def batch_delete( delete_uri_A )
+        return Repository_Batch_Delete.new( self.aspace_O, self, self, delete_uri_A )
     end
     
     def query_search_filter( query_O )
@@ -43,7 +46,7 @@ class Repository
             SE.puts "I shouldn't be here, @uri_addr is nil!"
             raise
         when query_O.uri_addr.start_with?( @uri_addr )
-            SE.puts "#{SE.lineno}: It's all mine (query uri '#{query_O.uri_addr}' starts with '#{@uri_addr}')"
+#           SE.puts "#{SE.lineno}: It's all mine (query uri '#{query_O.uri_addr}' starts with '#{@uri_addr}')"
         else
             not_mine_A = []
             mine_A = []
@@ -92,7 +95,7 @@ class Repository_Query < ASpace_Query
                 raise
             end
 =begin
-            The Locations are stored a the root level, so have to be queried as '/locations',
+            The Locations are stored at the root level, so have to be queried as '/locations',
             but there's a field called "owner_repo" which is the Repository that owns the 
             location.  Not sure why it's handled like this, instead of with the usual
             'repository' => 'ref' way, but in order to filter on "owner_repo" the following
@@ -126,7 +129,7 @@ class Repository_Query < ASpace_Query
 end
 
 class Repository_Search < ASpace_Search   
-    def initialize( aspace_O, rep_O, my_creator_O, record_type, search_uri = '/search' )
+    def initialize( aspace_O, rep_O, my_creator_O, record_type, search_uri, search_text, result_field_A )
 #           In this class rep_O and my_creator_O are the same, others they will be different
         if ( rep_O.is_not_a?( Repository ) )
             SE.puts "#{SE.lineno}: Was expecting param 'rep_O' to be a Repository not a '#{rep_O.class}'"
@@ -141,13 +144,30 @@ class Repository_Search < ASpace_Search
             end
             self.uri_addr = "#{rep_O.uri_addr}#{search_uri}"
         end
-        super
-    end
-    def record_H_A__having_the_text( search_text )
         search_O = super
         rep_O.query_search_filter( search_O )
         return self
     end
 end
+
+class Repository_Batch_Delete < ASpace_Batch_Delete
+    def initialize( aspace_O, rep_O, my_creator_O, delete_uri_A )
+#           In this class rep_O and my_creator_O are the same, others they will be different
+        if ( rep_O.is_not_a?( Repository ) )
+            SE.puts "#{SE.lineno}: Was expecting param 'rep_O' to be a Repository not a '#{rep_O.class}'"
+            SE.q {[ 'rep_O', 'my_creator_O' ]}
+            raise
+        end
+        aspace_O.http_calls_O.get( rep_O.uri_addr )
+        delete_uri_A.each_with_index do | delete_uri, idx |
+            next if delete_uri.start_with?( "#{rep_O.uri_addr}/" ) 
+            SE.put "#{SE.lineno}: Found a delete_uri without a repo:id prefix"
+            SE.q {['delete_uri', 'idx', 'rep_O.uri_addr']}
+            raise
+        end
+        super       
+    end
+end
+
 
 

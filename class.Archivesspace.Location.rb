@@ -6,7 +6,7 @@ class Location
       there's a 'new_buffer' method that will do it from inside here too, eg:
           location_buffer_O = location.new(aspace_O, location-num|uri).new_buffer[.read|create]
 =end
-    attr_reader :aspace_O, :owner_repo, :uri_id_num,  :uri_addr
+    attr_reader :aspace_O, :owner_repo, :uri_num,  :uri_addr
     
     def initialize( p1_O, p2_location_identifier = nil )
     
@@ -25,15 +25,15 @@ class Location
 
         case true
         when p2_location_identifier.nil?
-            @uri_id_num = nil
+            @uri_num = nil
             @uri_addr = nil
         when p2_location_identifier.integer? 
-            @uri_id_num = p2_location_identifier
-            @uri_addr = "/#{LOCATIONS}/#{@uri_id_num}"
+            @uri_num = p2_location_identifier
+            @uri_addr = "/#{LOCATIONS}/#{@uri_num}"
         when p2_location_identifier.start_with?( "/#{LOCATIONS}" ) 
             @uri_addr = p2_location_identifier
-            @uri_id_num = p2_location_identifier.trailing_digits
-            if (! @uri_id_num.integer? ) then
+            @uri_num = p2_location_identifier.trailing_digits
+            if (! @uri_num.integer? ) then
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.puts "Invalid param2: #{p2_location_identifier}"
                 raise
@@ -64,10 +64,10 @@ class Location_Record_Buf < Record_Buf
         end    
         @rec_jsonmodel_type = K.location
         @uri_addr = location_O.uri_addr
-        @uri_id_num = location_O.uri_id_num
+        @uri_num = location_O.uri_num
         super( location_O.aspace_O )
     end
-    attr_reader :location_O, :uri_id_num, :uri_addr
+    attr_reader :location_O, :uri_num, :uri_addr
     
     def owner_repo_validate
         return if ( @owner_repo.nil? )
@@ -113,33 +113,30 @@ class Location_Record_Buf < Record_Buf
     #   SE.q {[ '@record_H' ]}
         owner_repo_validate
         
-        # if (!(  @record_H[ K.building ] and @record_H[ K.building ] != '')) then 
-            # SE.puts "#{SE.lineno}: =============================================="
-            # SE.puts "#{SE.lineno}: I was expecting a @record_H[K.building] value";
-            # SE.puts "@uri_addr = #{@uri_addr}"
-            # SE.q {[ '@record_H' ]}
-            # raise
-        # end
-        if (!(  @record_H[ K.title ] and @record_H[ K.title ] != K.undefined )) then 
+        if ( ! (  @record_H[ K.building ] and @record_H[ K.building ] != '' ) ) then 
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "#{SE.lineno}: I was expecting a @record_H[K.classification] value";
+            SE.puts "#{SE.lineno}: I was expecting a @record_H[K.building] value";
             SE.puts "@uri_addr = #{@uri_addr}"
             SE.q {[ '@record_H' ]}
             raise
         end
-        if ( @uri_addr == nil ) then
+        # if (!(  @record_H[ K.title ] and @record_H[ K.title ] != K.undefined )) then 
+            # SE.puts "#{SE.lineno}: =============================================="
+            # SE.puts "#{SE.lineno}: I was expecting a @record_H[K.title] value";
+            # SE.puts "@uri_addr = #{@uri_addr}"
+            # SE.q {[ '@record_H' ]}
+            # raise
+        # end
+        if ( @uri_addr.nil? ) then
             @uri_addr = "/#{LOCATIONS}"
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Created Location, uri = #{http_response_body_H[ K.uri ]}"
         else
-            SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "#{SE.lineno}: I shouldn't be updating a Location"
-            raise
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Updated location, uri = #{http_response_body_H[ K.uri ]}"
         end
         @uri_addr = http_response_body_H[ K.uri ] 
-        @uri_id_num = @uri_addr.trailing_digits
+        @uri_num = @uri_addr.trailing_digits
         return self
     end
         

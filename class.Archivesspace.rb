@@ -71,7 +71,7 @@ class ASpace
       
         userid, password = p1_user.split(':')
         if ( password.nil? ) then
-            SE.puts  "(After entering the password: if there's no LF immediately after hitting <enter>, try a new window...)"
+            SE.puts  "(After entering the password: if there's no LF immediately after hitting <enter>, try a 'stty sane' or new window...)"
             SE.print "Enter password:"
             password = STDIN.noecho(&:gets).chomp   # If the 'gets' stops working from the cygwin command line
 #           password = STDIN.gets.chomp             # open a new window.  It does that sometimes.
@@ -204,9 +204,12 @@ class ASpace
         return ASpace_Query.new( self, nil, self, what_to_query )
     end
     
-    def search( record_type:, search_text:, search_uri: '/search' )
-        return ASpace_Search.new( self, nil, self, record_type, search_uri )
-                            .record_H_A__having_the_text( search_text )
+    def search( record_type:, search_text:, search_uri: '/search', result_field_A: [] )
+        return ASpace_Search.new( self, nil, self, record_type, search_uri, search_text, result_field_A )
+    end
+    
+    def batch_delete( delete_uri_A )
+        return ASpace_Batch_Delete.new( self, nil, self, delete_uri_A )
     end
     
 end
@@ -344,13 +347,22 @@ class ASpace_Search
 
         /repositories/:repo_id/search	                GET, POST	Search this repository
         /repositories/:repo_id/top_containers/search	GET	        Search for top containers
+        
+        
+       Also note THIS comment, from https://archivesspace.github.io/archivesspace/api/?shell#search-this-archive
+            For parameter 'q' : 
+                A search query string. 
+                Uses Lucene 4.0 syntax:
+                    http://lucene.apache.org/core/4_0_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html 
+                    Search index structure can be found in solr/schema.xml
+       
             
 =end
     attr_accessor :aspace_O, :rep_O, :my_creator_O, :uri_addr, :record_type 
     attr_accessor :result_A
     alias :record_H_A :result_A
     
-    def initialize( aspace_O, rep_O, my_creator_O, record_type, search_uri = '/search' )
+    def initialize( aspace_O, rep_O, my_creator_O, record_type, search_uri, search_text, result_field_A )
         self.aspace_O     = aspace_O
         self.rep_O        = rep_O
         self.my_creator_O = my_creator_O
@@ -358,19 +370,23 @@ class ASpace_Search
         if ( self.uri_addr.nil? ) then
             self.uri_addr = search_uri
         end
-    end
-   
-    def record_H_A__having_the_text( text )
-        record_H_A = []
+        if ( result_field_A.is_not_a?( Array ) ) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "'result_field_A' is not an Array, it's a #{result_field_A.class}"
+            SE.q {'result_field_A'}
+            raise
+        end
+        self.result_A = []
         page = 1
+        param_H = { 'q'      => "#{search_text}", 
+                    'type[]' => self.record_type.delete_suffix( 's' ), 
+                    K.page   => page 
+                   }
+        if ( result_field_A.not_empty? ) then
+            param_H.merge!( { 'fields[]' => result_field_A.join( ',' ) } )
+        end
         while true
-            http_call_response = self.aspace_O.http_calls_O
-                                     .get(  self.uri_addr, 
-                                            { 'q'      => "#{text}", 
-                                              'type[]' => self.record_type.delete_suffix( 's' ), 
-                                              K.page   => page 
-                                             }
-                                          )
+            http_call_response = self.aspace_O.http_calls_O.get( self.uri_addr, param_H )
             if ( !  (   http_call_response.has_key?( K.first_page ) &&
                         http_call_response.has_key?( K.last_page ) &&
                         http_call_response.has_key?( K.results ) && 
@@ -384,19 +400,60 @@ class ASpace_Search
             if ( http_call_response[ K.results ].empty? ) then
                 SE.puts "#{SE.lineno}: #{SE.my_caller}: =============================================="
                 SE.puts "Empty response using 'type[]' => '#{self.record_type.delete_suffix( 's' )}'"
+                SE.puts "Search text: '#{search_text}'"
+                SE.puts ''
             end
             http_call_response[ K.results ].each do | result_H |
                 result_H.reject! { | key, value | key == K.json }
-                record_H_A << result_H                   
+                self.result_A << result_H                   
             end
             page += 1
             break if ( page > http_call_response[ K.last_page ] )
         end
-        self.result_A = record_H_A
         return self
-
-    end       
+    end           
  
+end
+
+class ASpace_Batch_Delete
+    attr_accessor :aspace_O,  :rep_O, :my_creator_O
+    attr_accessor :deleted_cnt
+   
+    def initialize( aspace_O, rep_O, my_creator_O, delete_uri_A )
+        self.aspace_O     = aspace_O
+        self.rep_O        = rep_O
+        self.my_creator_O = my_creator_O 
+        self.deleted_cnt  = 0
+        if self.aspace_O.allow_updates
+            delete_uri_A.each_slice( 250 ) do | chunk__delete_uri_A |
+                SE.q {'chunk__delete_uri_A.length'}
+                param_H = {}.compare_by_identity
+                chunk__delete_uri_A.each do | delete_uri |
+                    param_H[ "#{K.record_uris}[]" ] = delete_uri
+                end
+                response = aspace_O.http_calls_O.post_with_params( "/batch_delete", param_H )
+                if response[ K.status ] != 'OK'     
+                    SE.puts "#{SE.lineno}: response['status'] != 'OK'"
+                    SE.q {'response'}
+                    SE.q {'param_H'}
+                    raise
+                end
+                response[ K.results ].each do | result_H |
+                    if result_H[ K.status ].downcase != 'Deleted'.downcase
+                        SE.puts "#{SE.lineno}: response[ 'results' ][ 'status' ] != 'Deleted'"
+                        SE.q {'response'}
+                        SE.q {'param_H'}
+                        raise
+                    end
+                    self.deleted_cnt += 1
+                end                       
+            end
+        else
+            SE.puts "#{SE.lineno}: NO UPDATE MODE."
+            self.deleted_cnt = delete_uri_A.length
+        end
+    end
+       
 end
 
 
