@@ -31,7 +31,7 @@ class Record_Format < Buffer_Base
         return h
     end
 
-    def container_location                  # Part of 'Top_Container' below, see container_locations  Array with an 's'
+    def container_location                  # Part of 'Top_Container' below, see 'container_locations' Array with an 's'
         h = {   
                 K.status => K.current ,
                 K.start_date => K.undefined ,
@@ -112,7 +112,7 @@ class Record_Format < Buffer_Base
                 K.coordinate_3_label => nil,
                 K.coordinate_3_indicator => nil,
                 K.classification => nil,
-#               K.title => K.undefined            #  This is generated from everything else
+                K.title => nil,            #  This is generated from everything else
             }
         @record_H.merge!( h )
         return h

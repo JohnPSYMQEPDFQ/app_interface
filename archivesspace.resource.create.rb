@@ -272,7 +272,7 @@ if ( cmdln_option_H[ :inmagic ] ) then
             when 'Additional Access'.downcase
                 # Not used
             when 'Collection Name'.downcase
-                collection_name << inmagic_value.gsub( K.embedded_CRLF, " " )
+                collection_name << inmagic_value.gsub( K.embedded_CRLF, " " ).strip
             when 'Filing Location'.downcase
                 filing_location << inmagic_value.gsub( K.embedded_CRLF, "\n" )
             when 'Historical Info'.downcase

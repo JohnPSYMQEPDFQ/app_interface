@@ -12,10 +12,11 @@ require 'class.Find_Dates_in_String.rb'
 module Main_Global_Variables
 #       Instead of easily mistyped instance-variables, we can do this...
         attr_accessor :myself_name, :cmdln_option_H, :output_fd3_F, :aspace_O,
-                      :states_A, :states_RES, :states_RE, :prepend_A,
+                      :states_A, :states_RES, :states_RE, :prepend_A_A,
                       :find_dates_with_4digit_years_O, :find_dates_with_2digit_years_O,
                       :min_date, :max_date, :note_cnt, :box_cnt, :the_unknown_box_O,
-                      :auto_group_H, :pending_output_record_H
+                      :auto_group_H, :pending_output_record_H,
+                      :tc_group_suffix
 end
 include Main_Global_Variables
 #       But not sure why it needs to be in a module...
@@ -29,9 +30,9 @@ class The_unknown_box
     end
 end
 
-def scrape_off_specified_bracketed_words( input_record )
+def scrape_off_explicitly_bracketed_words( input_record )
 
-    specified_bracketed_word_A = []
+    explicitly_bracketed_word_A = []
     loop do
         input_record.sub!( K.bracketed_word_RE ) do | full_match_string |
                 SE.q {['$1','$2','match_string' ]}  if ( $DEBUG )
@@ -40,18 +41,19 @@ def scrape_off_specified_bracketed_words( input_record )
         matchdata_O = $~
         break if ( matchdata_O.nil? )        
         bracketed_word = matchdata_O[ :bracketed_word ]                                                                    
-        specified_bracketed_word_A << bracketed_word
+        explicitly_bracketed_word_A << bracketed_word
         SE.q {[ 'input_record' ]}   if ( $DEBUG )
-        SE.q {[ 'specified_bracketed_word_A' ]}  if ( $DEBUG )
+        SE.q {[ 'explicitly_bracketed_word_A' ]}  if ( $DEBUG )
     end  
-    return input_record, specified_bracketed_word_A 
+    return input_record, explicitly_bracketed_word_A 
 end
 
-def scrape_off_container( input_record, from_thru_date_H_A, specified_bracketed_word_A )
+def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed_word_A )
 
     filter_types = lambda{ | type | 
         type.downcase
-            .sub( /(s|es)$/, '' )
+            .sub( /(?<!photocopi|photocopie)e?s$/, '' )
+#           .sub( /(s|es)$/, '' )
             .sub( /^(ov|oversized)$/, K.fmtr_oversize )
             .sub( /\s+ov$/, K.fmtr_oversize )    # as a 'modifier'
             .sub( /^vol[.]$/, K.volume ) 
@@ -59,12 +61,12 @@ def scrape_off_container( input_record, from_thru_date_H_A, specified_bracketed_
                                 # the return value 
                                 # from being changed 
                                 # in TWO places:
-                                #   *_specified_bracketed_word_A
+                                #   *_explicitly_bracketed_word_A
                                 #   inside container_H_A 
                                 # Always .dup the result.
     }
     
-#   Be careful of the scope of these things.   A varable they can't "see" at the time of 
+#   Be careful of the scope of these lambda things.   A varable they can't "see" at the time of 
 #   declaration must be passed in as a param.  Notice that 'from_thru_date_H_A' doesn't
 #   need to be, because IT is visible from the parameter declaration above.  
 #
@@ -113,8 +115,8 @@ def scrape_off_container( input_record, from_thru_date_H_A, specified_bracketed_
             
     SE.q {['input_record']} if ( $DEBUG )
     
-    specified_bracketed_word_A.map! do | specified_bracketed_word |
-        specified_bracketed_word = filter_types.( specified_bracketed_word )
+    explicitly_bracketed_word_A.map! do | explicitly_bracketed_word |
+        explicitly_bracketed_word = filter_types.( explicitly_bracketed_word )
     end
     
     container_H_A = [ ]
@@ -123,10 +125,10 @@ def scrape_off_container( input_record, from_thru_date_H_A, specified_bracketed_
     loop do
         container_match_O = input_record.match( K.container_and_child_types_RE )
         if ( container_match_O.nil? ) 
-            if (    specified_bracketed_word_A.include?( K.volume ) and 
+            if (    explicitly_bracketed_word_A.include?( K.volume ) and 
                     implied_bracketed_word_A.not_include?( K.volume ) 
                 ) then               
-                specified_bracketed_word_A.delete( K.volume )
+                explicitly_bracketed_word_A.delete( K.volume )
                 implied_bracketed_word_A.push( K.volume.dup )
                 if ( container_H_A.not_empty? and container_H_A.last[ K.indicator_2 ].blank? ) then
                     container_match_O__nc_H = { }   
@@ -182,7 +184,7 @@ def scrape_off_container( input_record, from_thru_date_H_A, specified_bracketed_
             container_indicator_A = [ ]
             previous_operator_is_a_range = false
             container_num_A.each_slice( 2 ) do | ( indicator, operator ) |
-                cleaned_indicator = indicator.gsub( /box(s|es)?/, '' ).strip 
+                cleaned_indicator = indicator.gsub( /#{K.valid_container_types_RES}/, '' ).strip 
                 current_operator_is_a_range = operator ? operator.strip.in?( '-', 'thru', 'through' ) : false  
                 if previous_operator_is_a_range or current_operator_is_a_range                 
                     if ( cleaned_indicator.not_integer? ) then
@@ -233,9 +235,9 @@ def scrape_off_container( input_record, from_thru_date_H_A, specified_bracketed_
                 SE.puts ''
             end
             if ( indicator.to_s.downcase.start_with?( K.fmtr_unk ) ) then
-                container_H[ K.indicator ] = self.the_unknown_box_O.next_seq.upcase
+                container_H[ K.indicator ] = self.the_unknown_box_O.next_seq.upcase + self.tc_group_suffix
             else
-                container_H[ K.indicator ] = indicator.to_s
+                container_H[ K.indicator ] = indicator.to_s + self.tc_group_suffix
             end                    
             orphan_child_H = {}
             container_type = filter_types.( container_match_O__nc_H[ :container_type ] ) 
@@ -246,8 +248,8 @@ def scrape_off_container( input_record, from_thru_date_H_A, specified_bracketed_
                 orphan_child_H[ K.type ]      = container_type.dup                 
                 orphan_child_H[ K.indicator ] = container_H[ K.indicator ].dup
                 container_H[ K.type ]         = nil
-            when container_type == K.box
-                container_H[ K.type ]         = K.box
+            when container_type.match?( /^#{K.valid_container_types_RES}/i )
+                container_H[ K.type ]         = container_type
             when container_type == K.fmtr_oversize.dup
                 container_H[ K.type ]         = K.box
                 container_H[ K.indicator ]   << ' OV'
@@ -277,7 +279,7 @@ def scrape_off_container( input_record, from_thru_date_H_A, specified_bracketed_
             if ( container_match_O__nc_H[ :child_type ].nil? ) then
                 if ( orphan_child_H.not_empty? ) then
                     container_H[ K.type ]                   = K.box
-                    container_H[ K.indicator ]              = self.the_unknown_box_O.next_seq.upcase
+                    container_H[ K.indicator ]              = self.the_unknown_box_O.next_seq.upcase + self.tc_group_suffix
                     container_match_O__nc_H[ :child_type ]  = orphan_child_H[ K.type ]                
                     container_match_O__nc_H[ :child_num ]   = orphan_child_H[ K.indicator ]
                 end                
@@ -308,13 +310,13 @@ def scrape_off_container( input_record, from_thru_date_H_A, specified_bracketed_
         SE.q {[ 'container_H' ]}   if ( $DEBUG )
     end 
 
-    arr = implied_bracketed_word_A - specified_bracketed_word_A
+    arr = implied_bracketed_word_A - explicitly_bracketed_word_A
     arr.uniq.each do | word |
         next if ( word.in?( K.box, K.folder, K.item ) )
-        specified_bracketed_word_A.push( word )
+        explicitly_bracketed_word_A.push( word )
     end
 
-    return input_record, from_thru_date_H_A, specified_bracketed_word_A, container_H_A
+    return input_record, from_thru_date_H_A, explicitly_bracketed_word_A, container_H_A
 end
 
 def scrape_off_notes( input_record )
@@ -362,7 +364,7 @@ def scrape_off_dates( input_record )
         from_thru_date_H[ Find_Dates_in_String::MORALITY_ACTION ]   = date_clump_S.morality_action
         from_thru_date_H_A << from_thru_date_H
     end
-    if ( self.cmdln_option_H[ :default_century_pivot_ccyymmdd ].empty? and self.cmdln_option_H[ :do_2digit_year_test ] ) then
+    if ( self.cmdln_option_H[ :default_century_pivot_ccyymmdd ].empty? and self.cmdln_option_H[ :DO_2DIGIT_YEAR_TEST ] ) then
         self.find_dates_with_2digit_years_O.do_find( input_record )
         self.find_dates_with_2digit_years_O.good__date_clump_S__A.each do | date_clump_S |  
             len = self.find_dates_with_2digit_years_O.good__date_clump_S__A.length
@@ -426,46 +428,69 @@ end
 
 def get_prepend_elements_for_indent_keys_F_A
     arr = []
-    self.prepend_A.each do | e | 
-        arr.push( e[ 0 ] ) if ( e[ 1 ] == :indent_keys ) 
+    self.prepend_A_A.each do | e_A | 
+        arr.push( e_A[ 0 ] ) if ( e_A[ 1 ] == :indent_keys ) 
     end
     return arr
 end
 def get_prepend_elements_for_sort_F_A
-    return self.prepend_A.column( 0 )
+    return self.prepend_A_A.column( 0 )
+end
+def set_tc_suffix__using_prepend_A_A__F
+    #  [ title, :sort, :group, as_record_type, group_num, $., SE.lineno ]
+
+    if ( self.prepend_A_A.last[ 3 ].in?( self.cmdln_option_H[ :TC_SUFFIX_RECORD_TYPE_A ] ) ) then                    
+        arr = self.prepend_A_A.map { | e_A |  next nil if ( e_A[ 3 ].not_in?( self.cmdln_option_H[ :TC_SUFFIX_RECORD_TYPE_A ] ) )
+                                              next "RG#{e_A[ 4 ]}" if ( e_A[ 3 ].to_s == K.recordgrp )
+                                              next "S#{e_A[ 4 ]}"  if ( e_A[ 3 ].to_s == K.series )
+                                              nil
+                                    }.compact
+        if ( arr.empty? ) then
+            self.tc_group_suffix = ''
+        else
+            self.tc_group_suffix = " [#{arr.join( ':' )}]"
+        end 
+    else
+       #just leave the self.tc_group_suffix variable unchanged.
+    end
 end
 
 #MAIN   
 self.myself_name = File.basename( $0 )
 
-self.cmdln_option_H = { :max_group_levels => 12,
-                        :max_title_size => 40,
-                        :default_century_pivot_ccyymmdd => '',
-                        :r => nil,
-                        :do_2digit_year_test => false,
-                        :find_dates_option_H => { },
-                        :phrase_split_chars => ':.'            # These go into a [] in a regexp so don't need to escaped (\).
+self.cmdln_option_H = { :MAX_GROUP_LEVELS => 12,
+                        :MAX_TITLE_SIZE => 40,
+                        :default_century_pivot_ccyymmdd => '', # As of 2026/3/31, the date options are still lowercase
+                        :R => nil,
+                        :DO_2DIGIT_YEAR_TEST => false,
+                        :BOXES_TRAILING => false,              # The Box Folder stuff is at the end of the line.
+                        :FIND_DATES_OPTION_H => { },
+                        :PHRASE_SPLIT_CHARS => ':.',           # These go into a [] in a regexp so don't need to escaped (\).
+                        :TC_SUFFIX_RECORD_TYPE_A => [ K.recordgrp ],
                      }
 OptionParser.new do |option|
     option.banner = "Usage: #{self.myself_name} [options] [file]"
-    option.on( "-l", "--ml", "--max-group-levels N", OptionParser::DecimalInteger, "Max number of group levels N (default=#{self.cmdln_option_H[ :max_group_levels ]})" ) do |opt_arg|
-        self.cmdln_option_H[ :max_group_levels ] = opt_arg
+    option.on( "-l", "--mgl", "--max-group-levels N", OptionParser::DecimalInteger, "Max number of group levels N (default=#{self.cmdln_option_H[ :MAX_GROUP_LEVELS ]})" ) do |opt_arg|
+        self.cmdln_option_H[ :MAX_GROUP_LEVELS ] = opt_arg
     end
-    option.on( "--mts", "--max-title-size N", OptionParser::DecimalInteger, "Warn if title-size over N (default=#{self.cmdln_option_H[ :max_title_size ]})" ) do |opt_arg|
-        self.cmdln_option_H[ :max_title_size ] = opt_arg
+    option.on( "--mts", "--max-title-size N", OptionParser::DecimalInteger, "Warn if title-size over N (default=#{self.cmdln_option_H[ :MAX_TITLE_SIZE ]})" ) do |opt_arg|
+        self.cmdln_option_H[ :MAX_TITLE_SIZE ] = opt_arg
     end
     option.on( "--dc", "--default_century_pivot_ccyymmdd N", OptionParser::DecimalInteger, "Default century pivot date (N) for 2-digit years." ) do |opt_arg|
         self.cmdln_option_H[ :default_century_pivot_ccyymmdd ] = opt_arg
     end  
     option.on( "-r N", OptionParser::DecimalInteger, "Stop after N input records" ) do |opt_arg|
-        self.cmdln_option_H[ :r ] = opt_arg
+        self.cmdln_option_H[ :R ] = opt_arg
     end
     option.on( "--do_2digit_year_test", "When the --default_century_pivot_ccyymmdd option is '', warn if 2digit years found." ) do |opt_arg|
-        self.cmdln_option_H[ :do_2digit_year_test ] = true
+        self.cmdln_option_H[ :DO_2DIGIT_YEAR_TEST ] = true
+    end
+    option.on( "--bt", "--boxes_trailing", "The Box Folder stuff is at the end of the line." ) do |opt_arg|
+        self.cmdln_option_H[ :BOXES_TRAILING ] = true
     end
     option.on( "--find_dates_option_H X", "Option Hash (X) passed to the Find_Dates_in_String class." ) do |opt_arg|
         begin
-            self.cmdln_option_H[ :find_dates_option_H ] = eval( opt_arg )
+            self.cmdln_option_H[ :FIND_DATES_OPTION_H ] = eval( opt_arg )
         rescue Exception => msg
             SE.puts ''
             SE.puts msg
@@ -474,7 +499,7 @@ OptionParser.new do |option|
             raise
         end
     end
-    option.on( '-s', '--sc', '--phrase_split_chars X', "Punctuation characters (X) used to split the records (default='#{self.cmdln_option_H[ :phrase_split_chars ]}')" ) do |opt_arg|
+    option.on( '--phrase_split_chars X', "Punctuation characters (X) used to split the records (default='#{self.cmdln_option_H[ :PHRASE_SPLIT_CHARS ]}')" ) do |opt_arg|
         opt_arg.each_char do | char |
             if ( not char.match?( /[[:punct:]]/ ) ) then
                 SE.puts ''
@@ -483,8 +508,11 @@ OptionParser.new do |option|
                 raise
             end
         end
-        self.cmdln_option_H[ :phrase_split_chars ] = opt_arg            
+        self.cmdln_option_H[ :PHRASE_SPLIT_CHARS ] = opt_arg            
     end
+    option.on( '--is','--include_series_in_tc_suffix', "TC's are unique by Series too (Record-Groups is the default)." ) do |opt_arg|
+        self.cmdln_option_H[ :TC_SUFFIX_RECORD_TYPE_A ] << K.series            
+    end    
     option.on( '-h', '-?', '--help' ) do
         SE.puts option
         SE.puts ''
@@ -496,8 +524,8 @@ OptionParser.new do |option|
         exit
     end
 end.parse!  # Bang because ARGV is altered
-self.cmdln_option_H[ :max_group_levels ] += -1                   # :max_group_levels is zero relative.
-self.cmdln_option_H[ :max_group_levels ]  =  1 if ( self.cmdln_option_H[ :max_group_levels ] < 1 )
+self.cmdln_option_H[ :MAX_GROUP_LEVELS ] += -1                   # :MAX_GROUP_LEVELS is zero relative.
+self.cmdln_option_H[ :MAX_GROUP_LEVELS ]  =  1 if ( self.cmdln_option_H[ :MAX_GROUP_LEVELS ] < 1 )
 SE.q {'self.cmdln_option_H'}
 
 self.output_fd3_F = File::open( '/dev/fd/3', mode='w' )
@@ -511,8 +539,8 @@ stringer = self.states_A.join('|')
 self.states_RES = "^\s*(#{stringer})( |[[:punct:]]|$)"
 self.states_RE  = /#{self.states_RES}/
 
-phrase_split_chars_A = self.cmdln_option_H[ :phrase_split_chars ].chars
-phrase_split_chars_RE = /([#{self.cmdln_option_H[ :phrase_split_chars ]}])/
+phrase_split_chars_A = self.cmdln_option_H[ :PHRASE_SPLIT_CHARS ].chars
+phrase_split_chars_RE = /([#{self.cmdln_option_H[ :PHRASE_SPLIT_CHARS ]}])/
 
 marker_of_begining_of_record_before_prepend = '~~BOR~~'
 self.auto_group_H = { :text => '', :cnt => 0 }
@@ -522,7 +550,7 @@ self.find_dates_with_4digit_years_O =
                                 :pattern_name_RES => '.',
                                 :date_string_composition => :dates_in_text,
                                 :yyyymmdd_min_value => '1800',
-                               }.merge( self.cmdln_option_H[ :find_dates_option_H ] ),
+                               }.merge( self.cmdln_option_H[ :FIND_DATES_OPTION_H ] ),
                                self.aspace_O )
 
 self.find_dates_with_2digit_years_O = 
@@ -530,7 +558,7 @@ self.find_dates_with_2digit_years_O =
                                 :pattern_name_RES => '.',
                                 :date_string_composition => :dates_in_text,
                                 :default_century_pivot_ccyymmdd => '1900',
-                               }.merge( self.cmdln_option_H[ :find_dates_option_H ] ),
+                               }.merge( self.cmdln_option_H[ :FIND_DATES_OPTION_H ] ),
                                self.aspace_O ) \
                          if ( self.cmdln_option_H[ :default_century_pivot_ccyymmdd ].empty? )
 
@@ -541,12 +569,12 @@ self.max_date = +''
 self.note_cnt = 0
 self.box_cnt = 0
 self.pending_output_record_H = {}
-self.prepend_A = []
-previous_prepend_A_pop_A = +''
+self.prepend_A_A = []
+self.tc_group_suffix = ''
 
 ARGF.each_line do |input_record|
     begin
-        if ( self.cmdln_option_H[ :r ] and $. > self.cmdln_option_H[ :r ] ) then 
+        if ( self.cmdln_option_H[ :R ] and $. > self.cmdln_option_H[ :R ] ) then 
             break
         end
 
@@ -591,7 +619,7 @@ ARGF.each_line do |input_record|
     #           The is pushed onto the stack and then inserted in front of the following records
     #
     #       drop[.:] [number]
-    #           Where 'number' if present is checked against the current value of 'self.prepend_A.maxindex'
+    #           Where 'number' if present is checked against the current value of 'self.prepend_A_A.maxindex'
     # #
     #   The K.fmtr_indent records have the following format:
     #       K.fmtr_indent K.fmtr_right|K.fmtr_left
@@ -618,25 +646,26 @@ ARGF.each_line do |input_record|
             end
             
             if ( command.downcase == K.fmtr_end_group.downcase ) then
-                if ( self.prepend_A.empty? ) then
-                    SE.puts "#{SE.lineno}: Got an __END_GROUP__ record but self.prepend_A is empty."
+                if ( self.prepend_A_A.empty? ) then
+                    SE.puts "#{SE.lineno}: Got an __END_GROUP__ record but self.prepend_A_A is empty."
                     SE.q {[ 'input_record' ]}
-                    SE.q {[ 'self.prepend_A' ]}
+                    SE.q {[ 'self.prepend_A_A' ]}
                     raise
                 end
                 indent_direction = K.fmtr_left
-                previous_prepend_A_pop_A = self.prepend_A.pop
-                if ( previous_prepend_A_pop_A[ 2 ] != :group ) then
-                    SE.puts "#{SE.lineno}: Got a '#{command}' record but non-group record was popped '#{previous_prepend_A_pop_A}'"
-                    SE.q {'self.prepend_A'}
+                set_tc_suffix__using_prepend_A_A__F 
+                previous_prepend_A = self.prepend_A_A.pop
+                if ( previous_prepend_A[ 2 ] != :group ) then
+                    SE.puts "#{SE.lineno}: Got a '#{command}' record but non-group record was popped '#{previous_prepend_A}'"
+                    SE.q {'self.prepend_A_A'}
                     SE.q { 'input_record' }
                     raise               
                 end
-                if ( indent_level_based_on_text_indentation != self.prepend_A.length ) then
-                    SE.puts "#{SE.lineno}: Got a '#{command}' record but the text indentation doesn't match the prepend_A.length."
+                if ( indent_level_based_on_text_indentation != self.prepend_A_A.length ) then
+                    SE.puts "#{SE.lineno}: Got a '#{command}' record but the text indentation doesn't match the prepend_A_A.length."
                     SE.q {'original_input_record'}
                     SE.q {'indent_level_based_on_text_indentation'}
-                    SE.q {'self.prepend_A'}
+                    SE.q {'self.prepend_A_A'}
                     raise
                 end
                 set_text_for_auto_group_F( '' )
@@ -687,17 +716,17 @@ ARGF.each_line do |input_record|
             stringer.sub!( /[,.:;]$/, '' )
             stringer << '.'
             
-            if ( indent_level_based_on_text_indentation != self.prepend_A.length ) then
-                SE.puts "#{SE.lineno}: Got a '#{command}' record but the text indentation doesn't match the prepend_A.length."
+            if ( indent_level_based_on_text_indentation != self.prepend_A_A.length ) then
+                SE.puts "#{SE.lineno}: Got a '#{command}' record but the text indentation doesn't match the prepend_A_A.length."
                 SE.q {'original_input_record'}
                 SE.q {'indent_level_based_on_text_indentation'}
-                SE.q {'self.prepend_A'}
+                SE.q {'self.prepend_A_A'}
                 raise
             end
-            self.prepend_A.push( [ stringer, :indent_keys, :prefix, $., SE.lineno ] )
-            if ( self.prepend_A.maxdepth != 2 ) then
-                SE.puts "#{SE.lineno}: self.prepend_A has a maxdepth != 2"
-                SE.q {[ 'input_record', 'self.prepend_A' ]}
+            self.prepend_A_A.push( [ stringer, :indent_keys, :prefix, nil, nil, $., SE.lineno ] )
+            if ( self.prepend_A_A.maxdepth != 2 ) then
+                SE.puts "#{SE.lineno}: self.prepend_A_A has a maxdepth != 2"
+                SE.q {[ 'input_record', 'self.prepend_A_A' ]}
                 raise
             end 
             set_text_for_auto_group_F( '' )
@@ -705,18 +734,18 @@ ARGF.each_line do |input_record|
             
         when command.downcase == K.fmtr_drop.downcase
             self.output_fd3_F.puts input_record.strip
-            if ( self.prepend_A.length == 0 ) then
-                SE.puts "#{SE.lineno}: Got a 'drop' record but there are no entries in self.prepend_A."
+            if ( self.prepend_A_A.length == 0 ) then
+                SE.puts "#{SE.lineno}: Got a 'drop' record but there are no entries in self.prepend_A_A."
                 SE.q { 'input_record' }
                 raise
             end
             arr = command_line_split_A.reject{ | e | e.match?( command_line_split_on_RE ) }
             if ( arr.maxindex == 0 and arr[ 0 ].integer? ) then
                 drop_nbr = arr[ 0 ].to_i
-                if ( self.prepend_A.maxindex != drop_nbr ) then
+                if ( self.prepend_A_A.maxindex != drop_nbr ) then
                     SE.puts "#{SE.lineno}: Got a 'drop' record with the number '#{drop_nbr}', " +
-                            "but it's not equal to the self.prepend_A.maxindex value '#{self.prepend_A.maxindex}'"
-                    SE.q {'self.prepend_A'}
+                            "but it's not equal to the self.prepend_A_A.maxindex value '#{self.prepend_A_A.maxindex}'"
+                    SE.q {'self.prepend_A_A'}
                     SE.q { 'input_record' }
                     raise
                 end
@@ -726,18 +755,18 @@ ARGF.each_line do |input_record|
                 SE.q { 'input_record' }
                 raise
             end
-            previous_prepend_A_pop_A = self.prepend_A.pop            
-            if ( previous_prepend_A_pop_A[ 2 ] == :group ) then
-                SE.puts "#{SE.lineno}: Got a 'drop' record but a Group record was popped '#{previous_prepend_A_pop_A}'"
-                SE.q {'self.prepend_A'}
+            previous_prepend_A = self.prepend_A_A.pop            
+            if ( previous_prepend_A[ 2 ] == :group ) then
+                SE.puts "#{SE.lineno}: Got a 'drop' record but a Group record was popped '#{previous_prepend_A}'"
+                SE.q {'self.prepend_A_A'}
                 SE.q { 'input_record' }
                 raise               
             end
-            if ( indent_level_based_on_text_indentation != self.prepend_A.length ) then
-                SE.puts "#{SE.lineno}: Got a '#{command}' record but the text indentation doesn't match the prepend_A.length."
+            if ( indent_level_based_on_text_indentation != self.prepend_A_A.length ) then
+                SE.puts "#{SE.lineno}: Got a '#{command}' record but the text indentation doesn't match the prepend_A_A.length."
                 SE.q {'original_input_record'}
                 SE.q {'indent_level_based_on_text_indentation'}
-                SE.q {'self.prepend_A'}
+                SE.q {'self.prepend_A_A'}
                 raise
             end
             set_text_for_auto_group_F( '' )
@@ -750,14 +779,14 @@ ARGF.each_line do |input_record|
             raise
         end
 
-        if ( indent_level_based_on_text_indentation != self.prepend_A.length ) then
-            SE.puts "#{SE.lineno}: The text indentation doesn't match the prepend_A.length."
+        if ( indent_level_based_on_text_indentation != self.prepend_A_A.length ) then
+            SE.puts "#{SE.lineno}: The text indentation doesn't match the prepend_A_A.length."
             SE.q {'original_input_record'}
             SE.q {'indent_level_based_on_text_indentation'}
-            SE.q {'self.prepend_A'}
+            SE.q {'self.prepend_A_A'}
             raise
         end
-#                      prepend_A is needs here in case a 'Box' is prepended.  
+#                      prepend_A_A is needs here in case a 'Box' is prepended.  
         input_record = get_prepend_elements_for_indent_keys_F_A.join( ' ' ) + 
                  ' ' + marker_of_begining_of_record_before_prepend + 
                  ' ' + input_record      
@@ -774,14 +803,28 @@ ARGF.each_line do |input_record|
 #           note_A.push( "{#{K.dimensions}}: #{m_O[ 0 ].strip}" )
 #       end
 
-        input_record, specified_bracketed_word_A = scrape_off_specified_bracketed_words( input_record )
+        input_record, explicitly_bracketed_word_A = scrape_off_explicitly_bracketed_words( input_record )
+        if ( self.cmdln_option_H[ :BOXES_TRAILING ] ) then
+            input_record, from_thru_date_H_A, explicitly_bracketed_word_A, container_H_A = scrape_off_container( 
+            input_record, from_thru_date_H_A, explicitly_bracketed_word_A                                       ) 
+#               If the boxes are at the end, the "trailing date logic won't work unless we scrape off the boxes first.
+#               HOWEVER, when the boxes are at the end, the volumns with dates logic won't work (as we haven't
+#               scraped off the dates yet, so the date array is empty).
+            input_record, from_thru_date_H_A = scrape_off_dates( input_record )            
+        else
+            input_record, from_thru_date_H_A = scrape_off_dates( input_record )
+
+            input_record, from_thru_date_H_A, explicitly_bracketed_word_A, container_H_A = scrape_off_container( 
+            input_record, from_thru_date_H_A, explicitly_bracketed_word_A                                       )  
+        end
         
-        input_record, from_thru_date_H_A = scrape_off_dates( input_record )
-
-        input_record, from_thru_date_H_A, specified_bracketed_word_A, container_H_A = scrape_off_container( 
-        input_record, from_thru_date_H_A, specified_bracketed_word_A                                       )  
-
-        if ( matchdata_O = input_record.match( /(\A|\s+)(box|boxes|folders?|oversized?|volume\s+[0-9])(\s+|\Z)/i )) then
+        if ( input_record.match?(/\A#{marker_of_begining_of_record_before_prepend}\s*(-+|_+|=+)\z/) ) then
+            SE.puts ''
+            SE.puts "#{SE.lineno}: Record skipped."
+            SE.puts "'#{input_record}'"
+            SE.puts ''
+        end
+        if ( matchdata_O = input_record.match( /(\A|\s+)(box|boxes|folders?|oversized?|albums?|volumes?\s+[0-9])(\s+|\Z)/i )) then
             SE.puts ''
             SE.puts "#{SE.lineno}:WARNING: Found some additional container words '#{matchdata_O}' in: '#{input_record}'"
             SE.puts ''
@@ -793,65 +836,69 @@ ARGF.each_line do |input_record|
         output_record_H[ K.fmtr_forced_indent ] = []            # the order        
         record_values_A = [ ]  # This goes inside the output_record_H
      
-        regexp = /#{marker_of_begining_of_record_before_prepend}\s*#{K.any_fmtr_group_record_RES}[: ]/i
-        group_match_O = input_record.match( regexp )
+#                                                               >>>> This has ()'s <<
+        regexp = /#{marker_of_begining_of_record_before_prepend}\s*#{K.any_fmtr_group_record_RES}/i  
+        group_text_MO = input_record.match( regexp )
+        if ( group_text_MO ) then
+            input_record_group_type = group_text_MO[ 1 ].downcase[ 0...-1 ]  # Drop the last char, as a space or ':' is included  
+                                                                             # in K.any_fmtr_group_record_RES
+            group_number_MO = group_text_MO.post_match.match( /^\s*[0-9.]+/ )
+            group_num = group_number_MO[ 0 ].to_s
 
-        if ( group_match_O ) then
-            match_record_type = group_match_O[ 1 ].downcase
             title = +''
             case true
-            when ( match_record_type == K.series )
+            when ( input_record_group_type == K.series )
                 as_record_type = K.series
-                title  << K.series.sub( /./,&:upcase ) + ' ' + group_match_O.post_match
-            when ( match_record_type.in?( [ K.subseries, K.sub_series_text.downcase ] ) )
+                title  << K.series.sub( /./,&:upcase ) + ' ' + group_text_MO.post_match
+            when ( input_record_group_type.in?( [ K.subseries, K.fmtr_sub_series_text.downcase ] ) )
                 as_record_type = K.subseries
-                title  << K.sub_series_text + ' ' + group_match_O.post_match
-            when ( match_record_type.in?( [ K.recordgrp, K.recordgrp_text.downcase ] ) )
+                title  << K.fmtr_sub_series_text + ' ' + group_text_MO.post_match
+            when ( input_record_group_type.in?( [ K.recordgrp, K.fmtr_record_group_text.downcase ] ) )
                 as_record_type = K.recordgrp    
-                title  << K.recordgrp_text + ' ' + group_match_O.post_match           
-            when ( match_record_type == K.group )
+                title  << K.fmtr_record_group_text + ' ' + group_text_MO.post_match  
+                group_num = group_text_MO.post_match.rstrip.leading_digits
+            when ( input_record_group_type.in?( [ K.subgrp, K.fmtr_sub_group_text.downcase ] ) )
+                as_record_type = K.subgrp    
+                title  << K.fmtr_sub_group_text + ' ' + group_text_MO.post_match                     
+            when ( input_record_group_type == K.group )
                 as_record_type = K.otherlevel
-                title  << group_match_O.post_match.strip
+                title  << group_text_MO.post_match
             else
-                SE.puts "#{SE.lineno}: Unknown record_type '#{group_match_O[ 1 ].downcase}'"
-                SE.q {[ 'input_record', 'self.prepend_A' ]}
+                SE.puts "#{SE.lineno}: Unknown record_type '#{input_record_group_type}'"
+                SE.q {[ 'input_record', 'self.prepend_A_A' ]}
                 raise
             end
             
-            # if  ( as_record_type.in?( [ K.series, K.recordgrp ] ) and self.prepend_A.not_empty? ) then
-                # SE.puts "#{SE.lineno}: Got a '#{as_record_type}' record but self.prepend_A is not empty"
-                # SE.q {[ 'input_record', 'self.prepend_A' ]}
-                # raise
-            # end
-            if  ( as_record_type.in?( [ K.subseries ] ) and self.prepend_A.empty? ) then
-                SE.puts "#{SE.lineno}: Got a '#{as_record_type}' record but self.prepend_A is empty"
-                SE.q {[ 'input_record', 'self.prepend_A' ]}
+            if  ( as_record_type.in?( [ K.subseries, K.subgrp ] ) and self.prepend_A_A.empty? ) then
+                SE.puts "#{SE.lineno}: Got a '#{as_record_type}' record but self.prepend_A_A is empty"
+                SE.q {[ 'input_record', 'self.prepend_A_A' ]}
                 raise
             end
-            if ( indent_level_based_on_text_indentation != self.prepend_A.length ) then
-                SE.puts "#{SE.lineno}: Got a '#{command}' record but the text indentation doesn't match the prepend_A.length."
+            if ( indent_level_based_on_text_indentation != self.prepend_A_A.length ) then
+                SE.puts "#{SE.lineno}: Got a '#{command}' record but the text indentation doesn't match the prepend_A_A.length."
                 SE.q {'original_input_record'}
                 SE.q {'indent_level_based_on_text_indentation'}
-                SE.q {'self.prepend_A'}
+                SE.q {'self.prepend_A_A'}
                 raise
             end
             
-            self.prepend_A.push( [ title, :sort, :group, $., SE.lineno ] )
-            if ( self.prepend_A.maxdepth != 2 ) then
-                SE.puts "#{SE.lineno}: self.prepend_A has a maxdepth != 2"
-                SE.q {[ 'input_record', 'self.prepend_A' ]}
+            self.prepend_A_A.push( [ title, :sort, :group, as_record_type, group_num, $., SE.lineno ] )
+            if ( self.prepend_A_A.maxdepth != 2 ) then
+                SE.puts "#{SE.lineno}: self.prepend_A_A has a maxdepth != 2"
+                SE.q {[ 'input_record', 'self.prepend_A_A' ]}
                 raise
             end 
+            set_tc_suffix__using_prepend_A_A__F
             set_text_for_auto_group_F( '' )        
             
-            specified_bracketed_word_A.sort.uniq.each do | bracketed_word |
+            explicitly_bracketed_word_A.sort.uniq.each do | bracketed_word |
                 title.concat( " [#{bracketed_word.sub( /./,&:upcase )}]")
             end
             
             record_values_A[ K.fmtr_record_values__text_idx ] = title.strip            
             output_record_H[ K.level ]                        = as_record_type    
-            output_record_H[ K.fmtr_record_sort_keys ] = get_prepend_elements_for_sort_F_A.join( '   ' ).downcase.gsub( /[^[a-z0-9,\- ]]/,'' )  + '   '
-            output_record_H[ K.fmtr_record_indent_keys ] = get_prepend_elements_for_indent_keys_F_A
+            output_record_H[ K.fmtr_record_sort_keys ]        = get_prepend_elements_for_sort_F_A.join( '   ' ).downcase.gsub( /[^[a-z0-9,\- ]]/,'' )  + '   '
+            output_record_H[ K.fmtr_record_indent_keys ]      = get_prepend_elements_for_indent_keys_F_A
             output_record_H[ K.fmtr_forced_indent ].push( K.fmtr_right )
         else
             regexp = /^.*#{marker_of_begining_of_record_before_prepend}/
@@ -931,7 +978,7 @@ ARGF.each_line do |input_record|
             indent_keys_A = [ ] 
             loop do
                 break if ( phrase_A.empty? )
-                break if ( indent_keys_A.maxindex >= self.cmdln_option_H[ :max_group_levels ] )
+                break if ( indent_keys_A.maxindex >= self.cmdln_option_H[ :MAX_GROUP_LEVELS ] )
                 phrase = phrase_A[ 0 ].strip
                 break if ( phrase[ 0 ] == '[' )
                 indent_keys_A.push( phrase )
@@ -968,11 +1015,11 @@ ARGF.each_line do |input_record|
                 end
             end
  
-            specified_bracketed_word_A.sort.uniq.each do | bracketed_word |
+            explicitly_bracketed_word_A.sort.uniq.each do | bracketed_word |
                 title.concat( " [#{bracketed_word.sub( /./,&:upcase )}]")
             end
             record_values_A[ K.fmtr_record_values__text_idx ] = title.strip                                                   
-            if ( title.length > self.cmdln_option_H[ :max_title_size ] ) then
+            if ( title.length > self.cmdln_option_H[ :MAX_TITLE_SIZE ] ) then
                 SE.puts "#{SE.lineno}: Warning: Title size #{title.length} '#{title}'"
                 SE.puts ''
             end                                                  
@@ -1000,19 +1047,19 @@ ARGF.each_line do |input_record|
         SE.puts 'rescue ==================================================================='
         SE.puts "#{SE.lineno}: Original input_record:  '#{original_input_record}'"
         SE.puts "#{SE.lineno}: As currently modified:  '#{input_record}'"
-      # SE.puts "#{SE.lineno}: previous_prepend_A_pop_A: '#{previous_prepend_A_pop_A}'"
-      # SE.q {['self.prepend_A']}
+      # SE.puts "#{SE.lineno}: previous_prepend_A: '#{previous_prepend_A}'"
+      # SE.q {['self.prepend_A_A']}
         SE.puts 'rescue ==================================================================='
         SE.puts ''
         raise
     end
 end
 write_pending_record_H( {} )
-if ( self.prepend_A.length > 0 ) then
+if ( self.prepend_A_A.length > 0 ) then
     SE.puts ''
     SE.puts ''
-    SE.puts "#{SE.lineno}: ERROR! self.prepend_A not empty.  Missing drop record."
-    SE.q { 'self.prepend_A' }
+    SE.puts "#{SE.lineno}: ERROR! self.prepend_A_A not empty.  Missing drop record."
+    SE.q { 'self.prepend_A_A' }
     SE.puts ''
     raise
 end

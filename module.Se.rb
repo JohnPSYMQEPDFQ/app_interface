@@ -142,16 +142,17 @@ module SE
         
         def loop( *argv )
             if ( self.loop_cnt > self.loop_limit ) then
-                self.puts "LOOP DETECTOR: Abort ( loops=#{self.loop_cnt}, limit=#{self.loop_limit} )"
+                SE.puts "#{SE.lineno}: LOOP DETECTOR: Abort ( loops=#{self.loop_cnt}, limit=#{self.loop_limit} )"
                 argv.each_with_index do | argv, idx |
-                    self.puts "argv #{idx}: #{argv}"
+                    SE.print "argv #{idx}:"
+                    SE.q {'argv'}
                 end
-                raise
+                raise "Aborting in '#{self.class}'"
             end
             if ( self.loop_cnt >= self.loop_limit ) then
-                self.puts "#{self.lineno}: LOOP DETECTOR: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                SE.puts "#{SE.lineno}: LOOP DETECTOR: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 $DEBUG = true
-                self.ap_stack
+                SE.ap_stack
             end
             self.loop_cnt += 1
         end

@@ -149,15 +149,13 @@ class AO_Record_Buf < Record_Buf
         if ( @uri_addr.nil? ) then
             @uri_addr = "#{@ao_O.res_O.rep_O.uri_addr}/#{ARCHIVAL_OBJECTS}"
             http_response_body_H = super
-            SE.puts "#{SE.lineno}: Created ArchivalObject, uri = #{http_response_body_H[ K.uri ]}";
+            SE.puts "#{SE.lineno}: Created ArchivalObject, uri = #{http_response_body_H[ K.uri ]}"
+            @uri_addr = http_response_body_H[ K.uri ] 
+            @uri_num = @uri_addr.trailing_digits
         else
-#           SE.puts "#{SE.lineno}: I shouldn't be updating an ArchivalObject"
-#           raise
             http_response_body_H = super
-            SE.puts "#{SE.lineno}: Updated ArchivalObject, uri = #{http_response_body_H[ K.uri ]}";
+            SE.puts "#{SE.lineno}: Updated ArchivalObject, uri = #{http_response_body_H[ K.uri ]}"
         end
-        @uri_addr = http_response_body_H[ K.uri ] 
-        @uri_num = @uri_addr.trailing_digits
         return self
     end
 end    
@@ -174,7 +172,7 @@ class AO_Query_of_Resource
                    )
         if ( resource_O.is_not_a?( Resource ) ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 is not a Resource class object, it's: '#{res_O.class}'"
+            SE.puts "Param 'resource_O:' is not a Resource class object, it's: '#{res_O.class}'"
             raise
         end    
         self.res_O              = resource_O
@@ -188,7 +186,7 @@ class AO_Query_of_Resource
 =end
         if ( get_full_ao_record_TF.not_in?( true, false )) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 2 should be true or false, not '#{get_full_ao_record_TF}'"
+            SE.puts "Param 'get_full_ao_record_TF:' should be true or false, not '#{get_full_ao_record_TF}'"
             raise
         end 
       # if ( get_full_ao_record_TF ) then
@@ -199,7 +197,7 @@ class AO_Query_of_Resource
 
         if ( recurse_index_children_TF.not_in?( true, false )) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 4 should be true or false, not '#{recurse_index_children_TF}'"
+            SE.puts "Param 'recurse_index_children_TF:' should be true or false, not '#{recurse_index_children_TF}'"
             raise
         end         
 

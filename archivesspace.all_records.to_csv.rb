@@ -24,7 +24,7 @@ myself_name = File.basename( $0 )
 cmdln_option_H = { :rep_num => nil,
                    :res_num => nil,
                    :type => nil,
-                   :leading_columns_only => false,
+                   :programmed_columns_only => false,
                    :comparison_filter => false,
                   }
 OptionParser.new do |option|
@@ -43,8 +43,8 @@ OptionParser.new do |option|
     option.on( "--type X", "Type of records to query (required), e.g. LOCATIONS" ) do |opt_arg|
         cmdln_option_H[ :type ] = opt_arg
     end
-    option.on( "--lco", "--leading-columns-only", "Only output the 'leading_column_A' fields." ) do |opt_arg|
-        cmdln_option_H[ :leading_columns_only ] = true
+    option.on( "--pco", "--programmed-columns-only", "Output a pre-programmed set of columns." ) do |opt_arg|
+        cmdln_option_H[ :programmed_columns_only ] = true
     end
     option.on( "--cf", "--filter", "--comparison-filter", "Apply the comparison-filter to the output." ) do |opt_arg|
         cmdln_option_H[ :comparison_filter ] = true
@@ -61,7 +61,7 @@ if ( cmdln_option_H[ :type ].nil? ) then
     exit 1
 end
 
-header_separator = '=>'
+header_separator_for_CKA_columns = '=>'
 
 aspace_O = ASpace.new
 case true
@@ -77,7 +77,7 @@ else
 end
 
 header_H = {}
-composite_key_record_A = []
+record_CKA = []
 query_O.result_A.each do | record_H |
     hash = record_H.deep_yield( yield_to: [ Hash ] ) do | y | 
                     if ( cmdln_option_H[ :comparison_filter ] == true ) then
@@ -86,8 +86,8 @@ query_O.result_A.each do | record_H |
                         y
                     end
                     end.to_composite_key_h 
-                       .transform_keys { | k | k.join( header_separator ) }
-    composite_key_record_A << hash
+                       .transform_keys { | k | k.join( header_separator_for_CKA_columns ) }
+    record_CKA << hash
     hash.each_key do | key | 
         stringer = key
         next if ( header_H.has_key?( stringer ) )
@@ -96,33 +96,33 @@ query_O.result_A.each do | record_H |
 end
 
 case cmdln_option_H[ :type ]
-when LOCATIONS
-    leading_column_A = %w( building floor room area 
-                           coordinate_1_label coordinate_1_indicator
-                           coordinate_2_label coordinate_2_indicator
-                           coordinate_3_label coordinate_3_indicator
-                           title
-                           uri
-                          )
+when "LOCATIONS"
+    programmed_column_selection_A = %w( building floor room area 
+                                        coordinate_1_label coordinate_1_indicator
+                                        coordinate_2_label coordinate_2_indicator
+                                        coordinate_3_label coordinate_3_indicator
+                                        title
+                                        uri
+                                       )
 else
-    leading_column_A = []
+    programmed_column_selection_A = []
 end
-if ( leading_column_A.empty? ) then
-    if ( cmdln_option_H[ :leading_columns_only ] == true ) then
+if ( programmed_column_selection_A.empty? ) then
+    if ( cmdln_option_H[ :programmed_columns_only ] == true ) then
         SE.puts "#{SE.lineno}: ============================================"
-        SE.puts "The leading-columns-only option is set, but"
-        SE.puts "'leading_column_A' is empty!"
+        SE.puts "The programmed-columns-only option is set, but"
+        SE.puts "'programmed_column_selection_A' is empty!"
         exit
     end
     header_A = header_H.keys.sort
 else
-    header_A = leading_column_A 
-    if ( cmdln_option_H[ :leading_columns_only ] == false ) then
-        header_A.concat( header_H.keys.sort - leading_column_A )
+    header_A = programmed_column_selection_A 
+    if ( cmdln_option_H[ :programmed_columns_only ] == false ) then
+        header_A.concat( header_H.keys.sort - programmed_column_selection_A )
     else
         arr = header_A - header_H.keys.sort
         if ( arr.not_empty? ) then
-            SE.puts "Columns missing from leading_column_A: #{arr.join(',')}"
+            SE.puts "Columns missing from programmed_column_selection_A: #{arr.join(',')}"
             SE.puts "The --filter option is on!" if ( cmdln_option_H[ :comparison_filter ] )
             SE.puts ''
         end        
@@ -130,11 +130,13 @@ else
 end
 SE.puts "Columns available: #{header_H.keys.sort.join(',')}"
 SE.puts ''
-SE.puts "Columns used:      #{header_A.join(',')}"
+SE.puts "Columns used:      #{header_A.sort.join(',')}"
+SE.puts ''
+SE.puts "Column order:      #{header_A.join(',')}"
 
 CSV do | csv_O |                    # <<<  Defaults to stdout.  'CSV.open( $stdout )' didn't work.
     csv_O << header_A
-    composite_key_record_A.each do | record_H |    
+    record_CKA.each do | record_H |    
         csv_O << record_H.values_at( *header_A ) 
     end
 end

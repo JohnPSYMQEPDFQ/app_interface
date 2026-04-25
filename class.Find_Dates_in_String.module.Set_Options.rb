@@ -203,7 +203,7 @@ module Set_Options
                 SE.q { 'self.option_H' }
                 SE.puts ''
                 SE.puts "Here are the 'Find_Dates_in_String' allowed options, with default values:"
-                SE.ap Find_Dates_in_String.new( ).self.option_H
+                SE.ap Find_Dates_in_String.new( ).option_H
                 raise
             end
         end

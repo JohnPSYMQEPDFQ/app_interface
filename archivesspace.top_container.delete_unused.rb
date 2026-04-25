@@ -1,25 +1,4 @@
-=begin
 
-=begin
-
-Variable Abbreviations:
-        AO = Archival Object ( Resources are an AO too, but they have their own structure. )
-        AS = ArchivesSpace
-        IT = Instance Type
-        TC = Top Container
-        SC = Sub-Container
-        _H = Hash
-        _J = Json string
-        _RES = Regular Expression String, e.g: find_bozo_RES = '\s+bozo\s+'
-        _RE  = Regular Expression, e.g.: find_bozo_RE = /#{find_bozo_RES}/
-        _A = Array
-        _O = Object
-        _Q = Query
-        _C = Class of Struct
-        _S = Structure of _C 
-        __ = reads as: 'in a(n)', e.g.: record_H__A = 'record' Hash "in an" Array.
-
-=end
 
 require 'optparse'
 require 'class.Archivesspace.rb'
@@ -37,7 +16,7 @@ cmdln_option = { :rep_num => 2  ,
                  :update => false ,
                  }
 OptionParser.new do |option|
-    option.banner = "Usage: #{myself_name} [options] FILE"
+    option.banner = "Usage: #{myself_name} [options]"
     option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
         cmdln_option[ :rep_num ] = opt_arg
     end
@@ -69,20 +48,29 @@ SE.puts "Elapsed seconds = #{elapsed_seconds}"
 
 SE.puts "#{record_H_A.length} Top Containers."
 
-tc_delete_uri_A = []
+tc_to_delete__uri_A = []
+tc_with_locations_but_no_collection__uri_A = []
 record_H_A.each do | record_H |
-    next if ( record_H.key?( K.collection ) && record_H[ K.collection ].count > 0 )
-    tc_delete_uri_A.push( record_H[ K.uri ] )        
+    if ( record_H.key?( K.collection ) && record_H[ K.collection ].count > 0 ) then
+        next
+    end
+    if ( record_H.key?( K.container_locations ) && record_H[ K.container_locations ].count > 0 ) then
+        tc_with_locations_but_no_collection__uri_A.push( record_H[ K.uri ] )
+        next
+    end
+    tc_to_delete__uri_A.push( record_H[ K.uri ] )        
 end
-SE.puts "#{tc_delete_uri_A.length} to be deleted."
-delete_cnt = rep_O.batch_delete( tc_delete_uri_A ).deleted_cnt
-if ( delete_cnt != tc_delete_uri_A.length ) then
+SE.puts "#{tc_to_delete__uri_A.length} to be deleted."
+delete_cnt = rep_O.batch_delete( tc_to_delete__uri_A ).deleted_cnt
+if ( delete_cnt != tc_to_delete__uri_A.length ) then
     SE.puts "#{SE.lineno}: Expected number of TC's not deleted!"
-    SE.puts "delete_cnt != tc_delete_uri_A.length"
-    SE.q {[ 'delete_cnt', 'tc_delete_uri_A.length']}
+    SE.puts "delete_cnt != tc_to_delete__uri_A.length"
+    SE.q {[ 'delete_cnt', 'tc_to_delete__uri_A.length']}
     raise
 end
 SE.puts "#{delete_cnt} deleted."
+#SE.q {'tc_with_locations_but_no_collection__uri_A'}
+
 
 
 

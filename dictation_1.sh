@@ -4,36 +4,47 @@ myself_name=$(basename $0)
 
 function display_usage {
     echo "Usage: ${myself_name} [-cgm] [-s ead_id] [-t title] file"
-    echo "       -c = Tell the add_objects program to combine-like-records."
+    echo "       -b = The '--boxes_trailing' option passed to the 'dictation_1.to.indent' program"
+    echo "       -c = Tell the 'indent.to.add_objects' program to combine-like-records."
     echo "       -e = Run the csv creation program with the specified ead_id value."
     echo "       -g = Minimum number of records need to make a group (default is 2)."
+    echo "       -i = The '--include_series_in_tc_suffix' option is passed to the 'dictation_1.to.indent' program"
+    echo "       -I = DON'T run the 'dictation_1.to.indent', don't remove the *txt files either."
     echo "       -l = Maximum number of group levels (default is 5)."
     echo "       -p = Phrase split characters (default is ':.')."
     echo "       -s = Maximum number of series records (default is 0)."
-    echo "       -t = The indenter will create a new_parent record with the specified title."
-    echo "       -I = DON'T run the indent prgm (the 1st one), don't remove the *txt files either."
     echo "       -S = do sort"
+    echo "       -t = The 'indent.to.add_objects' will create a new_parent record with the specified title."
     echo "       Param 1 is the file to process." 
 } 
 
-combine_like_records=''  #  -c
-ead_id=''                #  -e X
-min_group_size=''        #  -g N      formatter.indent.to.add_objects.rb default is 2
-max_group_levels=''      #  -l N      formatter.dictation_1.to.indent.rb default is 12
-phrase_split_chars=''    #  -p 'XXX'  formatter.dictation_1.to.indent.rb default is ':.'
-max_series_records=''    #  -s N      formatter.indent.to.add_objects.rb default is 0
-parent_title=''          #  -t X
-do_sort=''               #  -S
-do_indent_prgm='1'       #  -I = don't do the indent program, don't remove files at the beginning.
+boxes_trailing=''               #  -b
+combine_like_records=''         #  -c
+ead_id=''                       #  -e X
+min_group_size=''               #  -g N      formatter.indent.to.add_objects.rb default is 2
+include_series_in_tc_suffix=''
+do_indent_prgm='1'              #  -I        don't do the indent program, don't remove files at the beginning.
+max_group_levels=''             #  -l N      formatter.dictation_1.to.indent.rb default is 12
+phrase_split_chars=''           #  -p 'XXX'  formatter.dictation_1.to.indent.rb default is ':.'
+max_series_records=''           #  -s N      formatter.indent.to.add_objects.rb default is 0
+do_sort=''                      #  -S
+parent_title=''                 #  -t X
 
-while getopts ce:g:l:p:s:t:IS cmdln_opt
+
+while getopts bce:g:hiIl:p:s:St: cmdln_opt
 do
     case $cmdln_opt in
+    (b)     boxes_trailing='1'
+            ;;
     (c)     combine_like_records='1'
             ;;
     (e)     ead_id="$OPTARG"
             ;;
     (g)     min_group_size="$OPTARG"
+            ;;
+    (i)     include_series_in_tc_suffix='1'
+            ;;
+    (I)     do_indent_prgm=''
             ;;
     (l)     max_group_levels="$OPTARG"
             ;;
@@ -41,13 +52,11 @@ do
             ;;
     (s)     max_series_records="$OPTARG"
             ;;
-    (t)     parent_title="$OPTARG"
-            ;;
-    (I)     do_indent_prgm=''
-            ;;
     (S)     do_sort='1'
             ;;
-    (*)     display_usage
+    (t)     parent_title="$OPTARG"
+            ;;
+    (*|h)     display_usage
             exit 1
             ;;
     esac
@@ -129,7 +138,9 @@ trap 'trap_0' 0
 if [[ -n "${do_indent_prgm}" ]]
 then
     (   set -x
-        run_ruby.sh formatter.dictation_1.to.indent.rb ${max_group_levels:+--max_group_levels }${max_group_levels} \
+        run_ruby.sh formatter.dictation_1.to.indent.rb ${boxes_trailing:+--boxes_trailing} \
+                                                       ${include_series_in_tc_suffix:+--include_series_in_tc_suffix} \
+                                                       ${max_group_levels:+--max_group_levels }${max_group_levels} \
                                                        ${phrase_split_chars:+--phrase_split_chars }${phrase_split_chars} \
                                 "${input_fn}" \
                                >"${output_fn_prefix}.indent.json" \

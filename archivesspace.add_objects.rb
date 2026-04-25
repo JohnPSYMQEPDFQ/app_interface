@@ -92,7 +92,7 @@ myself_name = File.basename( $0 )
 
 cmdln_option_H = { :rep_num => 2  ,
                    :res_num => nil,
-                   :res_title => nil,
+                   :res_faft => '',
                    :ao_num => nil,
                    :ao_title => nil ,
                    :reuse_TCs => false ,
@@ -107,8 +107,8 @@ OptionParser.new do |option|
     option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
         cmdln_option_H[ :res_num ] = opt_arg
     end
-    option.on( "--res-title x", "Resource Title ( required )" ) do |opt_arg|
-        cmdln_option_H[ :res_title ] = opt_arg.strip
+    option.on( "--res-faft x", "Resource's K.Filing_Aid_Filing_Title ( required )" ) do |opt_arg|
+        cmdln_option_H[ :res_faft ] = opt_arg.strip.downcase
     end
     option.on( "--ao-num n", OptionParser::DecimalInteger, "Initial parent AO URI number ( optional, but must be member of suppled Resource number )" ) do |opt_arg|
         cmdln_option_H[ :ao_num ] = opt_arg
@@ -132,7 +132,7 @@ OptionParser.new do |option|
     
     option.separator '' 
     option.separator 'Example:'
-    option.separator "    rr -aL #{myself_name} --res-num NNN --res-title 'XXX' file.json"
+    option.separator "    rr -aL #{myself_name} --res-num NNN --res-faft 'XXX' file.json"
     option.separator ''
     
 end.parse!  # Bang because ARGV is altered
@@ -160,8 +160,8 @@ if ( cmdln_option_H[ :res_num ].nil? ) then
     SE.puts "The --res-num option is required."
     raise
 end
-if ( cmdln_option_H[ :res_title ].nil? ) then
-    SE.puts "The --res-title option is required."
+if ( cmdln_option_H[ :res_faft ].nil? ) then
+    SE.puts "The --res-faft option is required."
     raise
 end
 
@@ -172,35 +172,8 @@ rep_O = Repository.new( aspace_O, cmdln_option_H[ :rep_num ] )
 
 res_O = Resource.new( rep_O, cmdln_option_H[ :res_num ] )
 res_buf_O = res_O.new_buffer.read
-res_title = res_buf_O.record_H[ K.title ]
-if ( cmdln_option_H[ :res_title ].downcase != res_title.downcase[ 0, cmdln_option_H[ :res_title ].length ] ) then
-    SE.puts "#{SE.lineno}: The --res-title value must start with the title of --res-num #{cmdln_option_H[ :res_num ]}. They don't:"
-    SE.q {[ 'cmdln_option_H[ :res_title ]' ]}
-    SE.q {[ 'res_buf_O.record_H[ K.title ]' ]}
-    raise
-end
-search_text = %Q|title:"#{cmdln_option_H[ :res_title ]}"|
-res_search_H_A = rep_O.search( record_type: K.resource, search_text: search_text, result_field_A: [ K.title ] ).result_A
-raise "res_search_H_A.empty?" if res_search_H_A.empty?
-if ( res_search_H_A.length > 1 ) then
-    multiple_titles_A = res_search_H_A.map{ | res_search_H | res_search_H.fetch( K.title ) }
-    cnt = multiple_titles_A.count { | title | title == "#{cmdln_option_H[ :res_title ]}" and
-                                              title == res_title }
-    if ( cnt != 1 ) then
-        SE.puts "#{SE.lineno}: =============================="
-        SE.puts "Multiple Resource titles found for option: --res_title '#{cmdln_option_H[ :res_title ]}'"
-        SE.q {'multiple_titles_A'}
-        raise
-    end
-end
-raise "res_search_H_A.empty?" if ( res_search_H_A.empty? )
-if ( res_search_H_A.first.fetch( K.title ) != res_title ) then
-    SE.puts "#{SE.lineno}: =============================="
-    SE.puts "res_search_H_A.first.fetch( K.title ) != res_title'"
-    SE.q {'res_search_H_A.first.fetch( K.title )'}
-    SE.q {'res_title'}
-    raise 
-end
+aspace_O.validate_resource_faft( res_buf_O, cmdln_option_H[ :res_faft ] )
+
 
 res_Q_O = Res_Q.new( resource_O: res_O, get_full_ao_record_TF: false )
 parent_ref_stack_A = [ ]

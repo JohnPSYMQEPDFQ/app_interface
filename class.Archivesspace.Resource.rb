@@ -49,8 +49,8 @@ class Resource
                                                    )
     end
     
-    def search( record_type:, search_text:, search_uri: '/search', result_field_A: [] )
-        return Resource_Search.new( self.rep_O.aspace_O, self.rep_O, self, record_type, search_uri, search_text, result_field_A )
+    def search( record_type_A: [], search_text:, search_uri: '/search', result_field_A: [] )
+        return Resource_Search.new( self.rep_O.aspace_O, self.rep_O, self, record_type_A, search_uri, search_text, result_field_A )
     end
     
     def batch_delete( delete_uri_A )
@@ -170,12 +170,12 @@ class Resource_Record_Buf < Record_Buf
             @uri_addr = "#{@res_O.rep_O.uri_addr}/#{RESOURCES}"
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Created Resource, uri = #{http_response_body_H[ K.uri ]}";
+            @uri_addr = http_response_body_H[ K.uri ] 
+            @uri_num = @uri_addr.trailing_digits
         else
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Updated Resource, uri = #{http_response_body_H[ K.uri ]}";
         end
-        @uri_addr = http_response_body_H[ K.uri ] 
-        @uri_num = @uri_addr.trailing_digits
     end
 end   
 
@@ -217,7 +217,7 @@ class Repository_Query__for_Resource < Repository_Query
 end
 
 class Repository_Search__for_Resource < Repository_Search   
-    def initialize( aspace_O, rep_O, my_creator_O, record_type, search_uri, search_text, result_field_A )
+    def initialize( aspace_O, rep_O, my_creator_O, record_type_A, search_uri, search_text, result_field_A )
         if ( rep_O.is_not_a?( Repository ) )
             SE.puts "#{SE.lineno}: Was expecting param 'rep_O' to be a Repository not a '#{rep_O.class}'"
             SE.q {[ 'rep_O', 'my_creator_O' ]}

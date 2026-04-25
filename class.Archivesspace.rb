@@ -11,11 +11,11 @@ Variable Abbreviations:
         _RES = Regular Expression String, e.g: find_bozo_RES = '\s+bozo\s+'
         _RE  = Regular Expression, e.g.: find_bozo_RE = /#{find_bozo_RES}/
         _A = Array
+        _CKA = Composite Key Array
         _O = Object
         _Q = Query
         _C = Class of Struct
         _S = Structure of _C 
-        _TF = True/False (Boolean)
         _TF = True/False (Boolean)
         __ = reads as: 'of'
 
@@ -30,16 +30,17 @@ require 'class.Archivesspace.Record_Format.rb'
 
 
 class ASpace
-    public  attr_reader :allow_updates, :api_uri_base, :session, :http_calls_O, :date_expression_format, :date_expression_separator
-    public  attr_writer :allow_updates
-    private attr_writer                 :api_uri_base, :session, :http_calls_O 
+    public  attr_reader :allow_updates, :res_faft_validated, :api_uri_base, :session, :http_calls_O, :date_expression_format, :date_expression_separator
+    public  attr_writer :allow_updates, :res_faft_validated
+    private attr_writer                                       :api_uri_base, :session, :http_calls_O 
     
     def initialize( )
         env_var_aspace_uri_base        = 'ASPACE_URI_BASE'
         env_var_aspace_user            = 'ASPACE_USER'
-        self.allow_updates             = false
-        self.session                   = 'NEVER_LOGGED_IN! SEE:class.Archivespace.rb'
         self.api_uri_base              = nil
+        self.session                   = 'NEVER_LOGGED_IN! SEE:class.Archivespace.rb'
+        self.allow_updates             = false
+        self.res_faft_validated        = false
         self.http_calls_O              = 'NEVER_LOGGED_IN! SEE:class.Archivespace.rb'
         self.date_expression_format    = 'aspace_default'      # The default is the yyyyDmmDdd format.   or :mmmddyyyy = MMM. nn, yyyy
         self.date_expression_separator = ' - '
@@ -200,12 +201,73 @@ class ASpace
         return date_expression
     end
     
+    def validate_resource_faft( res_buf_O, faft_to_validate )
+        if ( res_buf_O.is_not_a?( Resource_Record_Buf )) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "Param-1 is not a 'Resource_Record_Buf' class object, it's a '#{res_buf_O.class}'"
+            raise
+        end 
+        rep_O = res_buf_O.res_O.rep_O
+        res_title = res_buf_O.record_H.fetch( K.title ).strip.downcase
+        res_faft  = res_buf_O.record_H.fetch( K.finding_aid_filing_title, '~~no_finding_aid_filing_title~~' ).strip.downcase
+        if ( faft_to_validate.not_in?(  res_faft[ 0, faft_to_validate.length ], res_title[ 0, faft_to_validate.length ] ) ) then
+            SE.puts "#{SE.lineno}: The 'faft_to_validate'(Param-2) must start with the K.finding_aid_filing_title (FAFT)"
+            SE.puts "of the 'res_buf_O'(Param-1), NOT the resource's K.title (unless there's no FAFT)."
+            SE.q {[ 'res_buf_O.num' ]}
+            SE.q {[ 'faft_to_validate' ]}
+            SE.q {[ 'res_faft[ 0, faft_to_validate.length ]' ]}
+            SE.q {[ 'res_faft' ]}
+            SE.q {[ 'res_title[ 0, faft_to_validate.length ]' ]}
+            SE.q {[ 'res_title' ]}
+            raise
+        end
+        
+        search_text = %Q|title:"#{faft_to_validate}"|
+        #   Note that:  The K.title returned by 'search' is NOT the resource's K.title field, it's the K.finding_aid_filing_title
+        #               Except that sometimes it IS!   Who knows, check for both.  
+        search_record_H_A = rep_O.search( record_type_A: [ K.resource ], search_text: search_text, result_field_A: [ K.title ] ).result_A
+        if ( search_record_H_A.empty? ) then
+            SE.puts "#{SE.lineno}: =============================="
+            SE.puts "Nothing found for '#{search_text}'" 
+            SE.puts ''
+            SE.puts "NOTE THAT: The AS search doesn't seem to be able to find partial words."
+            SE.puts "           It won't find 'bozo the cl', but will find 'bozo the clown' (or 'bozo the')"
+            SE.puts ''
+            SE.puts "Res title '#{res_title}'"
+            SE.puts "Res faft  '#{res_faft}'"
+            raise
+        end
+        if ( search_record_H_A.length > 1 ) then
+            search_title_A = search_record_H_A.map{ | res_search_H | res_search_H.fetch( K.title ).downcase }
+            arr = search_title_A.select { | search_title | search_title[ 0, faft_to_validate.length ] == "#{faft_to_validate}" &&
+                                                           search_title                               == res_faft }
+            if ( arr.length > 1 ) then
+                SE.puts "#{SE.lineno}: =============================="
+                SE.puts "Multiple Resource titles found for option: --res_faft '#{faft_to_validate}'"
+                SE.q {'search_title_A'}
+                SE.q {'arr'}
+                raise
+            end
+        end
+
+        if ( search_record_H_A.first.fetch( K.title ).strip.downcase.not_in?( res_faft, res_title ) ) then
+            SE.puts "#{SE.lineno}: =============================="
+            SE.puts "search_record_H_A.first.fetch( K.title ).strip.downcase.not_in?( res_faft, res_title )"
+            SE.q {'search_record_H_A.first.fetch( K.title ).strip.downcase'}
+            SE.q {'res_faft'}
+            SE.q {'res_title'}
+            raise 
+        end
+        self.res_faft_validated = true
+        return self.res_faft_validated
+    end
+    
     def query( what_to_query )
         return ASpace_Query.new( self, nil, self, what_to_query )
     end
     
-    def search( record_type:, search_text:, search_uri: '/search', result_field_A: [] )
-        return ASpace_Search.new( self, nil, self, record_type, search_uri, search_text, result_field_A )
+    def search( record_type_A: [], search_text:, search_uri: '/search', result_field_A: [] )
+        return ASpace_Search.new( self, nil, self, record_type_A, search_uri, search_text, result_field_A )
     end
     
     def batch_delete( delete_uri_A )
@@ -283,7 +345,7 @@ class ASpace_Query
             when id.integer? 
                 int_id_A.push( id.to_i )
             else
-                stringer = id.delete_prefix( "{self.uri_addr}/" )
+                stringer = id.delete_prefix( "#{self.uri_addr}/" )
                 if ( stringer.not_integer? ) then
                     SE.puts "#{SE.lineno}: =============================================="
                     SE.puts "The param 1 array isn't all integers: '#{stringer}'"
@@ -294,7 +356,7 @@ class ASpace_Query
             end
         end
         record_H_A = []
-        int_id_A.each_slice( 250 ) do | sliced_A |        
+        int_id_A.each_slice( 100 ) do | sliced_A |        
             http_response_body = self.aspace_O.http_calls_O.get( self.uri_addr, { 'id_set' => sliced_A.join( ',' ) } )
             if ( http_response_body.is_not_a?( Array ) ) then
                 SE.puts "#{SE.lineno}: =============================================="
@@ -358,15 +420,15 @@ class ASpace_Search
        
             
 =end
-    attr_accessor :aspace_O, :rep_O, :my_creator_O, :uri_addr, :record_type 
+    attr_accessor :aspace_O, :rep_O, :my_creator_O, :uri_addr, :record_type_A 
     attr_accessor :result_A
     alias :record_H_A :result_A
     
-    def initialize( aspace_O, rep_O, my_creator_O, record_type, search_uri, search_text, result_field_A )
-        self.aspace_O     = aspace_O
-        self.rep_O        = rep_O
-        self.my_creator_O = my_creator_O
-        self.record_type  = record_type
+    def initialize( aspace_O, rep_O, my_creator_O, record_type_A, search_uri, search_text, result_field_A )
+        self.aspace_O       = aspace_O
+        self.rep_O          = rep_O
+        self.my_creator_O   = my_creator_O 
+        self.record_type_A  = record_type_A.map{ | e | e.delete_suffix('s')}.sort.reverse
         if ( self.uri_addr.nil? ) then
             self.uri_addr = search_uri
         end
@@ -376,15 +438,28 @@ class ASpace_Search
             SE.q {'result_field_A'}
             raise
         end
-        self.result_A = []
         page = 1
-        param_H = { 'q'      => "#{search_text}", 
-                    'type[]' => self.record_type.delete_suffix( 's' ), 
-                    K.page   => page 
-                   }
-        if ( result_field_A.not_empty? ) then
-            param_H.merge!( { 'fields[]' => result_field_A.join( ',' ) } )
+        self.result_A = []        
+        param_H = {}.compare_by_identity
+        param_H[ 'q'.dup ]    = "#{search_text}"
+        param_H[ K.page.dup ] = page.dup
+        if ( record_type_A.not_empty? ) then
+            record_type_A.each do | record_type |
+                if ( record_type.not_in?( [ 'resource','archival_object','accession','digital_object',
+                                            'agent_person','agent_family','agent_corporate_entity','agent_software',
+                                            'subject','location','event','classification' ] ) ) then
+                    SE.puts "#{SE.lineno}: =============================================="
+                    SE.puts "Invalid record_type `#{record_type}`"
+                    raise
+                end
+                param_H[ 'type[]'.dup ] = record_type             
+            end
         end
+        if ( result_field_A.not_empty? ) then
+            param_H[ 'fields[]'.dup ] = result_field_A.join( ',' )  # For some reason this allows a comma-delimited list
+                                                                    # but 'type[]' doesn't.
+        end
+       #SE.q{['self.uri_addr','param_H']}
         while true
             http_call_response = self.aspace_O.http_calls_O.get( self.uri_addr, param_H )
             if ( !  (   http_call_response.has_key?( K.first_page ) &&
@@ -399,9 +474,11 @@ class ASpace_Search
             end
             if ( http_call_response[ K.results ].empty? ) then
                 SE.puts "#{SE.lineno}: #{SE.my_caller}: =============================================="
-                SE.puts "Empty response using 'type[]' => '#{self.record_type.delete_suffix( 's' )}'"
-                SE.puts "Search text: '#{search_text}'"
-                SE.puts ''
+                SE.print "Empty search response "
+                SE.print "using 'type[]' => '#{self.record_type_A.join( ',' )}'" if ( self.record_type_A.not_empty? )
+                SE.puts  "."
+                SE.puts  "Search text: '#{search_text}'"
+                SE.puts  ''
             end
             http_call_response[ K.results ].each do | result_H |
                 result_H.reject! { | key, value | key == K.json }
@@ -425,7 +502,7 @@ class ASpace_Batch_Delete
         self.my_creator_O = my_creator_O 
         self.deleted_cnt  = 0
         if self.aspace_O.allow_updates
-            delete_uri_A.each_slice( 250 ) do | chunk__delete_uri_A |
+            delete_uri_A.each_slice( 100 ) do | chunk__delete_uri_A |
                 SE.q {'chunk__delete_uri_A.length'}
                 param_H = {}.compare_by_identity
                 chunk__delete_uri_A.each do | delete_uri |

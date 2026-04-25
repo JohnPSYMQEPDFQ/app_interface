@@ -36,8 +36,7 @@ def put_indent( p1_calculated_indent_level, p2_group_number_A, p3_group_title_A 
             output_record_H[ K.fmtr_record ][ K.component_id ] = p2_group_number_A.join( '.' )
         end
         stringer << ": #{p3_group_title_A.join( ' ' )}"  
-        output_record_H[ K.fmtr_record ][ K.title ] = stringer
-    
+        output_record_H[ K.fmtr_record ][ K.title ] = stringer   
     when 2 .. self.cmdln_option_H[ :max_series ] 
         output_record_H[ K.fmtr_record ][ K.level ] = K.subseries.downcase
         stringer = +"Subseries"
@@ -106,7 +105,7 @@ def put_record( p1_calculated_indent_level, p2_record_H__stack_A, p3_current_rec
             regexp = /^([{<](.+?)[}>][: ])/
             m_O = note.match( regexp ) 
             if ( m_O.nil?  ) then
-                if ( output_record_H[ K.fmtr_record ][ K.level ].in?( [ K.series, K.subseries, K.recordgrp, K.group ] )) then
+                if ( output_record_H[ K.fmtr_record ][ K.level ].in?( [ K.series, K.subseries, K.recordgrp, K.subgrp, K.group ] )) then
                     note_type = K.scopecontent
                 else
                     note_type = K.materialspec
@@ -164,7 +163,7 @@ def put_record( p1_calculated_indent_level, p2_record_H__stack_A, p3_current_rec
             output_record_H[ K.fmtr_record ][ K.title ] = +'[Dated]'
         else
             if ( p3_current_record_H[ K.fmtr_record_indent_keys ].empty? ) then
-                output_record_H[ K.fmtr_record ][ K.title ] = +'[Item]'
+                output_record_H[ K.fmtr_record ][ K.title ] = +'[Mixed materials]'
             else
                 SE.q {'p2_record_H__stack_A'}   if ( $DEBUG )
                 SE.q {'p3_current_record_H'}    if ( $DEBUG )

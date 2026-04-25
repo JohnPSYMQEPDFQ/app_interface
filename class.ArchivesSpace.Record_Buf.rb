@@ -4,11 +4,17 @@ class Record_Buf < Buffer_Base
         super( )
         @cant_change_A << K.uri
         @http_calls_O = p1_aspace_O.http_calls_O
+        if ( @http_calls_O.is_not_a?( Http_Calls ) ) then
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "@http_calls_O.is_not_a?( Http_Calls )"
+            SE.q {'@http_calls_O'}
+            raise
+        end
     end
     attr_reader :http_calls_O
     
     def jsonmodel_filter__what_to_keep( jsonmodel_type )
-        if ( jsonmodel_type == nil or jsonmodel_type == '' )
+        if ( jsonmodel_type.nil? or jsonmodel_type == '' )
         then   
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "jsonmodel_type is nil or ''"
@@ -150,7 +156,7 @@ class Record_Buf < Buffer_Base
             SE.ap "@record_H:", @record_H
             raise
         end 
-        if (@record_H == nil or ( @record_H.has_key?( K.uri) and @record_H[ K.uri ] != @uri_addr )) then
+        if (@record_H.nil? or ( @record_H.has_key?( K.uri) and @record_H[ K.uri ] != @uri_addr )) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Current @record_H[ K.uri ] != @uri_addr"
             SE.puts "@uri_addr = #{@uri_addr}"
@@ -167,8 +173,10 @@ class Record_Buf < Buffer_Base
                 SE.ap "http_response_body_H:", http_response_body_H
                 raise
             end
+            lock_version = @record_H.fetch( K.lock_version, 0 )
+            lock_version += 1
         else
-            http_response_body_H = {K.uri => "NO UPDATE MODE"}
+            http_response_body_H = {K.uri => "NO UPDATE MODE: #{@uri_addr}"}
         end
         return http_response_body_H
     end
@@ -181,7 +189,7 @@ class Record_Buf < Buffer_Base
             SE.ap "@record_H:", @record_H
             raise
         end 
-        if (@record_H == nil or not ( @record_H.has_key?( K.uri) and @record_H[ K.uri ] == @uri_addr )) then
+        if (@record_H.nil? or not ( @record_H.has_key?( K.uri) and @record_H[ K.uri ] == @uri_addr )) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Current @record_H[ K.uri ] != @uri_addr"
             SE.puts "@uri_addr = #{@uri_addr}"
@@ -197,8 +205,9 @@ class Record_Buf < Buffer_Base
                 SE.ap "http_response_body_H:", http_response_body_H
                 raise
             end
+            http_response_body_H = {K.uri => @uri_addr}
         else
-            http_response_body_H = {K.uri => "NO UPDATE MODE"}
+            http_response_body_H = {K.uri => "NO UPDATE MODE: #{@uri_addr}"}
         end
         return http_response_body_H
     end

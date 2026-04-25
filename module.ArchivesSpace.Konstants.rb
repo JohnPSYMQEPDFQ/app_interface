@@ -22,11 +22,29 @@ Variable Abbreviations:
 module These_Constants
 
 #   Main entry points.
-    REPOSITORIES        = 'repositories'          
-    RESOURCES           = 'resources'
-    ARCHIVAL_OBJECTS    = 'archival_objects'
-    TOP_CONTAINERS      = 'top_containers'
-    LOCATIONS           = 'locations'
+    REPOSITORIES                = 'repositories'          
+    RESOURCES                   = 'resources'
+    ARCHIVAL_OBJECTS            = 'archival_objects'
+    TOP_CONTAINERS              = 'top_containers'
+    LOCATIONS                   = 'locations'
+    
+#   Location constants
+    ALA_NOTE_MARKER             = '_ALA_'                                     # "Automated Location Assignment"
+    ALA_PROBLEMS                = '_ALA_PROBLEMS_'                            # Value for 'building'      
+    ALA_START_DATE              = '1981-05-02'                                # Date the museum opened.
+    ERROR_LABEL                 = 'ERROR'                                     # Value for 'coordinate_1_label'
+    NO_LOCATION                 = 'NO_LOCATION'                               # Value for 'coordinate_1_indicator' 
+    DUPLICATE_LOCATIONS         = 'DUPLICATE_LOCATIONS'                       # Value for 'coordinate_1_indicator'
+                                                                              #   and for 'coordinate_2_indicator'
+    INVALID_LOCATION            = 'INVALID_LOCATION'                          # Value for 'coordinate_1_indicator'
+    INVALID_LOCATION_A          = 'INVALID_LOCATION_A'                        # Array of Modifiers of 'INVALID_LOCATION's
+    DUPLICATE_RANGES            = 'DUPLICATE_RANGES'                          # Value for 'coordinate_2_label'
+    MULTIPLE_MATCHES            = 'MULTIPLE_MATCHES'                          # Value for 'coordinate_2_label'
+    RANGE_LOCATION              = 'RANGE_LOCATION'                            # Value for 'coordinate_2_indicator'
+    MISSING_LOCATION            = 'MISSING_LOCATION'                          # Value for 'coordinate_2_indicator'
+#   Search string: '_ALA_PROBLEMS_ [_MS_634_, ERROR: NO_LOCATION]'
+#   ALA = Automated Location Assignment
+    
 end
 include These_Constants
 
@@ -35,6 +53,7 @@ module K
     def K.acqinfo; return 'acqinfo'; end                                    # notes (Immediate Source of Acquisition)
     def K.active_restrictions; return 'active_restrictions'; end            # top_container
     def K.ancestors; return 'ancestors'; end                                # archival_object
+    def K.album; return 'album'; end                                        # top container type
     def K.approximate; return 'approximate'; end                            # dates
     def K.archival_object; return 'archival_object'; end                    # root. DANGER: Singular, see above for plural
     def K.area; return 'area'; end                                          # location
@@ -175,8 +194,7 @@ module K
     def K.precomputed_waypoints; return 'precomputed_waypoints'; end        # tree
     def K.processinfo; return 'processinfo'; end                            # note multipart (process information)
     def K.publish; return 'publish'; end
-    def K.recordgrp; return 'recordgrp'; end                                # archival_object
-    def K.recordgrp_text; return 'Record Group'; end                        # formatters
+    def K.recordgrp; return 'recordgrp'; end                                # As text, it's Record Group;  see K.fmtr_record_group_text   
     def K.record_uris; return 'record_uris'; end                            # used in some /batch... requests
     def K.ref; return 'ref'; end                                            # archival_object, sub_container
     def K.ref_id; return 'ref_id'; end                                      # archival_object
@@ -200,9 +218,9 @@ module K
     def K.status; return 'status'; end                                      # http response
     def K.subjects; return 'subjects'; end                                  # archival_object, resource
     def K.subnotes; return 'subnotes'; end
-    def K.subseries; return 'subseries'; end                                # As text, it's Sub-series;  see K.sub_series_text   
+    def K.subgrp; return 'subgrp'; end                                      # As text, it's Sub-group;  see K.fmtr_sub_group_text   
+    def K.subseries; return 'subseries'; end                                # As text, it's Sub-series;  see K.fmtr_sub_series_text   
     def K.sub_container; return 'sub_container'; end                        # instances
-    def K.sub_series_text; return 'Sub-series'; end                         # The 'level' value is subseries
     def K.suppressed; return 'suppressed'; end
     def K.spreadsheet_true; return 1; end                                   # Harvard-Spreadsheet (for booleans)
     def K.spreadsheet_false; return 0; end                                  # Harvard-Spreadsheet (for booleans)
@@ -249,13 +267,6 @@ module K
     def K.fmtr_inmagic_seriesdate; return 'seriesdate'; end                 # InMagic formatter column-use
     def K.fmtr_inmagic_seriesnote; return 'seriesnote'; end                 # InMagic formatter column-use
     def K.fmtr_left; return '__LEFT__'; end                  
-    def K.fmtr_inmagic_location_RES
-        stringer = '(?<left_del>[\[ ])(?<prefix>SMCC|shelf)\s+(?<location>[GHI]\d+[.]\d\d\d[.][A-Z]\d{1,2})(?<right_del>[\] ;.,:])'
-        return stringer
-    end
-    def K.fmtr_inmagic_location_RE
-        return /#{K.fmtr_inmagic_location_RES}/i
-    end    
     def K.fmtr_new_parent; return '__NEW_PARENT__'; end     
     def K.fmtr_oversize; return 'oversize'; end           
     def K.fmtr_prefix; return 'prefix'; end                                 
@@ -269,14 +280,17 @@ module K
     def K.fmtr_record_values__text_idx; return 0; end                       
     def K.fmtr_record_values__dates_idx; return 1; end                      
     def K.fmtr_record_values__notes_idx; return 2; end                      
-    def K.fmtr_record_values__container_idx; return 3; end                  
+    def K.fmtr_record_values__container_idx; return 3; end  
+    def K.fmtr_record_group_text; return 'Record Group'; end                # The 'level' value is recordgrp  
     def K.fmtr_right; return '__RIGHT__'; end  
-    def K.fmtr_unk; return 'unk'; end                               # The Unknown Box Indicator value   
+    def K.fmtr_sub_group_text; return 'Sub-group'; end                      # The 'level' value is subgrp
+    def K.fmtr_sub_series_text; return 'Sub-series'; end                    # The 'level' value is subseries
+    def K.fmtr_unk; return 'unk'; end                                       # The Unknown Box Indicator value   
 
 
-    def K.min_length_for_indent_key; return 3; end                  # Used in class.formatter.Record_Grouping_Indent.rb
-    def K.skip_these_values_for_indent_key_A                        # Used in class.formatter.Record_Grouping_Indent.rb
-        arr = [ 'ov', K.box, K.folder, K.volume, K.item, K.file ].freeze
+    def K.min_length_for_indent_key; return 3; end                          # Used in class.formatter.Record_Grouping_Indent.rb
+    def K.skip_these_values_for_indent_key_A                                # Used in class.formatter.Record_Grouping_Indent.rb
+        arr = [ 'ov', K.box, K.folder, K.volume, K.item, K.file, K.album ].freeze
         return arr
     end    
 
@@ -289,7 +303,12 @@ module K
     end
     
     def K.any_fmtr_group_record_RES
-        stringer = "(#{K.series}|#{K.recordgrp_text}|#{K.subseries}|#{K.sub_series_text}|#{K.group})"   #Used to have the number and an extra set of parentheeseses
+        stringer = "(#{K.fmtr_record_group_text} |#{K.fmtr_sub_group_text} |#{K.series} |#{K.subseries} |#{K.fmtr_sub_series_text} |#{K.group}:)"   
+                    #Used to have the number and an extra set of parentheeseses.
+                    
+                    #Changed it to have the appropriate ' ' or ':' depending on the constant.
+                    #A series is: 'Series N', but a group is always 'Group:'.  If a space
+                    #is allowed to match after 'Group ' then 'Group Insurance' will look like a Group!
         return stringer
     end
     
@@ -304,51 +323,41 @@ module K
     end
     
     def K.valid_container_types_RES
-        return '(ov |box(s|es)?)'
+        return '(ov\d{0,2}|box(?:s|es)?|items?|vol[.]|volumes?)'
     end
     
     def K.valid_child_types_RES
-        return '(folders?|vol[.]|volumes?|items?)'
+        return '(folders?|vol[.]|volumes?|albums?)'
     end
     
     def K.valid_grandchild_types_RES
-        return '(volumes?|files?)'
+        return '(vol[.]|volumes?|files?|albums?)'
     end  
     
     def K.indicator_num_RES
-        return '(' + K.fmtr_unk + '|([0-9]([0-9a-z./-])*))'  # NOTE!!!   See note on 'K.container_type_separators_RES'
+        return '(' + K.fmtr_unk + '|ov\s*\d{0,2}|([0-9]([0-9a-z./-])*))'  # NOTE!!!   See note on 'K.container_type_separators_RES'
     end
     
     def K.container_and_child_types_RES   
-        # stringer = '(?<begin_del>(\A|\s+|\[\s*))' +     # MUST use the /x option on the regex!!!
-                   # '(?<inside_the_dels>' + 
-                       # '(' +
-                           # '(?<container_type>'       + "(#{K.valid_container_types_RES}|#{K.valid_child_types_RES})" + ')((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>[0-9]+                (' + K.container_type_separators_RES + '[0-9]+)?),?' + 
-                           # '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
-                           # '(\s+(?<child_type>      ' + K.valid_child_types_RES                                       + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     ([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
-                           # '(\s+(?<grandchild_type> ' + K.valid_grandchild_types_RES                                  + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>([0-9]+[a-z]?|[ivx]+)(' + K.container_type_separators_RES + '([0-9]+[a-z]?|[ivx]+))?  ))?  )?' +
-                       # ')' +
-                   # ')' +
-                   # '(?<end_del>(\Z|\.|,|:|\s*\]|\s+))'    
-        # stringer = '(\A|\s+|\[\s*)\K' +                #\K = The behavior of \K is similar to a positive lookbehind assertion (?<=...), but with the key advantage of allowing variable-length lookbehind
-                                                       # # MUST use the /x option on the regex!!!
-                   # '(?<inside_the_dels>' + 
-                       # '(' +
-                           # '(?<container_type>'       + "(#{K.valid_container_types_RES}|#{K.valid_child_types_RES})" + ')((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>[0-9./]+         (' + K.container_type_separators_RES + '[0-9./]+)*),?' + 
-                           # '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
-                           # '(\s+(?<child_type>      ' + K.valid_child_types_RES                                       + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     [0-9]+[a-z]?(' + K.container_type_separators_RES + '[0-9]+[a-z]?)?  ))?  )?' +
-                           # '(\s+(?<grandchild_type> ' + K.valid_grandchild_types_RES                                  + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>[0-9]+[a-z]?(' + K.container_type_separators_RES + '[0-9]+[a-z]?)?  ))?  )?' +
-                       # ')' +
-                   # ')' +
-                   # '(?<trailing_del>(\Z|\s*[.,;:\]]|\s+))'        
+      # stringer = '(\A|\s+|\[\s*)\K' +                #\K = The behavior of \K is similar to a positive lookbehind assertion (?<=...), but with the key advantage of allowing variable-length lookbehind
+                                                       # MUST use the /x option on the regex!!!
+                 # '(?<inside_the_dels>' + 
+                     # '(' +
+                         # '(?<container_type>'       + "(#{K.valid_container_types_RES}|#{K.valid_child_types_RES})" + ')((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>'  + K.indicator_num_RES + '(' + K.container_type_separators_RES + K.indicator_num_RES + '+)*  )[,;:]?' + 
+                         # '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
+                         # '(\s+(?<child_type>      ' + K.valid_child_types_RES                                       + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     ' + K.indicator_num_RES + '(' + K.container_type_separators_RES + K.indicator_num_RES + '+)?  ))?  )?' +
+                         # '(\s+(?<grandchild_type> ' + K.valid_grandchild_types_RES                                  + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>' + K.indicator_num_RES + '(' + K.container_type_separators_RES + K.indicator_num_RES + '+)?  ))?  )?' +
+                     # ')' +
+                 # ')' +
+                 # '(?<trailing_del>(\Z|\s*[.,;:\]]|\s+))'       
         stringer = '(\A|\s+|\[\s*)\K' +                #\K = The behavior of \K is similar to a positive lookbehind assertion (?<=...), but with the key advantage of allowing variable-length lookbehind
                                                        # MUST use the /x option on the regex!!!
                    '(?<inside_the_dels>' + 
                        '(' +
                            '(?<container_type>'       + "(#{K.valid_container_types_RES}|#{K.valid_child_types_RES})" + ')((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>'  + K.indicator_num_RES + '(' + K.container_type_separators_RES + K.indicator_num_RES + '+)*  )[,;:]?' + 
-                           '(\s+(?<container_type_modifier>(ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\]))(\Z|\.|,)?)?' + 
-                           '(\s+(?<child_type>      ' + K.valid_child_types_RES                                       + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     ' + K.indicator_num_RES + '(' + K.container_type_separators_RES + K.indicator_num_RES + '+)?  ))?  )?' +
-                           '(\s+(?<grandchild_type> ' + K.valid_grandchild_types_RES                                  + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>' + K.indicator_num_RES + '(' + K.container_type_separators_RES + K.indicator_num_RES + '+)?  ))?  )?' +
+                           '(\s+(?<container_type_modifier>((ov|oversized?|\[oversized?\]|rc|record[\-\s]?cards?|sb|slide[\-\s]?box|\[slide[\-\s]?box\])(?!\s+\d+)))(\Z|\.|,)?)?' + 
+                           '(\s+(?<child_type>      ' + K.valid_child_types_RES                                       + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<child_num>     ' + K.indicator_num_RES + '(' + K.container_type_separators_RES + K.indicator_num_RES + '+)*  ))?  )?' +
+                           '(\s+(?<grandchild_type> ' + K.valid_grandchild_types_RES                                  + ') (\s+(nos?|numbers?)\.?)?  (\s+(?<grandchild_num>' + K.indicator_num_RES + '(' + K.container_type_separators_RES + K.indicator_num_RES + '+)*  ))?  )?' +
                        ')' +
                    ')' +
                    '(?<trailing_del>(\Z|\s*[.,;:\]]|\s+))'       
@@ -360,8 +369,16 @@ module K
         return /#{K.container_and_child_types_RES}/ix
     end    
     
-#   Stuff below here might be used anywhere
-#
+#   Container location stuff
+
+    def K.smcc_loc_id_RES 
+        stringer = '(?<SMCC_LOC_ID>(?<XYZ_1>[A-Z]\d{1,2})[.](?<XYZ_2>\d{1,3})[.](?<XYZ_3>[A-Z]\d{1,2})(\s{0,2}-\s{0,2}(?<XYZ_4>[A-Z]\d{1,2}))?)'
+        return stringer
+    end
+    def K.smcc_loc_id_RE
+        return /#{K.smcc_loc_id_RES}/i
+    end
+
 #   Date patterns
 
     def K.alpha_month_RES

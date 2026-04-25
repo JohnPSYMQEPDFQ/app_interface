@@ -143,12 +143,12 @@ class TC_Record_Buf < Record_Buf
             @uri_addr = "#{@tc_O.rep_O.uri_addr}/#{TOP_CONTAINERS}"
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Created TopContainer, uri = #{http_response_body_H[ K.uri ]}"
+            @uri_addr = http_response_body_H[ K.uri ] 
+            @uri_num = @uri_addr.trailing_digits
         else
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Updated top_container, uri = #{http_response_body_H[ K.uri ]}"
         end
-        @uri_addr = http_response_body_H[ K.uri ] 
-        @uri_num = @uri_addr.trailing_digits
         return self
     end
         
@@ -177,6 +177,7 @@ class TC_Record_Buf < Record_Buf
             end
         end
         http_response_body_H = super
+        SE.puts "#{SE.lineno}: Deleted top_container, uri = #{http_response_body_H[ K.uri ]}"
         return http_response_body_H
     end    
 end

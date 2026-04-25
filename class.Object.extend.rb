@@ -2,7 +2,12 @@
 class Object
    
     def deep_copy( )
-        return Marshal.load( Marshal.dump( self ) )
+        begin
+            return Marshal.load( Marshal.dump( self ) )
+        rescue StandardError => e
+            SE.puts "#{SE.lineno}: self.class='#{self.class}'"
+            raise e.message   
+        end
     end
     alias_method :copy_by_value, :deep_copy
     alias_method :cbv,           :deep_copy
@@ -180,6 +185,10 @@ class Object
     
     def not_include?( p1 )
         return ! self.include?( p1 )
+    end
+    
+    def not_between?( *args )
+        return ! self.between?( *args )
     end
     
     def in?( *args )

@@ -131,12 +131,12 @@ class Location_Record_Buf < Record_Buf
             @uri_addr = "/#{LOCATIONS}"
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Created Location, uri = #{http_response_body_H[ K.uri ]}"
+            @uri_addr = http_response_body_H[ K.uri ] 
+            @uri_num = @uri_addr.trailing_digits
         else
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Updated location, uri = #{http_response_body_H[ K.uri ]}"
         end
-        @uri_addr = http_response_body_H[ K.uri ] 
-        @uri_num = @uri_addr.trailing_digits
         return self
     end
         
@@ -150,6 +150,7 @@ class Location_Record_Buf < Record_Buf
         read()
         owner_repo_validate     
         http_response_body_H = super
+        SE.puts "#{SE.lineno}: Deleted location, uri = #{http_response_body_H[ K.uri ]}"
         return http_response_body_H
     end    
 end

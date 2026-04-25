@@ -27,8 +27,8 @@ class Repository
         return Repository_Query.new( self.aspace_O, self, self, what_to_query )
     end
     
-    def search( record_type:, search_text:, search_uri: '/search', result_field_A: [] )
-        return Repository_Search.new( self.aspace_O, self, self, record_type, search_uri, search_text, result_field_A )
+    def search( record_type_A: [], search_text:, search_uri: '/search', result_field_A: [] )
+        return Repository_Search.new( self.aspace_O, self, self, record_type_A, search_uri, search_text, result_field_A )
     end
     
     def batch_delete( delete_uri_A )
@@ -129,7 +129,7 @@ class Repository_Query < ASpace_Query
 end
 
 class Repository_Search < ASpace_Search   
-    def initialize( aspace_O, rep_O, my_creator_O, record_type, search_uri, search_text, result_field_A )
+    def initialize( aspace_O, rep_O, my_creator_O, record_type_A, search_uri, search_text, result_field_A )
 #           In this class rep_O and my_creator_O are the same, others they will be different
         if ( rep_O.is_not_a?( Repository ) )
             SE.puts "#{SE.lineno}: Was expecting param 'rep_O' to be a Repository not a '#{rep_O.class}'"

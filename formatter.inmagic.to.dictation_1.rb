@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require 'json'
 require 'optparse'
 
@@ -15,7 +13,7 @@ require 'tempfile'
 module Main_Global_Variables
 #       Instead of easily mistyped instance-variables, we can do this...
         attr_accessor :myself_name, :valid_column_uses_H, :cmdln_option_H, 
-                      :output_F, :pending_output_BUF, :output_cnt, :box_cnt, :box_line_only_cnt, :detail_column_A, :column_stack_A,
+                      :output_F, :pending_output_BUF, :output_cnt, :box_cnt, :box_line_only_cnt, :detail_column_A, :column_stack_H_A,
                       :used_column_header_A, :columns_to_skip_for_notes, :inmagic_column_to_as_note_type_xlat_H
         attr_accessor :container_for_following_records_A
         VALUE_IDX = 0 # Both of these
@@ -114,7 +112,7 @@ def seriesnote_pos( on_nil = :fail )
 end
 def column_pos_for_use( use, on_nil = :fail )
     pos = column_use_H.keys.index( use )
-    if ( on_nil == :fail and pos.nil? ) then
+    if ( on_nil == :fail && pos.nil? ) then
         SE.puts "#{SE.lineno}: Can't find the '#{use}' column in 'column_use_H'"
         SE.q {[ 'column_use_H' ]}
         raise
@@ -159,9 +157,9 @@ end
 
 def is_there_series_or_recordgrp_data?( input_column_H ) 
     its_true = nil
-    its_true = ( series_column_name.not_nil?    and input_column_H[ series_column_name ].not_blank? )
+    its_true = ( series_column_name.not_nil?    && input_column_H[ series_column_name ].not_blank? )
     return true if ( its_true ) 
-    its_true = ( recordgrp_column_name.not_nil? and input_column_H[ recordgrp_column_name ].not_blank? )
+    its_true = ( recordgrp_column_name.not_nil? && input_column_H[ recordgrp_column_name ].not_blank? )
     return true if ( its_true )
     return false
 end
@@ -171,7 +169,7 @@ def box_only_line_logic( sub_column_value, note )
     if ( $&.not_nil? ) then
         current_container = $&.strip
         prematch=$`
-        if ( stringer.match?( /^\s*([.:])?\s*$/) and note.blank? ) then  # If true: the sub_column is ONLY the Box/child data.
+        if ( stringer.match?( /^\s*([.:])?\s*$/) && note.blank? ) then  # If true: the sub_column is ONLY the Box/child data.
             case box_only_line_option
             when :next  
                 self.box_cnt += -1
@@ -252,6 +250,9 @@ def put_column( column_idx = 0 )
         column_value = matchdata[ 1 ]
     end
 
+#   record_group_RE = /^\s*((#{K.subseries}|#{K.fmtr_sub_series_text})\s+[0-9]+)/i
+    record_group_RE = /^\s*#{K.any_fmtr_group_record_RES}\s*[0-9]+/i  
+
     sub_column_value_A = column_value.split( '|' ).map( &:to_s ).map( &:strip )    
     sub_column_value_A = sub_column_value_A.sort_by { | k | k.downcase.strip.gsub(/[^[a-z0-9 ]]/,'') } if ( self.cmdln_option_H[ :sort ] )
 
@@ -259,7 +260,18 @@ def put_column( column_idx = 0 )
     sub_column_value_A.each_with_index do | sub_column_value, sub_column_idx |
 #       next if ( sub_column_value.blank? )
         sub_column_value_unaltered = sub_column_value.dup
-
+        sub_column_record_group_MO = sub_column_value_unaltered.match( record_group_RE )
+        
+        sub_column_value.gsub!( 160.chr("UTF-8"), ' ' ) # called an NBSP (non-breaking space) char.
+        sub_column_value.gsub!( '...', '…' )     
+        sub_column_value.gsub!( '—', '-' )              # Those dashes are subtly different! Do:  echo '-—–' | od -ctx1
+        sub_column_value.gsub!( '–', '-' )              # This one is one-dot shorter than the one above.   
+        sub_column_value.tr!( '’“”', '\'""' )
+        sub_column_value.gsub!( /\s\s+/, ' ' )    
+        sub_column_value.gsub!( /\s*$/, '' )   
+        sub_column_value.strip!       
+        
+       #SE.q {['sub_column_idx','sub_column_record_group_MO']}
         notes = +''
         if ( sub_column_value.sub!( /\s+note:(.*)$/i, '' ) ) then
             stringer = $&
@@ -303,13 +315,13 @@ def put_column( column_idx = 0 )
             self.box_cnt += 1 if current_type_is_a_container
             
             last_type_is_a_container = (
-                 type_match_O_A[ -1 ] and         
+                 type_match_O_A[ -1 ] &&         
                  type_match_O_A[ -1 ][ :container_type ].match?( regexp ) )
             second_to_last_type_is_a_container = (
-                 type_match_O_A[ -2 ] and         
+                 type_match_O_A[ -2 ] &&         
                  type_match_O_A[ -2 ][ :container_type ].match?( regexp ) )
             if ( current_type_is_a_container ) then
-                if ( type_match_O_A.empty? or last_type_is_a_container or second_to_last_type_is_a_container ) then
+                if ( type_match_O_A.empty? || last_type_is_a_container || second_to_last_type_is_a_container ) then
                     type_match_O_A.push( type_match_O ) 
                 else
                     type_match_O_A.insert( -2, type_match_O )  # insert BEFORE the last entry   
@@ -341,34 +353,9 @@ def put_column( column_idx = 0 )
         rearranged_sub_column_value << sub_column_value.strip   # Put what's left of the sub_column on the end.    
         sub_column_value = rearranged_sub_column_value.dup   # No pointers!
 
-#       This note logic needs to be here to handle the pattern of:
-#           [box NN child NN shelf XXXX]   which is usually at the end of the line.
-#
-#       The box and child things are pulled off by the code above, leaving
-#           [  shelf XXXX ] 
-#       at the end of the record.
-     
-        # if ( sub_column_value.sub!( /(\[\s* shelf\s.*?\])\s*$/i, '' ) ) then    # Inmagic column shelf notes are sometimes enclosed in [ ]
-            # if ( notes.not_blank? ) then
-                # SE.puts "#{SE.lineno}: WARNING: multiple notes found on one line"
-                # SE.q {'$&'}
-                # SE.q {'sub_column_value_unaltered'}
-                # SE.q {'notes'}
-            # end
-            # stringer = $&                           # The note is put back AFTER the box logic
-            # stringer.gsub!( /[\[\]]/, '' )
-            # stringer.gsub!( /\s\s+/, ' ' )
-            # stringer.sub!( /\.$/, '' )
-            # stringer.strip!
-            # stringer.sub!( /./,&:upcase )
-            # stringer.tr!( '{}', '<>' )
-            # stringer << ' '
-            # notes << "NOTE: {physloc} #{stringer}"
-        # end   
-        
-        if ( sub_column_value.sub!( K.fmtr_inmagic_location_RE, ' ' ) ) then    # Inmagic location info into a note.    
+        if ( sub_column_value.sub!( /(?<left_del>[\[ ])(?<prefix>SMCC|shelf)\s+#{K.smcc_loc_id_RES}(?<right_del>[\] ;.,:])/i, ' ' ) ) then
             match_O = $~
-            if ( ( match_O[ :left_del ] == '[' or match_O[ :right_del ] == ']' ) and
+            if ( ( match_O[ :left_del ] == '[' || match_O[ :right_del ] == ']' ) &&
                    match_O[ :left_del ] + match_O[ :right_del ] != '[]' )  then
                 SE.puts "#{SE.lineno}: mismatched '[]' on container stuff."
                 SE.q {'match_O'}
@@ -376,7 +363,7 @@ def put_column( column_idx = 0 )
                 SE.q {'sub_column_value_unaltered'}
                 raise
             end
-            stringer = match_O[ :location ]                        
+            stringer = match_O[ :SMCC_LOC_ID ]                        
             stringer.gsub!( /\s\s+/, ' ' )
             stringer.strip!
             stringer.sub!( /./,&:upcase )
@@ -396,51 +383,71 @@ def put_column( column_idx = 0 )
         
         this_column_is_a_record_group_continuation = false
         if ( column_idx == 0 )
-            if ( self.column_stack_A.not_empty? and self.column_stack_A.last.match( /^\s*(#{K.recordgrp_text}\s+[0-9]+)/i ) ) then
-                group_text_from_stack = $1
-                stringer = sub_column_value_unaltered.downcase.sub( /[[:punct:]]\s*$/, '' ).gsub( /\s\s+/, ' ').strip
+            if ( self.column_stack_H_A.not_empty? &&
+                 self.column_stack_H_A.last.fetch( :group_record_MO )[ 1 ].downcase == K.fmtr_record_group_text.downcase )  then
               # SE.q {'stringer'}
-              # SE.q {'self.column_stack_A.last[ 0 .. stringer.maxindex ]'}
+              # SE.q {'self.column_stack_H_A.last.fetch( :sub_column_value )[ 0 .. stringer.maxindex ]'}
               # SE.q {'stringer.maxindex'}
-              # SE.q {'stringer == self.column_stack_A.last[ 0 .. stringer.maxindex ]'}
-                if ( stringer == self.column_stack_A.last[ 0 .. stringer.maxindex ] ) then
+              # SE.q {'stringer == self.column_stack_H_A.last.fetch( :sub_column_value )[ 0 .. stringer.maxindex ]'}
+              
+              #     Need to match the RecordGrp Number also.  
+                if ( sub_column_record_group_MO[ 0 ] == self.column_stack_H_A.last.fetch( :group_record_MO )[ 0 ] ) then
                     this_column_is_a_record_group_continuation = true
                 else  
-                  # SE.puts "#{SE.lineno}: POP:  #{self.column_stack_A.last[ 0, 30 ]}"
-                    self.column_stack_A.pop                    
-                    indent_spaces = +' ' * ( self.column_stack_A.length * 4 )
+                  # SE.puts "#{SE.lineno}: POP:  #{self.column_stack_H_A.last.fetch( :sub_column_value )[ 0, 30 ]}"
+                    column_stack_H = self.column_stack_H_A.pop                    
+                    indent_spaces = +' ' * ( self.column_stack_H_A.length * 4 )
                     output_F_puts indent_spaces  + "#{K.fmtr_end_group} STARTofROW csv.row=#{$.}" +
-                                " '#{group_text_from_stack}', #{self.column_stack_A.maxindex},#{column_idx},#{sub_column_idx}"
+                                " :column_idx=#{column_stack_H.fetch( :column_idx )}, :sub_column_idx=#{column_stack_H.fetch( :sub_column_idx )}," +
+                                " '#{column_stack_H.fetch( :group_record_MO )[ 1 ]}'," +
+                                " stack.length=#{self.column_stack_H_A.length},column_idx=#{column_idx}," +
+                                " sub_column_idx=#{sub_column_idx}"
                 end 
             end
         end        
         
-        regexp = /^\s*((#{K.subseries}|#{K.sub_series_text})\s+[0-9]+)/i
-        if ( sub_column_value_unaltered.match( regexp )  ) then
-            if ( self.column_stack_A.last.match( regexp ) ) then
-                group_text_from_stack = $1
-              # SE.puts "#{SE.lineno}: POP:  #{self.column_stack_A.last[ 0, 30 ]}"
-                self.column_stack_A.pop
-                indent_spaces = +' ' * ( self.column_stack_A.length * 4 )
-                output_F_puts indent_spaces  + "#{K.fmtr_end_group} End-Begin csv.row=#{$.}" +
-                            " '#{group_text_from_stack}', #{self.column_stack_A.maxindex},#{column_idx},#{sub_column_idx}"
+        if ( self.column_stack_H_A.length > 0 and sub_column_record_group_MO.not_nil? ) then
+           #SE.q {'sub_column_record_group_MO[ 1 ]'}
+           #SE.q {['column_stack_H_A.last.fetch( :group_record_MO )']}
+           #SE.q {['column_stack_H_A.last.fetch( :column_idx )','column_idx']}
+           #SE.q {['column_stack_H_A.last.fetch( :sub_column_idx )','sub_column_idx']}
+            arr = []
+            self.column_stack_H_A.last( 2 ).each do | column_stack_H |  
+               #SE.q {'column_stack_H'}
+                if ( sub_column_record_group_MO[ 1 ].downcase == column_stack_H.fetch( :group_record_MO )[ 1 ].downcase ) then           
+                    arr.push( column_stack_H.fetch( :group_record_MO )[ 1 ] )
+                end                    
+            end
+           #SE.q {'arr'}
+            raise "arr.length >= 2" if arr.length >= 2
+            if ( arr.length == 1 ) then
+              # SE.puts "#{SE.lineno}: POP:  #{self.column_stack_H_A.last.fetch( :sub_column_value )[ 0, 30 ]}"
+                loop do
+                    raise "self.column_stack_H_A.empty?" if self.column_stack_H_A.empty?
+                    column_stack_H = self.column_stack_H_A.pop
+                    indent_spaces = +' ' * ( self.column_stack_H_A.length * 4 )
+                    output_F_puts indent_spaces  + "#{K.fmtr_end_group} End-Begin csv.row=#{$.}" +
+                                " :column_idx=#{column_stack_H.fetch( :column_idx )}, :sub_column_idx=#{column_stack_H.fetch( :sub_column_idx )}," +
+                                " '#{column_stack_H.fetch( :group_record_MO )[ 1 ]}'," +
+                                " stack.length=#{self.column_stack_H_A.length},column_idx=#{column_idx}," +
+                                " sub_column_idx=#{sub_column_idx}"
+                    break if ( arr.first.downcase == column_stack_H.fetch( :group_record_MO )[ 1 ].downcase )
+                end
             end
         end
         if ( this_column_is_a_record_group_continuation ) then
         #   skip this column
         else
-            stringer = +' ' * ( self.column_stack_A.length * 4 )
-            if ( sub_column_value.blank? or sub_column_value.match?( /^\s*#/ ) ) then    # Don't put boxes on comment lines 
-                group_record_MO = nil
+            stringer = +' ' * ( self.column_stack_H_A.length * 4 )
+            if ( sub_column_value.blank? || sub_column_value.match?( /^\s*#/ ) ) then    # Don't put boxes on comment lines 
               # SE.q {'sub_column_value'}
               # SE.q {'self.container_for_following_records_A'}
             else
-                group_record_MO = sub_column_value_unaltered.match( /^\s*#{K.any_fmtr_group_record_RES}/i )
-                if ( self.container_for_following_records_A.empty? or 
+                if ( self.container_for_following_records_A.empty? || 
                       sub_column_value.index( self.container_for_following_records_A[ VALUE_IDX ] ) ) then
                 #   do nothing...
                 else
-                    if ( group_record_MO.nil? ) then
+                    if ( sub_column_record_group_MO.nil? ) then
                         stringer   << "%-20s  " % self.container_for_following_records_A[ VALUE_IDX ]
                         self.container_for_following_records_A[ COUNT_IDX ] += 1
                     else
@@ -461,10 +468,15 @@ def put_column( column_idx = 0 )
             end
             stringer << sub_column_value                            
             output_F_puts stringer
-            if ( group_record_MO.not_nil? ) then 
-                self.column_stack_A.push( sub_column_value_unaltered.sub( /[[:punct:]]\s*$/, '' ).gsub( /\s\s+/, ' ').strip.downcase )  
-              # SE.q {'self.column_stack_A'}
-              # SE.puts "#{SE.lineno}: PUSH: #{self.column_stack_A.last[ 0, 30 ]}"
+            if ( sub_column_record_group_MO.not_nil? ) then 
+                column_stack_H = { :column_idx       => column_idx,
+                                   :sub_column_idx    => sub_column_idx,
+#                                  :sub_column_value  => sub_column_value_unaltered.sub( /[[:punct:]]\s*$/, '' ).gsub( /\s\s+/, ' ').strip.downcase,
+                                   :group_record_MO   => sub_column_record_group_MO,
+                                  }
+                self.column_stack_H_A.push( column_stack_H )  
+              # SE.q {'self.column_stack_H_A'}
+              # SE.puts "#{SE.lineno}: PUSH: #{self.column_stack_H_A.last.fetch( :sub_column_value )[ 0, 30 ]}"
             end
         end
 
@@ -490,22 +502,23 @@ def put_column( column_idx = 0 )
         end
 
     end
-    if ( self.column_stack_A.maxindex >= 0 ) then
-        if ( m_O = self.column_stack_A.last.match( /^\s*#{K.any_fmtr_group_record_RES}/i ) and 
-            m_O[ 1 ] != "#{K.recordgrp_text.downcase}" ) then
-            group_text_from_stack = m_O[ 1 ]
-          # SE.puts "#{SE.lineno}: POP:  #{self.column_stack_A.last[ 0, 30 ]}"
-            self.column_stack_A.pop
-            indent_spaces = +' ' * ( self.column_stack_A.length * 4 )
+    if ( self.column_stack_H_A.maxindex >= 0 ) then
+       #SE.q {'self.column_stack_H_A'}
+        if ( column_stack_H_A.last.fetch( :group_record_MO )[ 1 ].downcase != K.fmtr_record_group_text.downcase ) then
+           
+          # SE.puts "#{SE.lineno}: POP:  #{self.column_stack_H_A.last.fetch( :sub_column_value )[ 0, 30 ]}"
+            column_stack_H = self.column_stack_H_A.pop
+            indent_spaces = +' ' * ( self.column_stack_H_A.length * 4 )
             output_F_puts indent_spaces + "#{K.fmtr_end_group} ENDofCOLUMN csv.row=#{$.}" +
-                        " '#{group_text_from_stack}',#{self.column_stack_A.maxindex},#{column_idx}"
+                        " :column_idx=#{column_stack_H.fetch( :column_idx )}, :sub_column_idx=#{column_stack_H.fetch( :sub_column_idx )}," +
+                        " '#{column_stack_H.fetch( :group_record_MO )[ 1 ]}'," +
+                        " stack.length=#{self.column_stack_H_A.length},column_idx=#{column_idx}" 
         end
     end
-    if ( column_idx == 0 and 
-         self.column_stack_A.not_empty? and 
-         not self.column_stack_A.last.match?( /#{K.recordgrp_text}/i ) 
+    if ( column_idx == 0 && self.column_stack_H_A.not_empty? && 
+         column_stack_H_A.last.fetch( :group_record_MO )[ 1 ].downcase != K.fmtr_record_group_text.downcase  
          ) then   
-        SE.q {['self.column_stack_A']}
+        SE.q {['self.column_stack_H_A']}
         raise
     end
 
@@ -692,7 +705,7 @@ tmp1_F.each_line do | input_column_J |
 #       column_value.strip!
         output_column_H[ column_header ] = column_value
        
-        if ( column_value.not_blank? and column_with_data_H.has_no_key?( column_header ) ) then
+        if ( column_value.not_blank? && column_with_data_H.has_no_key?( column_header ) ) then
             stringer = (column_value.include?( '|' ) ) ? '*|*' : '   '
             column_with_data_H[ column_header ] = "#{stringer} Line=#{$.}: #{column_value}"
         end
@@ -722,7 +735,7 @@ tmp2_F.each_line do | input_column_J |
     output_column_H={}
     
     input_column_H.keys.each do | column_name |
-        if ( column_with_data_H[ column_name ].nil? and column_use_H[ column_name ].nil? ) then
+        if ( column_with_data_H[ column_name ].nil? && column_use_H[ column_name ].nil? ) then
             next
         end
         output_column_H[ column_name] = input_column_H[ column_name ]  
@@ -761,7 +774,7 @@ tmp2_F.each_line do | input_column_J |
         SE.puts "CSV column headers      : #{original_file_header_A.join( ', ')}"
         SE.puts "Input columns being used: #{self.used_column_header_A.join( ', ' )}"
         SE.puts "   for the following use: #{column_use_H.values.join( ', ' )}"
-        if ( column_use_H.keys.length > 1 and column_use_H.values.select{ | e | e if ( e != :none_assigned ) }.uniq.size == 1 ) then
+        if ( column_use_H.keys.length > 1 && column_use_H.values.select{ | e | e if ( e != :none_assigned ) }.uniq.size == 1 ) then
             SE.puts ""
             SE.puts ""
             SE.puts ""
@@ -770,17 +783,17 @@ tmp2_F.each_line do | input_column_J |
             exit
         end
         
-        if ( seriesnote_pos( :nil_ok ) and seriesnote_pos < series_pos ) then
+        if ( seriesnote_pos( :nil_ok ) && seriesnote_pos < series_pos ) then
             SE.puts "#{SE.lineno}: The '#{K.fmtr_inmagic_seriesnote}' column must be after the '#{K.fmtr_inmagic_series}' column"
             SE.q {[ 'seriesnote_pos', 'series_pos', 'column_use_H ' ]}
             raise
         end
-        if ( seriesdate_pos( :nil_ok ) and seriesdate_pos < series_pos ) then
+        if ( seriesdate_pos( :nil_ok ) && seriesdate_pos < series_pos ) then
             SE.puts "#{SE.lineno}: The '#{K.fmtr_inmagic_seriesdate}' column must be after the '#{K.fmtr_inmagic_series}' column."
             SE.q {[ 'seriesdate_pos', 'series_pos', 'column_use_H ' ]}
             raise
         end
-        if ( seriesdate_pos( :nil_ok ) and seriesnote_pos( :nil_ok ) and seriesdate_pos > seriesnote_pos ) then
+        if ( seriesdate_pos( :nil_ok ) && seriesnote_pos( :nil_ok ) && seriesdate_pos > seriesnote_pos ) then
             SE.puts "#{SE.lineno}: The '#{K.fmtr_inmagic_seriesdate}' column must be before the '#{K.fmtr_inmagic_seriesnote}' column,"
             SE.puts "#{SE.lineno}: this is so the dates get put in-front-of the note."
             SE.q {[ 'seriesdate_pos', 'seriesnote_pos', 'column_use_H ' ]}
@@ -799,8 +812,8 @@ tmp3_F.rewind
 tmp3_F.each_line do | input_column_J |
     input_column_J.chomp!
     input_column_H = JSON.parse( input_column_J )
-  # next if ( series_column_name.not_nil?    and input_column_H[ series_column_name ].not_blank? )
-  # next if ( recordgrp_column_name.not_nil? and input_column_H[ recordgrp_column_name ].not_blank? )
+  # next if ( series_column_name.not_nil?    && input_column_H[ series_column_name ].not_blank? )
+  # next if ( recordgrp_column_name.not_nil? && input_column_H[ recordgrp_column_name ].not_blank? )
     if ( is_there_series_or_recordgrp_data?( input_column_H ) ) then
         SE.puts "#{SE.lineno}: Record skipped in RESOURCE_DATA process because:"
         SE.q {[ 'is_there_series_or_recordgrp_data?( input_column_H )' ]}
@@ -811,9 +824,9 @@ tmp3_F.each_line do | input_column_J |
 #           SE.puts "#{SE.lineno}: column_name:#{column_name} value blank"
             next
         end
-        if ( column_use_H.has_key?( column_name ) and column_use_H[ column_name ] != :none_assigned ) then
+        if ( column_use_H.has_key?( column_name ) && column_use_H[ column_name ] != :none_assigned ) then
             if ( column_use_H[ column_name ] == K.fmtr_inmagic_seriesdate ) then
-                if ( not ( series_column_name.nil? or input_column_H[ series_column_name ].blank? ) ) then
+                if ( not ( series_column_name.nil? || input_column_H[ series_column_name ].blank? ) ) then
 #                   SE.puts "#{SE.lineno}: NOT ( series_column_name.nil? or input_column_H[ '#{series_column_name}' ].blank? )"
 #                   SE.q {[ 'column_name', 'column_value', 'series_column_name' ]}
                     next
@@ -873,7 +886,7 @@ tmp3_F.rewind
 tmp3_F.each_line do | input_column_J |
     input_column_J.chomp!
     input_column_H = JSON.parse( input_column_J )
-    arr1 = input_column_H.keys.select{ | k | column_name_exists?( k ) and used_for_detail?( k )}.map{ | k | input_column_H[ k ] }
+    arr1 = input_column_H.keys.select{ | k | column_name_exists?( k ) && used_for_detail?( k )}.map{ | k | input_column_H[ k ] }
     if ( arr1.all?( &:empty? ) )
         SE.puts "#{SE.lineno}: WARNING: tmp3_F record skipped, having all blank detail rows"
         next
@@ -930,7 +943,7 @@ tmp3_F.each_line do | input_column_J |
                     SE.q {['output_column_H']}
                     raise
                 end
-                if ( recordgrp_column_name.nil? or output_column_H[ series_column_name ] != 'NO_SERIES_RECORD' ) 
+                if ( recordgrp_column_name.nil? || output_column_H[ series_column_name ] != 'NO_SERIES_RECORD' ) 
                     SE.puts "#{SE.lineno}: Column '#{column_name}' is supposed to be a '#{column_use}' and the column is blank,"
                     SE.puts "#{SE.lineno}: but: output_column_H[ #{series_column_name} ] != 'NO_SERIES_RECORD'."
                     SE.puts "#{SE.lineno}: Is the recordgrp column (logically) before the series column?"
@@ -940,27 +953,30 @@ tmp3_F.each_line do | input_column_J |
                     raise
                 end
             else
-                input_column_H[ column_name ].sub!( /^\s*Series\s*/i, '' )
+                #   Some of the InMagic files have a separate Record Group number field, and some just treat the 
+                #   Record Group like a Series.   I named all these fields before I knew any of this...
+                input_column_H[ column_name ].sub!( /^\s*(#{K.fmtr_record_group_text}|#{K.series})\s*/i, '' )   
+                grouping_type = $1.downcase
                 input_column_H[ column_name ].sub!( /^([0-9]+)[.:]?\s+/, '' )
                 if ( $~.nil? ) then
                     SE.puts "#{SE.lineno}: Column '#{column_name}' is supposed to be a '#{column_use}' but there's no series number"
                     SE.puts "#{SE.lineno}: at the begining of the column."
                     SE.puts "#{SE.lineno}: '#{input_column_name_value__save}'"
-                    series_num = '? '
+                    grouping_num = '? '
                 else
-                    series_num = $1
+                    grouping_num = $1
                 end
                 output_column_H[ column_name ] = +''
                 arr1 = input_column_H[ column_name ].split( '|' ).map( &:to_s ).map( &:strip ) 
-                series_name = +''
+                grouping_name = +''
                 note_A = []
                 arr1.each_with_index do | e, idx |
                     if ( idx == 0 ) then
-                        output_column_H[ column_name ] << "Series #{series_num}: #{e}"
-                        series_name = e
+                        output_column_H[ column_name ] << "#{grouping_type} #{grouping_num}: #{e}"
+                        grouping_name = e
                     end
                     next if ( e.blank? )
-                    next if ( e.downcase == series_name.downcase )
+                    next if ( e.downcase == grouping_name.downcase )
                     note_A.push( e )
                 end
                 if ( all_possible_notes_H.has_key?( column_name ) ) then
@@ -995,13 +1011,13 @@ tmp3_F.each_line do | input_column_J |
             stringer = +''
             if ( arr1.maxindex > 0 )
                 if ( m_O = arr1[ 1 ].match( /^\s*record\s*group\s+(#{input_column_H[ column_name ]})/i ) ) then
-                    stringer = "#{K.recordgrp_text} #{m_O[ 1 ]}."
+                    stringer = "#{K.fmtr_record_group_text} #{m_O[ 1 ]}."
                 elsif ( m_O = arr1[ 1 ].match( /^RG\s+([0-9]+)[ .]/ ) ) then
-                    stringer = "#{K.recordgrp_text} #{m_O[ 1 ]}. #{m_O.post_match}"
+                    stringer = "#{K.fmtr_record_group_text} #{m_O[ 1 ]}. #{m_O.post_match}"
                 end
             end
             if ( stringer.blank? ) then    
-                stringer = "#{K.recordgrp_text} #{input_column_H[ recordgrp_column_name ]}. #{arr1.join( ' ' )}"
+                stringer = "#{K.fmtr_record_group_text} #{input_column_H[ recordgrp_column_name ]}. #{arr1.join( ' ' )}"
                 SE.puts "#{SE.lineno}: WARNING: Possible wrong Record Group name: '#{stringer}': input_column_H[#{column_name}]}='#{input_column_H[ column_name ]}'"                    
             else
                 if ( arr1.maxindex > 1 ) then
@@ -1012,7 +1028,7 @@ tmp3_F.each_line do | input_column_J |
             stringer.gsub!( /\s\s+/, ' ')            
             output_column_H[ column_name ] = stringer
             
-            if ( series_column_name.nil? or input_column_H[ series_column_name ].blank? ) then
+            if ( series_column_name.nil? || input_column_H[ series_column_name ].blank? ) then
                 output_column_H[ series_column_name ] = 'NO_SERIES_RECORD'
             else
                 output_column_H[ series_column_name ] = +''
@@ -1086,7 +1102,7 @@ SE.puts ''
 
 self.output_F = File::open( output_filename, mode='w' )
 self.pending_output_BUF = +''
-self.column_stack_A = [ ]
+self.column_stack_H_A = [ ]
 tmp4_F.rewind
 tmp4_F.each_line do | input_column_J |
     input_column_J.chomp!
@@ -1095,29 +1111,28 @@ tmp4_F.each_line do | input_column_J |
         put_column( )
     rescue
         SE.puts "rescue ==================================================================="
-        SE.q {['self.column_stack_A']}
+        SE.q {['self.column_stack_H_A']}
         SE.puts "rescue ==================================================================="
         raise
     end
 end
-if ( self.column_stack_A.maxindex >= 0 ) then
-    regexp = /^\s*(#{K.recordgrp_text}\s+[0-9]+)/i
-    m_O = self.column_stack_A.last.match( regexp )
-    if ( m_O.not_nil? )
-        group_text_from_stack = m_O[1]
-      # SE.puts "#{SE.lineno}: POP:  #{self.column_stack_A.last[ 0, 30 ]}"
-        self.column_stack_A.pop
-        indent_spaces = ' ' * ( self.column_stack_A.length * 4 )
+if ( self.column_stack_H_A.maxindex >= 0 ) then
+    if ( column_stack_H.fetch( :group_record_MO )[ 1 ].downcase != K.fmtr_record_group_text.downcase )
+      # SE.puts "#{SE.lineno}: POP:  #{self.column_stack_H_A.last.fetch( :sub_column_value )[ 0, 30 ]}"
+        column_stack_H = self.column_stack_H_A.pop
+        indent_spaces = ' ' * ( self.column_stack_H_A.length * 4 )
         output_F_puts indent_spaces + "#{K.fmtr_end_group} ENDofPROGRAM csv.row=#{$.}" + 
-                    " '#{group_text_from_stack}',#{self.column_stack_A.maxindex}"
+                    " :column_idx=#{column_stack_H.fetch( :column_idx )}, :sub_column_idx=#{column_stack_H.fetch( :sub_column_idx )}," +
+                    " '#{column_stack_H.fetch( :group_record_MO )[ 1 ]}'," +
+                    " stack.length=#{self.column_stack_H_A.length}"
     end
 end
 output_F_puts( :flush )   # flush pending output buffer
 SE.puts "Box cnt     : #{self.box_cnt}"
 SE.puts "Box only cnt: #{self.box_line_only_cnt}"
 SE.puts "Record cnt  : #{self.output_cnt} (including control records and blank lines.)"
-if ( self.column_stack_A.not_empty? ) then   
-    SE.q {['self.column_stack_A']}
+if ( self.column_stack_H_A.not_empty? ) then   
+    SE.q {['self.column_stack_H_A']}
     raise
 end
 tmp4_F.close
