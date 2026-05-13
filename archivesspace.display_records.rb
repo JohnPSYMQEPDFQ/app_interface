@@ -27,7 +27,7 @@ OptionParser.new do |option|
     option.on( "--rep-num n", OptionParser::DecimalInteger, "Repository number ( default = 2 )" ) do |opt_arg|
         cmdln_option_H[ :rep_num ] = opt_arg
     end
-    option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number ( required )" ) do |opt_arg|
+    option.on( "--res-num n", OptionParser::DecimalInteger, "Resource number" ) do |opt_arg|
         cmdln_option_H[ :res_num ] = opt_arg
     end
     option.on( "--filter", "Apply read filter" ) do |opt_arg|
@@ -69,7 +69,7 @@ ao_query_O = nil
 current_record_type = K.undefined
 ARGV.push('res') if (ARGV.empty?)
 ARGV.each do | element | 
-    if ( element.in? [ 'res', 'ao', 'tc', 'index' ]) then
+    if ( element.in? [ 'res', 'ao', 'index' ]) then
         if ( not res_buf_O ) then
             SE.puts "The --res-num option is required."
             raise
@@ -77,7 +77,7 @@ ARGV.each do | element |
         current_record_type = element
         next if ( element != 'res' )
     end
-    if ( element == 'loc' ) then
+    if ( element.in?( 'tc', 'loc' ) ) then
         current_record_type = element
         next
     end
@@ -98,12 +98,12 @@ ARGV.each do | element |
     when 'index' 
         puts "Index for Archival_Object: #{element}:"
         if ( ao_query_O.nil? ) then
-            ao_query_O = AO_Query_of_Resource.new( resource_O: res_O )
+            ao_query_O = AO_Query__of_Resource.new( resource_O: res_O )
         end
-        print_thingy.( ao_query_O.index_H__of_uri( element ) )
+        print_thingy.( ao_query_O.index_H__OF_uri( element ) )
     when 'tc'
         puts "Top_Container: #{element}:"
-        tc_buf_O = Top_Container.new( res_buf_O, element )
+        tc_buf_O = Top_Container.new(  res_O.nil? ? rep_O : res_O , element )
                                 .new_buffer
                                 .read( cmdln_option_H[ :filter ] )
         print_thingy.( tc_buf_O.record_H )

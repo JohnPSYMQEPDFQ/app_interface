@@ -51,7 +51,7 @@ if ( ARGV.empty? and not $stdin.stat.pipe? ) then
     raise "No file or STDIN pipe."
 end
 
-@aspace_O = ASpace.new()
+self.aspace_O = ASpace.new()
 inmagic_header_A = [ 'name', 'date of gift', 'accession number', 'notes' ]
 
 template_record_H = {

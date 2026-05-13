@@ -32,16 +32,15 @@ module These_Constants
     ALA_NOTE_MARKER             = '_ALA_'                                     # "Automated Location Assignment"
     ALA_PROBLEMS                = '_ALA_PROBLEMS_'                            # Value for 'building'      
     ALA_START_DATE              = '1981-05-02'                                # Date the museum opened.
-    ERROR_LABEL                 = 'ERROR'                                     # Value for 'coordinate_1_label'
-    NO_LOCATION                 = 'NO_LOCATION'                               # Value for 'coordinate_1_indicator' 
     DUPLICATE_LOCATIONS         = 'DUPLICATE_LOCATIONS'                       # Value for 'coordinate_1_indicator'
-                                                                              #   and for 'coordinate_2_indicator'
+    ERROR_LABEL                 = 'ERROR'                                     # Value for 'coordinate_1_label'
     INVALID_LOCATION            = 'INVALID_LOCATION'                          # Value for 'coordinate_1_indicator'
-    INVALID_LOCATION_A          = 'INVALID_LOCATION_A'                        # Array of Modifiers of 'INVALID_LOCATION's
-    DUPLICATE_RANGES            = 'DUPLICATE_RANGES'                          # Value for 'coordinate_2_label'
-    MULTIPLE_MATCHES            = 'MULTIPLE_MATCHES'                          # Value for 'coordinate_2_label'
-    RANGE_LOCATION              = 'RANGE_LOCATION'                            # Value for 'coordinate_2_indicator'
     MISSING_LOCATION            = 'MISSING_LOCATION'                          # Value for 'coordinate_2_indicator'
+    MULTIPLE_MATCHES            = 'MULTIPLE_MATCHES'                          # Value for 'coordinate_2_label'
+    NO_LOCATION                 = 'NO_LOCATION'                               # Value for 'coordinate_1_indicator' 
+    ON_LOCATIONS                = 'On Locations'                              # Value for 'coordinate_2_indicator'
+    ON_RANGES                   = 'On Ranges'                                 # Value for 'coordinate_2_label'
+    RANGE_LOCATION              = 'RANGE_LOCATION'                            # Value for 'coordinate_2_indicator'
 #   Search string: '_ALA_PROBLEMS_ [_MS_634_, ERROR: NO_LOCATION]'
 #   ALA = Automated Location Assignment
     
@@ -130,7 +129,7 @@ module K
     def K.group; return 'group'; end                                        # archive_object: other_level field.
     def K.has_unpublished_ancestor; return 'has_unpublished_ancestor'; end
     def K.hierarchy; return 'hierarchy'; end                                # spreadsheet
-    def K.id; return 'id'; end                                              # tree
+    def K.id; return 'id'; end                                              # The uri number
     def K.identifier; return 'identifier'; end                              # top_container name for id_0 & id
     def K.id_0; return 'id_0'; end                                          # resource  This and the ead_id must be unique.  
                                                                             #           This is called the 'unitid' in the XML dump file!
@@ -268,7 +267,8 @@ module K
     def K.fmtr_inmagic_seriesnote; return 'seriesnote'; end                 # InMagic formatter column-use
     def K.fmtr_left; return '__LEFT__'; end                  
     def K.fmtr_new_parent; return '__NEW_PARENT__'; end     
-    def K.fmtr_oversize; return 'oversize'; end           
+    def K.fmtr_ov; return 'ov'; end                                         # This is a box type
+    def K.fmtr_oversize; return 'oversize'; end                             # This is NOT a box type
     def K.fmtr_prefix; return 'prefix'; end                                 
     def K.fmtr_prepend; return 'prepend'; end                               
     def K.fmtr_record; return '__RECORD__'; end                             
@@ -323,7 +323,10 @@ module K
     end
     
     def K.valid_container_types_RES
-        return '(ov\d{0,2}|box(?:s|es)?|items?|vol[.]|volumes?)'
+        return '(ov\d{0,3}|box(?:s|es)?|items?|vol[.]|volumes?)'
+    end
+    def K.valid_container_types_RE
+        return /#{K.valid_container_types_RES}/i
     end
     
     def K.valid_child_types_RES
@@ -335,7 +338,9 @@ module K
     end  
     
     def K.indicator_num_RES
-        return '(' + K.fmtr_unk + '|ov\s*\d{0,2}|([0-9]([0-9a-z./-])*))'  # NOTE!!!   See note on 'K.container_type_separators_RES'
+#       stringer = '(' + K.fmtr_unk + '|ov\s*\d{0,3}|([0-9]([0-9a-z./-])*))'
+        stringer = '(' + K.fmtr_unk + '|ov\s*\d{0,3}|([0-9]([0-9a-z./-])*)|[ivxl]+)'
+        return stringer  # NOTE!!!   See note on 'K.container_type_separators_RES'
     end
     
     def K.container_and_child_types_RES   
@@ -350,8 +355,8 @@ module K
                      # ')' +
                  # ')' +
                  # '(?<trailing_del>(\Z|\s*[.,;:\]]|\s+))'       
-        stringer = '(\A|\s+|\[\s*)\K' +                #\K = The behavior of \K is similar to a positive lookbehind assertion (?<=...), but with the key advantage of allowing variable-length lookbehind
-                                                       # MUST use the /x option on the regex!!!
+        stringer = '(?<leading_del>(\A|\s+|\[\s*)\K)' +  #\K = The behavior of \K is similar to a positive lookbehind assertion (?<=...), but with the key advantage of allowing variable-length lookbehind
+                                                         # MUST use the /x option on the regex!!!
                    '(?<inside_the_dels>' + 
                        '(' +
                            '(?<container_type>'       + "(#{K.valid_container_types_RES}|#{K.valid_child_types_RES})" + ')((\s+(nos?|numbers?)\.?))?(\s+)(?<container_num>'  + K.indicator_num_RES + '(' + K.container_type_separators_RES + K.indicator_num_RES + '+)*  )[,;:]?' + 

@@ -116,10 +116,10 @@ print__record_H = lambda{ | record_H, cnt |
 aspace_O = ASpace.new
 rep_O = Repository.new( aspace_O, rep_num )
 res_O = Resource.new( rep_O, res_num )
-res_query_O = AO_Query_of_Resource.new( resource_O: res_O, get_full_ao_record_TF: true )
+res_query_O = AO_Query__of_Resource.new( resource_O: res_O, get_full_ao_record_TF: true )
 
 cnt = 0
-TC_Query_of_Resource.new( res_query_O ).record_H_A.each do | record_H |
+TC_Query__of_Resource.new( res_query_O ).record_H_A.each do | record_H |
     cnt += 1
     print__record_H.call( record_H, cnt )
 end

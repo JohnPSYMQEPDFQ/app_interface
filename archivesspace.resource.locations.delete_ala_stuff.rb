@@ -118,7 +118,7 @@ if ( changed_record_CKA_H.not_empty? ) then
 end
 
 SE.puts "Getting AO's ..."
-ao_query_O = AO_Query_of_Resource.new( resource_O: res_O, get_full_ao_record_TF: true )
+ao_query_O = AO_Query__of_Resource.new( resource_O: res_O, get_full_ao_record_TF: true )
 ao_query_O.record_H_A.each do | record_H |
     changed_record_CKA_H = get_ao_ala_stuff( record_H )
     if ( changed_record_CKA_H.not_empty? ) then 
@@ -129,7 +129,7 @@ ao_query_O.record_H_A.each do | record_H |
 end
 
 SE.puts "Getting TC's ..."
-TC_Query_of_Resource.new( ao_query_O ).record_H_A.each do | record_H |
+TC_Query__of_Resource.new( ao_query_O ).record_H_A.each do | record_H |
     container_location_H_A = record_H.fetch( K.container_locations ).cbv
     container_location_H_A.delete_if { 
                     | container_location_H | container_location_H[ K.note ].to_s.match?( /^#{ALA_NOTE_MARKER}/i ) || 
@@ -146,7 +146,7 @@ end
 ala_problem_id_0_text = "#{ALA_PROBLEMS} [#{self.ala_id_0}"
 search_text  = %Q|title:"#{ala_problem_id_0_text}"|         # Note field-name and quotes in text
 SE.q {'search_text'}
-loc_record_H_A = rep_O.search( record_type_A: [ K.location ], search_text: search_text ).result_A
+loc_record_H_A = rep_O.search( record_type_A: [ K.location ], search_text: search_text ).record_H_A
 loc_record_H_A.each do | loc_record_H |
     raise "if ( loc_record_H[ K.title ].not_match?( /#{self.ala_id_0}/ ) )" if ( loc_record_H[ K.title ].not_match?( /#{self.ala_id_0}/ ) )
     loc_buf_O = Location.new( rep_O, loc_record_H[ K.uri ] ).new_buffer.read

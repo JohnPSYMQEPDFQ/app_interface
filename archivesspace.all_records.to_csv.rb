@@ -26,6 +26,7 @@ cmdln_option_H = { :rep_num => nil,
                    :type => nil,
                    :programmed_columns_only => false,
                    :comparison_filter => false,
+                   :column_header_info => false,
                   }
 OptionParser.new do |option|
     option.banner = "Usage: #{myself_name} [ options ]"
@@ -35,9 +36,7 @@ OptionParser.new do |option|
     option.on( "--res-num n", OptionParser::DecimalInteger, "Filter on Resource n." ) do |opt_arg|
         cmdln_option_H[ :res_num ] = opt_arg
         if ( cmdln_option_H[ :rep_num ].nil? ) then
-            SE.puts "The --res-num option needs the --rep-num option set first."
-            SE.q {'cmdln_option_H'}
-            exit 1
+            cmdln_option_H[ :rep_num ] = 2
         end
     end
     option.on( "--type X", "Type of records to query (required), e.g. LOCATIONS" ) do |opt_arg|
@@ -48,6 +47,9 @@ OptionParser.new do |option|
     end
     option.on( "--cf", "--filter", "--comparison-filter", "Apply the comparison-filter to the output." ) do |opt_arg|
         cmdln_option_H[ :comparison_filter ] = true
+    end
+    option.on( "--chi", "--column-header-info", "Output column header info to STDERR." ) do |opt_arg|
+        cmdln_option_H[ :column_header_info ] = true
     end
     option.on( "-h","--help" ) do
         SE.puts option
@@ -68,17 +70,17 @@ case true
 when cmdln_option_H[ :res_num ].not_nil?  then
     rep_O = Repository.new( aspace_O, cmdln_option_H[ :rep_num ] )
     res_O = Resource.new( rep_O, cmdln_option_H[ :res_num ] )
-    query_O = res_O.query( cmdln_option_H[ :type ].downcase ).record_H_A__all
+    record_H_A = res_O.query( cmdln_option_H[ :type ].downcase ).record_H_A
 when cmdln_option_H[ :rep_num ].not_nil?  then
     rep_O = Repository.new( aspace_O, cmdln_option_H[ :rep_num ] )
-    query_O = rep_O.query( cmdln_option_H[ :type ].downcase ).record_H_A__all
+    record_H_A = rep_O.query( cmdln_option_H[ :type ].downcase ).record_H_A
 else
-    query_O = aspace_O.query( cmdln_option_H[ :type ].downcase ).record_H_A__all
+    record_H_A = aspace_O.query( cmdln_option_H[ :type ].downcase ).record_H_A
 end
 
 header_H = {}
 record_CKA = []
-query_O.result_A.each do | record_H |
+record_H_A.each do | record_H |
     hash = record_H.deep_yield( yield_to: [ Hash ] ) do | y | 
                     if ( cmdln_option_H[ :comparison_filter ] == true ) then
                         y.reject { | key, value | K.comparison_filter_A.include?( key ) } 
@@ -128,11 +130,13 @@ else
         end        
     end
 end
-SE.puts "Columns available: #{header_H.keys.sort.join(',')}"
-SE.puts ''
-SE.puts "Columns used:      #{header_A.sort.join(',')}"
-SE.puts ''
-SE.puts "Column order:      #{header_A.join(',')}"
+if ( cmdln_option_H[ :column_header_info ] == true ) then
+    SE.puts "Columns available: #{header_H.keys.sort.join(',')}"
+    SE.puts ''
+    SE.puts "Columns used:      #{header_A.sort.join(',')}"
+    SE.puts ''
+    SE.puts "Column order:      #{header_A.join(',')}"
+end
 
 CSV do | csv_O |                    # <<<  Defaults to stdout.  'CSV.open( $stdout )' didn't work.
     csv_O << header_A

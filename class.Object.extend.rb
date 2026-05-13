@@ -22,24 +22,37 @@ class Object
     end
 #
     def blank?( )
-        return self.to_s.strip.empty?        #  .to_s on a nul variable returns ''
+        return true if self.nil?
+        return ! self.match?( /\S/ )       
     end
     def not_blank?( )
         return ! self.blank?
     end
     
-    def of_composite_key( composite_key )
-        if composite_key.is_not_a?( Array )
-            SE.puts "The composite key should be an Array, not a #{composite_key.class}"
-            SE.q {'composite_key'}
-            raise
+    def of_composite_key( *splat_A, separator: [], fail_on_nil: true )       
+        if splat_A.empty?
+            raise "#{SE.lineno}, called from: #{SE.my_caller}: The composite-key is empty!" if ( fail_on_nil ) 
+            return nil
         end
-        
+        case true
+        when separator.is_a?( String )
+            raise "#{SE.lineno}, called from: #{SE.my_caller}: 'separator:' is an empty String!" if ( separator.empty? )
+            composite_key = splat_A.flatten.join( separator )
+            result = self[ composite_key ]
+        when separator.is_a?( Array )
+            composite_key = splat_A.flatten
+            result = self.dig( composite_key )
+        else
+            raise "#{SE.lineno}, called from: #{SE.my_caller}: 'separator:' should be an Array or String, not a #{separator.class}"
+        end
+        raise "#{SE.lineno}, called from: #{SE.my_caller}: nil result for composite_key '#{composite_key}'" if result.nil?
+        return result
     end
     
     def to_composite_key_h( separator: [], sort_TF: false, _parent_key: nil, _flattened_H: {} )
 #
-#   If the 'separator' is an 'Array', the resulting flattened hash will have an 'Array' for its keys.
+#   If the 'separator' is an 'Array', the resulting flattened hash will have an 'Array' for its keys. The
+#   value of the array is irrelavent.  
 #   If the 'separator' is a 'String', the resulting flattened hash will have the a 'String" with they keys 
 #   separated by 'separator'.  
 
@@ -54,8 +67,13 @@ class Object
                 value = thingy
             end
             
-            if separator.is_a?( String ) && key.is_a?( String ) && key.include?( separator )
-                raise "Separator '#{separator}' found in key '#{key}'!"
+            if separator.is_a?( String ) 
+                if separator.empty? 
+                    raise "#{SE.lineno}, called from: #{SE.my_caller}: String 'separator' is empty!"
+                end
+                if key.is_a?( String ) && key.include?( separator )
+                    raise "#{SE.lineno}, called from: #{SE.my_caller}: Separator '#{separator}' found in key '#{key}'!"
+                end
             end
             if _parent_key 
                 current_key = separator.is_a?( String ) ? _parent_key + "#{separator}#{key}" 
@@ -76,7 +94,7 @@ class Object
         return sort_TF ? _flattened_H.sort_by{ | key, value | key }.to_h : _flattened_H
     end    
     
-
+=begin 
     def deep_flatten_to_h   # Replaced by: to_composite_key_h (above...)  
         do_one_thing = lambda { | thing |
             return thing if ( ! thing.respond_to?( :each_with_index ) )
@@ -129,7 +147,10 @@ class Object
         }
         self.deep_yield { | y | do_one_thing.( y ) }
     end 
+=end
     
+#   DON'T FORGET, the 'yield' code must return something, if nothing is returned that's a nil.
+
     def deep_yield( yield_to: nil, &block )
 #       yield_to == nil means yield_to all classes
 #       The 'yield_to' param can be a single Object type (eg. deep_yield( Hash ) ) or an array of them.
@@ -163,7 +184,6 @@ class Object
         end
         return result
     end
-
     alias_method :deep_yield!, :deep_yield
     
 

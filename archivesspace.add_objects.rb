@@ -61,9 +61,9 @@ require 'class.Archivesspace.Repository.rb'
 require 'class.Archivesspace.TopContainer.rb'
 require 'class.Archivesspace.Resource.rb'
 
-class Res_Q < AO_Query_of_Resource
+class Res_Q < AO_Query__of_Resource
 
-    def uri__of_title( title )  # Find the URI with the matching title
+    def uri__OF_title( title )  # Find the URI with the matching title
         a1 = [ ]
         self.index_H_A.each do | index_H |
             if ( index_H[ K.title ].downcase == title.downcase and index_H[ K.level ] != K.file ) then
@@ -182,11 +182,11 @@ if ( cmdln_option_H[ :ao_num ] ) then
         SE.puts "#{SE.lineno}: The '--ao-num' and 'ao-title' options are mutually exclusive"
         raise
     end
-    parent_ref_stack_A << res_Q_O.index_H__of_uri( cmdln_option_H[ :ao_num ] )[ K.uri ]
+    parent_ref_stack_A << res_Q_O.index_H__OF_uri( cmdln_option_H[ :ao_num ] )[ K.uri ]
     SE.puts "#{SE.lineno}: initial parent uri = #{parent_ref_stack_A[ 0 ]} (From the cmd_line)"
 else
     if ( cmdln_option_H[ :ao_title ] ) then
-        parent_ref_stack_A << res_Q_O.uri_addr__of_title( cmdln_option_H[ :ao_title ] )
+        parent_ref_stack_A << res_Q_O.uri_addr__OF_title( cmdln_option_H[ :ao_title ] )
         SE.puts "#{SE.lineno}: initial parent AO uri = #{parent_ref_stack_A[ 0 ]} (From the cmd_line)"
     else
         parent_ref_stack_A << res_buf_O.record_H[ K.uri ]
@@ -271,7 +271,7 @@ for argv in ARGV do
                     SE.q {[ 'input_record_H' ]}
                     raise
                 end                
-                parent_ref_stack_A[ 0 ] = res_Q_O.uri_addr__of_title( input_record_H[ K.fmtr_record ][ K.title ] )
+                parent_ref_stack_A[ 0 ] = res_Q_O.uri_addr__OF_title( input_record_H[ K.fmtr_record ][ K.title ] )
                 SE.puts "#{SE.lineno}: New parent: #{parent_ref_stack_A[ 0 ]}"
                 next
             end
@@ -313,7 +313,7 @@ for argv in ARGV do
                     indicator      = container_H[ K.indicator ]
                     unique_TC_key  = "#{type}#{indicator}"
                     if ( tc_uri_H__by_type_and_indicator.has_no_key?( unique_TC_key ) ) then
-                        tc_buf_O = Top_Container.new( res_buf_O ).new_buffer.create
+                        tc_buf_O = Top_Container.new( res_O ).new_buffer.create
                         tc_buf_O.record_H = { K.type => type }
                         tc_buf_O.record_H = { K.indicator => indicator }
                         tc_buf_O.store

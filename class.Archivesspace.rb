@@ -213,7 +213,6 @@ class ASpace
         if ( faft_to_validate.not_in?(  res_faft[ 0, faft_to_validate.length ], res_title[ 0, faft_to_validate.length ] ) ) then
             SE.puts "#{SE.lineno}: The 'faft_to_validate'(Param-2) must start with the K.finding_aid_filing_title (FAFT)"
             SE.puts "of the 'res_buf_O'(Param-1), NOT the resource's K.title (unless there's no FAFT)."
-            SE.q {[ 'res_buf_O.num' ]}
             SE.q {[ 'faft_to_validate' ]}
             SE.q {[ 'res_faft[ 0, faft_to_validate.length ]' ]}
             SE.q {[ 'res_faft' ]}
@@ -225,7 +224,7 @@ class ASpace
         search_text = %Q|title:"#{faft_to_validate}"|
         #   Note that:  The K.title returned by 'search' is NOT the resource's K.title field, it's the K.finding_aid_filing_title
         #               Except that sometimes it IS!   Who knows, check for both.  
-        search_record_H_A = rep_O.search( record_type_A: [ K.resource ], search_text: search_text, result_field_A: [ K.title ] ).result_A
+        search_record_H_A = rep_O.search( record_type_A: [ K.resource ], search_text: search_text, result_field_A: [ K.title ] ).record_H_A
         if ( search_record_H_A.empty? ) then
             SE.puts "#{SE.lineno}: =============================="
             SE.puts "Nothing found for '#{search_text}'" 
@@ -271,16 +270,13 @@ class ASpace
     end
     
     def batch_delete( delete_uri_A )
-        return ASpace_Batch_Delete.new( self, nil, self, delete_uri_A )
+        return ASpace_Batch_delete.new( self, nil, self, delete_uri_A )
     end
     
 end
 
 class ASpace_Query
     attr_accessor :aspace_O,  :rep_O,  :uri_addr,  :my_creator_O
-    attr_accessor :result_A
-    alias :record_H_A :result_A
-    alias :ids_A      :result_A
    
     def initialize( aspace_O, rep_O, my_creator_O, what_to_query )
         self.aspace_O     = aspace_O
@@ -289,17 +285,15 @@ class ASpace_Query
         if ( self.uri_addr.nil? ) then
             self.uri_addr = "/#{what_to_query}"
         end
-        self.result_A = nil
     end
             
-    def id_A__all
-        self.result_A = self.aspace_O.http_calls_O.get( self.uri_addr, { 'all_ids' => 'true' } )
-        return self
+    def rec_id_A
+        return self.aspace_O.http_calls_O.get( self.uri_addr, { 'all_ids' => 'true' } )
     end
        
-    def record_H_A__all
-       #SE.q {['self.aspace_O', 'self.my_creator_O', 'self.uri_addr']}
-        record_H_A = [ ]
+    def record_H_A
+       #SE.q {['self.aspace_O.class', 'self.my_creator_O.class', 'self.uri_addr']}
+        query_record_H_A = [ ]     # This needs to be different because of the method name.
         page_total = nil
         page_size = 250
         page = 0; loop do
@@ -313,50 +307,49 @@ class ASpace_Query
                 SE.q {'page_H'}
                 raise
             end        
-            record_H_A.concat( page_H[ K.results ] )
+            query_record_H_A.concat( page_H[ K.results ] )
             page_total = page_H[ K.total ]
             break if ( page > page_H[ K.last_page ])
         end
-        if ( record_H_A.length != page_total ) then
+        if ( query_record_H_A.length != page_total ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Length of 'record_H_A' != to page_H[ K.total ]"
-            SE.puts "'#{record_H_A.length}' != '#{page_total}'"
+            SE.puts "Length of 'query_record_H_A' != to page_H[ K.total ]"
+            SE.puts "'#{query_record_H_A.length}' != '#{page_total}'"
             SE.q {'page_H'}
             raise
         end
-        if ( record_H_A.empty? ) then
+        if ( query_record_H_A.empty? ) then
             SE.puts "#{SE.lineno}: Nothing found for query uri '#{self.uri_addr}'"
         end
-        self.result_A = record_H_A
-        return self
+        return query_record_H_A
     end
     
-    def record_H_A__of_id_A( id_A )
-        if ( id_A.is_not_a?( Array ) ) then
+    def record_H_A__OF_rec_id_A( rec_id_A )
+        if ( rec_id_A.is_not_a?( Array ) ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 is not an Array, it's: '#{id_A.class}'"
+            SE.puts "Param 1 is not an Array, it's: '#{rec_id_A.class}'"
             raise
         end   
-        int_id_A = []
-        id_A.each do | id | 
+        integer_rec_id_A = []
+        rec_id_A.each do | rec_id | 
             case true
-            when id.is_a?( Integer )
-                int_id_A.push( id )
-            when id.integer? 
-                int_id_A.push( id.to_i )
+            when rec_id.is_a?( Integer )
+                integer_rec_id_A.push( rec_id )
+            when rec_id.integer? 
+                integer_rec_id_A.push( rec_id.to_i )
             else
-                stringer = id.delete_prefix( "#{self.uri_addr}/" )
+                stringer = rec_id.delete_prefix( "#{self.uri_addr}/" )
                 if ( stringer.not_integer? ) then
                     SE.puts "#{SE.lineno}: =============================================="
                     SE.puts "The param 1 array isn't all integers: '#{stringer}'"
                     SE.puts "or convert to integers after removing the 'uri' prefix."
                     raise
                 end
-                int_id_A.push( stringer.to_i )
+                integer_rec_id_A.push( stringer.to_i )
             end
         end
-        record_H_A = []
-        int_id_A.each_slice( 100 ) do | sliced_A |        
+        query_record_H_A = []
+        integer_rec_id_A.each_slice( 100 ) do | sliced_A |        
             http_response_body = self.aspace_O.http_calls_O.get( self.uri_addr, { 'id_set' => sliced_A.join( ',' ) } )
             if ( http_response_body.is_not_a?( Array ) ) then
                 SE.puts "#{SE.lineno}: =============================================="
@@ -366,7 +359,7 @@ class ASpace_Query
             end
             if ( http_response_body.length < 1 ) then
                 SE.puts "#{SE.lineno}: =============================================="
-                SE.puts "Unable to find '#{self.uri_addr}' with 'id_set'='#{id_A}'"
+                SE.puts "Unable to find '#{self.uri_addr}' with 'id_set'='#{rec_id_A}'"
                 raise
             end  
             if ( http_response_body.length != sliced_A.length ) then
@@ -377,21 +370,20 @@ class ASpace_Query
                 SE.q {[ 'sliced_A' ]}            
                 raise
             end  
-            record_H_A.concat( http_response_body )
+            query_record_H_A.concat( http_response_body )
         end
-        if ( record_H_A.length != id_A.length ) then
+        if ( query_record_H_A.length != rec_id_A.length ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "record_H_A.length != id_A.length"
-            SE.q {[ 'record_H_A.length', 'id_A.length' ]}
-#           SE.q {[ 'record_H_A' ]}
-            SE.q {[ 'id_A' ]}            
+            SE.puts "query_record_H_A.length != rec_id_A.length"
+            SE.q {[ 'query_record_H_A.length', 'rec_id_A.length' ]}
+#           SE.q {[ 'query_record_H_A' ]}
+            SE.q {[ 'rec_id_A' ]}            
             raise
         end     
-        if ( record_H_A.empty? ) then
+        if ( query_record_H_A.empty? ) then
             SE.puts "#{SE.lineno}: Nothing found for query uri '#{self.uri_addr}'"
         end
-        self.result_A = record_H_A
-        return self
+        return query_record_H_A
     end
 end
 
@@ -420,31 +412,30 @@ class ASpace_Search
        
             
 =end
-    attr_accessor :aspace_O, :rep_O, :my_creator_O, :uri_addr, :record_type_A 
-    attr_accessor :result_A
-    alias :record_H_A :result_A
+    attr_accessor :aspace_O, :rep_O, :my_creator_O, :uri_addr, :record_type_A, :result_field_A, :record_H_A 
     
     def initialize( aspace_O, rep_O, my_creator_O, record_type_A, search_uri, search_text, result_field_A )
         self.aspace_O       = aspace_O
         self.rep_O          = rep_O
         self.my_creator_O   = my_creator_O 
         self.record_type_A  = record_type_A.map{ | e | e.delete_suffix('s')}.sort.reverse
+        self.result_field_A = result_field_A
         if ( self.uri_addr.nil? ) then
             self.uri_addr = search_uri
         end
-        if ( result_field_A.is_not_a?( Array ) ) then
+        if ( self.result_field_A.is_not_a?( Array ) ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "'result_field_A' is not an Array, it's a #{result_field_A.class}"
-            SE.q {'result_field_A'}
+            SE.puts "'result_field_A' is not an Array, it's a #{self.result_field_A.class}"
+            SE.q {'self.result_field_A'}
             raise
         end
         page = 1
-        self.result_A = []        
+        self.record_H_A = []        
         param_H = {}.compare_by_identity
         param_H[ 'q'.dup ]    = "#{search_text}"
         param_H[ K.page.dup ] = page.dup
-        if ( record_type_A.not_empty? ) then
-            record_type_A.each do | record_type |
+        if ( self.record_type_A.not_empty? ) then
+            self.record_type_A.each do | record_type |
                 if ( record_type.not_in?( [ 'resource','archival_object','accession','digital_object',
                                             'agent_person','agent_family','agent_corporate_entity','agent_software',
                                             'subject','location','event','classification' ] ) ) then
@@ -455,9 +446,9 @@ class ASpace_Search
                 param_H[ 'type[]'.dup ] = record_type             
             end
         end
-        if ( result_field_A.not_empty? ) then
-            param_H[ 'fields[]'.dup ] = result_field_A.join( ',' )  # For some reason this allows a comma-delimited list
-                                                                    # but 'type[]' doesn't.
+        if ( self.result_field_A.not_empty? ) then
+            param_H[ 'fields[]'.dup ] = self.result_field_A.join( ',' )  # For some reason this allows a comma-delimited list
+                                                                         # but 'type[]' doesn't.
         end
        #SE.q{['self.uri_addr','param_H']}
         while true
@@ -482,17 +473,17 @@ class ASpace_Search
             end
             http_call_response[ K.results ].each do | result_H |
                 result_H.reject! { | key, value | key == K.json }
-                self.result_A << result_H                   
+                self.record_H_A << result_H                   
             end
             page += 1
             break if ( page > http_call_response[ K.last_page ] )
-        end
+        end        
         return self
     end           
  
 end
 
-class ASpace_Batch_Delete
+class ASpace_Batch_delete
     attr_accessor :aspace_O,  :rep_O, :my_creator_O
     attr_accessor :deleted_cnt
    

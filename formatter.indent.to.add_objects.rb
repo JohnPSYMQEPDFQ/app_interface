@@ -116,10 +116,10 @@ def put_record( p1_calculated_indent_level, p2_record_H__stack_A, p3_current_rec
             end
             note.strip!
             if ( note.not_match?(/\A[[:alnum:]]/) ) then
-                SE.puts "#{SE.lineno}: 1st char of note is not a letter or number."
+                SE.puts "#{SE.lineno}: WARNING: 1st char of note is not a letter or number."
                 SE.q {'note'}
                 SE.q {'note_type'}
-                raise
+                SE.puts ''
             end
             note.gsub!( '|', "\n\n" )
             note.strip!
@@ -187,10 +187,16 @@ def put_record( p1_calculated_indent_level, p2_record_H__stack_A, p3_current_rec
         end  
     end
 
-    output_record_H[ K.fmtr_record ][ K.title ].sub!( /[.,:;]\s*$/, '' )
-    output_record_H[ K.fmtr_record ][ K.title ].sub!( /./,&:upcase )
+    output_record_H[ K.fmtr_record ][ K.title ].sub!( /[.,:;]+\s*$/, '' )
+    output_record_H[ K.fmtr_record ][ K.title ].sub!( /^\s*[.,:;]+/, '' )
     output_record_H[ K.fmtr_record ][ K.title ].strip!
-   
+    output_record_H[ K.fmtr_record ][ K.title ].sub!( /./,&:upcase )
+    
+    if ( output_record_H[ K.fmtr_record ][ K.level ] == K.file &&
+         output_record_H[ K.fmtr_record ].fetch( K.fmtr_container, '' ).empty? ) then
+        SE.puts "#{SE.lineno}: 'file' without a container '#{output_record_H[ K.fmtr_record ][ K.title ][0, 40]}'"
+    end
+    
     stringer = +''
     stringer = 'Forced' if ( output_record_H[ K.fmtr_record ][ K.level ] == K.otherlevel )
     self.output_fd3_F.puts 'R %-13s: ' % output_record_H[ K.fmtr_record ][ K.level ] + 

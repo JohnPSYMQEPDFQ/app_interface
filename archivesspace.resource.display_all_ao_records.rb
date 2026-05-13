@@ -40,7 +40,7 @@ OptionParser.new do |option|
     option.on( "--ao-index-only", "Get the AO index buffer only." ) do |opt_arg|
         cmdln_option[ :get_full_ao_record_TF ] = false
     end
-    option.on( "--filter", "Apply filter." ) do |opt_arg|
+    option.on( "--filter", "Apply filter." ) do |opt_arg|            # For comparing resources
         cmdln_option[ :filter ] = true
     end
     option.on( "--no-uri", "Don't print the URI value." ) do |opt_arg|
@@ -137,7 +137,7 @@ if ( cmdln_option[ :print_res_rec ] ) then
 end
 
 cnt = 0
-AO_Query_of_Resource.new( resource_O: res_O, get_full_ao_record_TF: cmdln_option[ :get_full_ao_record_TF ] )
+AO_Query__of_Resource.new( resource_O: res_O, get_full_ao_record_TF: cmdln_option[ :get_full_ao_record_TF ] )
                     .record_H_A( index_ok_TF: true ).each do | record_H |
     cnt += 1
     print__record_H.call( record_H, cnt )

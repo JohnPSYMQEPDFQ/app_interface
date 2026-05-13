@@ -1,15 +1,17 @@
 
 class Buffer_Base
+
+public  attr_reader :cant_change_A
+private attr_writer :cant_change_A
     
     def initialize(  )
         @record_H = Hash__where__store_calls_writer.new( self.method( 'record_H=') )
       # SE.puts "#{SE.lineno}, called from: #{SE.my_caller}" 
       # SE.puts "@record_H.class=#{@record_H.class}, @record_H.object_id=#{@record_H.object_id}"
-        @cant_change_A = [ ]
-        @cant_change_A << K.jsonmodel_type 
-        @cant_change_A << K.persistent_id     
+        self.cant_change_A = [ ]
+        self.cant_change_A << K.jsonmodel_type 
+        self.cant_change_A << K.persistent_id     
     end
-    attr_reader :cant_change_A  
     
     def hash_comp_key_type( h_before, h_after )
 #       SE.puts "Before: #{h_before}"

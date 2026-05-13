@@ -42,7 +42,7 @@ rep_O = Repository.new( aspace_O, cmdln_option[ :rep_num ] )
 
 SE.puts "Finding Top_Containers (which takes some time) ..."
 time_begin = Time.now
-record_H_A = rep_O.query( TOP_CONTAINERS ).record_H_A__all.result_A
+record_H_A = rep_O.query( TOP_CONTAINERS ).record_H_A
 elapsed_seconds = Time.now - time_begin
 SE.puts "Elapsed seconds = #{elapsed_seconds}"
 
@@ -60,16 +60,32 @@ record_H_A.each do | record_H |
     end
     tc_to_delete__uri_A.push( record_H[ K.uri ] )        
 end
-SE.puts "#{tc_to_delete__uri_A.length} to be deleted."
-delete_cnt = rep_O.batch_delete( tc_to_delete__uri_A ).deleted_cnt
-if ( delete_cnt != tc_to_delete__uri_A.length ) then
-    SE.puts "#{SE.lineno}: Expected number of TC's not deleted!"
-    SE.puts "delete_cnt != tc_to_delete__uri_A.length"
-    SE.q {[ 'delete_cnt', 'tc_to_delete__uri_A.length']}
-    raise
+SE.puts "Without Locations: #{tc_to_delete__uri_A.length} to be deleted."
+if ( tc_to_delete__uri_A.length > 0 ) then
+    delete_cnt = rep_O.batch_delete( tc_to_delete__uri_A ).deleted_cnt
+    if ( delete_cnt != tc_to_delete__uri_A.length ) then
+        SE.puts "#{SE.lineno}: Expected number of TC's not deleted!"
+        SE.puts "delete_cnt != tc_to_delete__uri_A.length"
+        SE.q {[ 'delete_cnt', 'tc_to_delete__uri_A.length']}
+        raise
+    end
+    SE.puts "#{delete_cnt} deleted."
 end
-SE.puts "#{delete_cnt} deleted."
 #SE.q {'tc_with_locations_but_no_collection__uri_A'}
+
+SE.puts "With Locations: #{tc_with_locations_but_no_collection__uri_A.length} to be deleted."
+if ( tc_with_locations_but_no_collection__uri_A.length > 0 ) then
+    delete_cnt = rep_O.batch_delete( tc_with_locations_but_no_collection__uri_A ).deleted_cnt
+    if ( delete_cnt != tc_with_locations_but_no_collection__uri_A.length ) then
+        SE.puts "#{SE.lineno}: Expected number of TC's not deleted!"
+        SE.puts "delete_cnt != tc_with_locations_but_no_collection__uri_A.length"
+        SE.q {[ 'delete_cnt', 'tc_with_locations_but_no_collection__uri_A.length']}
+        raise
+    end
+    SE.puts "#{delete_cnt} deleted."
+end
+
+
 
 
 

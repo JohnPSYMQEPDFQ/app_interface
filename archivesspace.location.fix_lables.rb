@@ -87,9 +87,9 @@ end.parse!
         }'
 =end
        
-def fix__G_Bay_Bay_to_Column( loc_query_O, cnt )
+def fix__G_Bay_Bay_to_Column( record_H_A, cnt )
     location_uri_A = []
-    loc_query_O.result_A.each do | record_H |
+    record_H_A.each do | record_H |
         if record_H[ K.room ] == "G Bay"
             cnt += 1
             if record_H[ K.coordinate_2_label ] == "Bay" 
@@ -100,9 +100,9 @@ def fix__G_Bay_Bay_to_Column( loc_query_O, cnt )
     self.locations_batch_update_H[ K.coordinate_2_label ]  = 'Column'
     return location_uri_A
 end
-def fix__H_Bay( loc_query_O, cnt )
+def fix__H_Bay( record_H_A, cnt )
     location_uri_A = []
-    loc_query_O.result_A.each do | record_H |
+    record_H_A.each do | record_H |
         if record_H[ K.room ] == "H"
             cnt += 1
             location_uri_A.push( record_H[ K.uri ] )
@@ -111,9 +111,9 @@ def fix__H_Bay( loc_query_O, cnt )
     self.locations_batch_update_H[ K.room ]  = 'H Bay'
     return location_uri_A
 end
-def fix__2nd_floor( loc_query_O, cnt )
+def fix__2nd_floor( record_H_A, cnt )
     location_uri_A = []
-    loc_query_O.result_A.each do | record_H |
+    record_H_A.each do | record_H |
         if record_H[ K.floor ] == "2nd"
             cnt += 1
             location_uri_A.push( record_H[ K.uri ] )
@@ -122,9 +122,9 @@ def fix__2nd_floor( loc_query_O, cnt )
     self.locations_batch_update_H[ K.floor ]  = '2nd Floor'
     return location_uri_A
 end
-def fix__area_2( loc_query_O, cnt )
+def fix__area_2( record_H_A, cnt )
     location_uri_A = []
-    loc_query_O.result_A.each do | record_H |
+    record_H_A.each do | record_H |
         if record_H[ K.area ] == "2"
             cnt += 1
             location_uri_A.push( record_H[ K.uri ] )
@@ -133,9 +133,9 @@ def fix__area_2( loc_query_O, cnt )
     self.locations_batch_update_H[ K.area ]  = 'Area 2'
     return location_uri_A
 end
-def fix__shelf_blank( loc_query_O, cnt )
+def fix__shelf_blank( record_H_A, cnt )
     location_uri_A = []
-    loc_query_O.result_A.each do | record_H |
+    record_H_A.each do | record_H |
         if record_H.has_key?( K.coordinate_3_label ) && record_H[ K.coordinate_3_label ] == 'Shelf '
             cnt += 1
             location_uri_A.push( record_H[ K.uri ] )
@@ -167,9 +167,9 @@ self.aspace_O.allow_updates             = cmdln_option[ :update ]
 self.rep_O   = Repository.new( aspace_O, cmdln_option[ :rep_num ] )
 
 SE.puts "Starting query..."        
-loc_query_O = self.rep_O.query( LOCATIONS ).record_H_A__all
+record_H_A = self.rep_O.query( LOCATIONS ).record_H_A
 cnt = 0
-location_uri_A = self.send( cmdln_option[ :method_to_run ], loc_query_O, cnt )
+location_uri_A = self.send( cmdln_option[ :method_to_run ], record_H_A, cnt )
 
 SE.q {['location_uri_A.length']}
 if ( location_uri_A.length == 0 ) then

@@ -15,9 +15,9 @@ module Main_Global_Variables
         attr_accessor :myself_name, :valid_column_uses_H, :cmdln_option_H, 
                       :output_F, :pending_output_BUF, :output_cnt, :box_cnt, :box_line_only_cnt, :detail_column_A, :column_stack_H_A,
                       :used_column_header_A, :columns_to_skip_for_notes, :inmagic_column_to_as_note_type_xlat_H
-        attr_accessor :container_for_following_records_A
+        attr_accessor :box_for_following_records_A
         VALUE_IDX = 0 # Both of these
-        COUNT_IDX = 1 # are for the 'container_for_following_records_A' array
+        COUNT_IDX = 1 # are for the 'box_for_following_records_A' array
 end
 include Main_Global_Variables
 #       But not sure why it needs to be in a module...
@@ -144,15 +144,15 @@ def has_subcolumns?( column_name )
     return use
 end
 def container_for_following_records_reset
-    if ( self.container_for_following_records_A.nil? ) then
-        self.container_for_following_records_A = [ ] 
+    if ( self.box_for_following_records_A.nil? ) then
+        self.box_for_following_records_A = [ ] 
         return
     end
-    return if ( self.container_for_following_records_A.empty? )
-    if ( self.container_for_following_records_A[ COUNT_IDX ] == 0 ) then
-        SE.puts "#{SE.lineno}: WARNING: Container '#{self.container_for_following_records_A[ VALUE_IDX ]} never used"    
+    return if ( self.box_for_following_records_A.empty? )
+    if ( self.box_for_following_records_A[ COUNT_IDX ] == 0 ) then
+        SE.puts "#{SE.lineno}: WARNING: Container '#{self.box_for_following_records_A[ VALUE_IDX ]} never used"    
     end
-    self.container_for_following_records_A = [ ] 
+    self.box_for_following_records_A = [ ] 
 end
 
 def is_there_series_or_recordgrp_data?( input_column_H ) 
@@ -166,53 +166,58 @@ end
 
 def box_only_line_logic( sub_column_value, note )
     stringer = sub_column_value.sub( K.container_and_child_types_RE, '' )
-    if ( $&.not_nil? ) then
-        current_container = $&.strip
-        prematch=$`
-        if ( stringer.match?( /^\s*([.:])?\s*$/) && note.blank? ) then  # If true: the sub_column is ONLY the Box/child data.
-            case box_only_line_option
-            when :next  
-                self.box_cnt += -1
+    container_MO = $~
+    if ( container_MO.nil? || container_MO[ :container_type ].to_s.downcase != K.box ) then
+        return sub_column_value
+    end
+
+    box_prefix_string = "#{container_MO[ :container_type ]} #{container_MO[ :container_num ]}"
+    if ( container_MO[ :child_type ].to_s.not_blank? ) then
+        box_prefix_string.concat( " #{container_MO[ :child_type ]} #{container_MO[ :child_num ]}" )
+    end
+    if ( stringer.match?( /^\s*([.:])?\s*$/) && note.blank? ) then  # If true: the sub_column is ONLY the Box/child data.
+        case box_only_line_option
+        when :next  
+            self.box_cnt += -1
+            self.box_line_only_cnt += 1
+            container_for_following_records_reset
+            self.box_for_following_records_A = [ box_prefix_string.upcase, 0 ]
+            return "# BOX_ONLY_LINE '#{box_prefix_string}' used to set the following record:"
+        when :prior
+            pending_BUF_group_record_match_O = self.pending_output_BUF.match( /^\s*#{K.any_fmtr_group_record_RES}/i )          
+            if ( pending_BUF_group_record_match_O.not_nil? ) then
+                sub_column_value << ' CONFUSING BOX_ONLY_LINE: Previous line is a group.'
                 self.box_line_only_cnt += 1
-                container_for_following_records_reset
-                self.container_for_following_records_A = [ current_container.upcase, 0 ]
-                return "# BOX_ONLY_LINE '#{current_container}' used to set the following record:"
-            when :prior
-                pending_BUF_group_record_match_O = self.pending_output_BUF.match( /^\s*#{K.any_fmtr_group_record_RES}/i )          
-                if ( pending_BUF_group_record_match_O.not_nil? ) then
-                    sub_column_value << ' CONFUSING BOX_ONLY_LINE: Previous line is a group.'
+                return sub_column_value
+            end
+#   ADD!  Only move the box if the previous line ALSO has a date.  If not, just make a "confusing" line.
+            pending_BUF_type_match_O = self.pending_output_BUF.match( /^\s*#{K.container_and_child_types_RES}/i )
+            if ( pending_BUF_type_match_O.not_nil?) then
+                if ( pending_BUF_type_match_O[ 0 ].upcase == pending_BUF_type_match_O[ 0 ] ) then    # If true:  the Pending_BUF isn't a group record AND
+                  # The container/child that was present was already upcased
+                  # which means it came from here.
+                    self.pending_output_BUF.prepend( box_prefix_string.upcase + ', ' )
+                    self.box_line_only_cnt += 1
+                    return "# BOX_ONLY_LINE '#{box_prefix_string}' moved to previous line (2+)."
+                else
+                    sub_column_value << ' CONFUSING BOX_ONLY_LINE: Previous line already has a box.'
                     self.box_line_only_cnt += 1
                     return sub_column_value
                 end
-#   ADD!  Only move the box if the previous line ALSO has a date.  If not, just make a "confusing" line.
-                pending_BUF_type_match_O = self.pending_output_BUF.match( /^\s*#{K.container_and_child_types_RES}/i )
-                if ( pending_BUF_type_match_O.not_nil?) then
-                    if ( pending_BUF_type_match_O[ 0 ].upcase == pending_BUF_type_match_O[ 0 ] ) then    # If true:  the Pending_BUF isn't a group record AND
-                      # The container/child that was present was already upcased
-                      # which means it came from here.
-                        self.pending_output_BUF.prepend( current_container.upcase + ', ' )
-                        self.box_line_only_cnt += 1
-                        return "# BOX_ONLY_LINE '#{current_container}' moved to previous line (2+)."
-                    else
-                        sub_column_value << ' CONFUSING BOX_ONLY_LINE: Previous line already has a box.'
-                        self.box_line_only_cnt += 1
-                        return sub_column_value
-                    end
-                else
-                    self.pending_output_BUF.prepend( current_container.upcase + ', ' )
-                    self.box_line_only_cnt += 1
-                    return "# BOX_ONLY_LINE '#{current_container}' moved to previous line"
-                end
             else
-                SE.puts "#{SE.lineno} Invalid 'box_only_line_option'"
-                SE.q {'box_only_line_option'}
-                raise
-            end  
-        else    # Not a box only line
-            if ( prematch.blank? ) then                # If true: the Box is the 1st thing in the sub-column
-                container_for_following_records_reset  # which we'll guess to mean to reset the container_for_following_records_A
-              # SE.q {'current_container'}
+                self.pending_output_BUF.prepend( box_prefix_string.upcase + ', ' )
+                self.box_line_only_cnt += 1
+                return "# BOX_ONLY_LINE '#{box_prefix_string}' moved to previous line"
             end
+        else
+            SE.puts "#{SE.lineno} Invalid 'box_only_line_option'"
+            SE.q {'box_only_line_option'}
+            raise
+        end  
+    else    # Not a box only line
+        if ( container_MO.pre_match.blank? ) then  # If true: the Box is the 1st thing in the sub-column
+            container_for_following_records_reset  # which we'll guess to mean to reset the box_for_following_records_A
+          # SE.q {'box_prefix_string'}
         end
     end
     return sub_column_value
@@ -302,24 +307,31 @@ def put_column( column_idx = 0 )
 #               Get all the containers into an array           
         type_match_O_A = []
         loop do           
-            sub_column_value.sub!( K.container_and_child_types_RE, ' ' ) # <<  This must be a ' '
+            sub_column_value.sub!( K.container_and_child_types_RE, '' ) 
             type_match_O = $~
             break if ( type_match_O.nil? )
-            if ( type_match_O[ :trailing_del ].last == ']' ) then
-                SE.puts "#{SE.lineno}: WARNING: ']' chopped of due to container.sub! statement."
-            end
+            sub_column_value.rstrip!   # <<  SEE BELOW: There must be a space at the end...
+            if ( type_match_O[ :trailing_del ].strip == ']' ) then
+                if ( type_match_O[ :leading_del ].strip == '[' ) then
+                    sub_column_value.delete_suffix!( '[' )
+                else
+                    SE.puts "#{SE.lineno}: ']' on container match but no leading '['"
+                    SE.q {'type_match_O'}
+                    SE.q {'sub_column_value'}
+                    raise
+                end
+            end          
+            sub_column_value.concat( ' ' )  # <<  There must be a space at the end for the rest to work.
             
-            regexp = /#{K.valid_container_types_RES}/i
-            
-            current_type_is_a_container = type_match_O[ :container_type ].match?( regexp )
+            current_type_is_a_container = type_match_O[ :container_type ].match?( K.valid_container_types_RE )
             self.box_cnt += 1 if current_type_is_a_container
             
             last_type_is_a_container = (
                  type_match_O_A[ -1 ] &&         
-                 type_match_O_A[ -1 ][ :container_type ].match?( regexp ) )
+                 type_match_O_A[ -1 ][ :container_type ].match?( K.valid_container_types_RE ) )
             second_to_last_type_is_a_container = (
                  type_match_O_A[ -2 ] &&         
-                 type_match_O_A[ -2 ][ :container_type ].match?( regexp ) )
+                 type_match_O_A[ -2 ][ :container_type ].match?( K.valid_container_types_RE ) )
             if ( current_type_is_a_container ) then
                 if ( type_match_O_A.empty? || last_type_is_a_container || second_to_last_type_is_a_container ) then
                     type_match_O_A.push( type_match_O ) 
@@ -441,26 +453,26 @@ def put_column( column_idx = 0 )
             stringer = +' ' * ( self.column_stack_H_A.length * 4 )
             if ( sub_column_value.blank? || sub_column_value.match?( /^\s*#/ ) ) then    # Don't put boxes on comment lines 
               # SE.q {'sub_column_value'}
-              # SE.q {'self.container_for_following_records_A'}
+              # SE.q {'self.box_for_following_records_A'}
             else
-                if ( self.container_for_following_records_A.empty? || 
-                      sub_column_value.index( self.container_for_following_records_A[ VALUE_IDX ] ) ) then
+                if ( self.box_for_following_records_A.empty? || 
+                      sub_column_value.index( self.box_for_following_records_A[ VALUE_IDX ] ) ) then
                 #   do nothing...
                 else
                     if ( sub_column_record_group_MO.nil? ) then
-                        stringer   << "%-20s  " % self.container_for_following_records_A[ VALUE_IDX ]
-                        self.container_for_following_records_A[ COUNT_IDX ] += 1
+                        stringer   << "%-s  " % self.box_for_following_records_A[ VALUE_IDX ]
+                        self.box_for_following_records_A[ COUNT_IDX ] += 1
                     else
-                        if ( self.container_for_following_records_A[ COUNT_IDX ] > 0 ) then
+                        if ( self.box_for_following_records_A[ COUNT_IDX ] > 0 ) then
                             SE.puts "#{SE.lineno}: Group Record '#{sub_column_value_unaltered}' hit with Box-Only Value " +
-                                    "'#{self.container_for_following_records_A[ VALUE_IDX ]}', reset Box-Only prefixing."
+                                    "'#{self.box_for_following_records_A[ VALUE_IDX ]}', reset Box-Only prefixing."
                             self.container_for_following_records_reset
                         else
                             SE.puts "#{SE.lineno}: Box before a record group."
                             SE.q {['sub_column_value']}
                             SE.q {['sub_column_value_unaltered']}
-                            SE.q {['self.container_for_following_records_A']}
-                            SE.q {['sub_column_value.index( self.container_for_following_records_A[ VALUE_IDX ] )']}
+                            SE.q {['self.box_for_following_records_A']}
+                            SE.q {['sub_column_value.index( self.box_for_following_records_A[ VALUE_IDX ] )']}
                             raise
                         end
                     end
@@ -894,9 +906,9 @@ tmp3_F.each_line do | input_column_J |
     if ( is_there_series_or_recordgrp_data?( input_column_H ) ) then
         all_possible_notes_H = create_H_of_all_possible_notes( input_column_H )     # This doesn't include the 'series column' notes.
     else
-        SE.puts "#{SE.lineno}: 'create_H_of_all_possible_notes' skpped because:"
-        SE.q {[ 'is_there_series_or_recordgrp_data?( input_column_H )' ]}
-        SE.q {[ 'input_column_H[ recordgrp_column_name ]', 'input_column_H[ series_column_name ]']}
+       #SE.puts "#{SE.lineno}: function 'create_H_of_all_possible_notes' skpped because:"
+       #SE.q {[ 'is_there_series_or_recordgrp_data?( input_column_H )' ]}
+       #SE.q {[ 'input_column_H[ recordgrp_column_name ]', 'input_column_H[ series_column_name ]']}
         all_possible_notes_H = {}
     end
     
@@ -955,8 +967,15 @@ tmp3_F.each_line do | input_column_J |
             else
                 #   Some of the InMagic files have a separate Record Group number field, and some just treat the 
                 #   Record Group like a Series.   I named all these fields before I knew any of this...
-                input_column_H[ column_name ].sub!( /^\s*(#{K.fmtr_record_group_text}|#{K.series})\s*/i, '' )   
-                grouping_type = $1.downcase
+                input_column_H[ column_name ].sub!( /^\s*(#{K.fmtr_record_group_text}|#{K.series})\s*/i, '' )
+                case true
+                when ( $1.not_nil? )
+                    grouping_type = $1.downcase
+                when ( $1.nil? && self.cmdln_option_H[ :column_use_H ][ column_name ] == K.fmtr_inmagic_series )
+                    grouping_type = K.fmtr_inmagic_series
+                else
+                    grouping_type = '? '
+                end
                 input_column_H[ column_name ].sub!( /^([0-9]+)[.:]?\s+/, '' )
                 if ( $~.nil? ) then
                     SE.puts "#{SE.lineno}: Column '#{column_name}' is supposed to be a '#{column_use}' but there's no series number"

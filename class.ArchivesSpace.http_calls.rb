@@ -5,15 +5,17 @@ require 'json'
 
 class Http_Calls
 
+public  attr_reader :aspace_O
+private attr_writer :aspace_O
+
     def initialize( p1_aspace_O )
         if ( p1_aspace_O.is_not_a?( ASpace ) ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Param 1 is not a ASpace class object, it's a '${p1_aspace_O.class}'"
             raise
         end    
-        @aspace_O = p1_aspace_O
-    end
-    attr_reader :aspace_O
+        self.aspace_O = p1_aspace_O
+    end   
     
     def get( p1_uri, p2_params = { } )
         uri = URI.parse( "#{self.aspace_O.api_uri_base}#{p1_uri}" )
@@ -45,7 +47,7 @@ class Http_Calls
         else
             headers = { "Content-type" => "application/json" , 'X-ArchivesSpace-Session' => self.aspace_O.session}
         end
-        if ( @aspace_O.allow_updates || p1_uri.end_with?( '/login' ) ) then   # the login uses this method.
+        if ( self.aspace_O.allow_updates || p1_uri.end_with?( '/login' ) ) then   # the login uses this method.
             response_O = http.request( Net::HTTP::Post.new( uri.request_uri, headers ))    
             if ( response_O.code != "200" ) then 
                 SE.puts "#{SE.lineno}: =============================================="
@@ -70,7 +72,7 @@ class Http_Calls
         headers = { "Content-type" => "application/json" , 'X-ArchivesSpace-Session' => self.aspace_O.session}
         input_O = Net::HTTP::Post.new( uri.request_uri, headers )
         input_O.body = p2_input_H.to_json
-        if ( @aspace_O.allow_updates ) then
+        if ( self.aspace_O.allow_updates ) then
             response_O = http.request( input_O )  
             if ( response_O.code != "200" ) then
                 SE.puts "#{SE.lineno}: =============================================="
@@ -94,7 +96,7 @@ class Http_Calls
         http = Net::HTTP.new( uri.host, uri.port )
         http.use_ssl = ( self.aspace_O.api_uri_base[ 0, 6 ] == 'https:' ) 
     #   http.set_debug_output( $stderr )   
-        if ( @aspace_O.allow_updates ) then    
+        if ( self.aspace_O.allow_updates ) then    
             headers = { "Content-type" => "application/json" , 'X-ArchivesSpace-Session' => self.aspace_O.session}  
             response_O = http.request( Net::HTTP::Delete.new( uri.request_uri, headers ))
             if ( response_O.code != "200" ) then 

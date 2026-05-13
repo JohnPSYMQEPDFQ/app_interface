@@ -113,6 +113,7 @@ class Record_Format < Buffer_Base
                 K.coordinate_3_indicator => nil,
                 K.classification => nil,
                 K.title => nil,            #  This is generated from everything else
+                K.owner_repo => nil,       #  Not sure what this is for...
             }
         @record_H.merge!( h )
         return h

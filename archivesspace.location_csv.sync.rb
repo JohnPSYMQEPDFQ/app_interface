@@ -160,10 +160,10 @@ input_csv_O.close
 =end
 
 ala_problem_record_cnt = 0
-loc_query_O = self.rep_O.query( LOCATIONS ).record_H_A__all
+record_H_A = self.rep_O.query( LOCATIONS ).record_H_A
 location_delete_uri_A = [ ]
-SE.puts "#{loc_query_O.result_A.length} location records in ASpace."
-loc_query_O.result_A.each do | record_H |
+SE.puts "#{record_H_A.length} location records in ASpace."
+record_H_A.each do | record_H |
     title_downcase_WO_spaces = record_H.fetch( K.title ).gsub( /\s+/, '' ).downcase
     if ( record_H_H__by_title_H.has_key?( title_downcase_WO_spaces ) ) then
         record_H_H__by_title_H.delete( title_downcase_WO_spaces )
