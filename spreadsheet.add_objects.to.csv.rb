@@ -136,7 +136,7 @@ ARGF.each_line do |input_record_J|
     SE.ap "#{$.}: input_record_H:", input_record_H
     raise
 end
-#SE.ap "tc_uri_H__by_type_and_indicator:", tc_uri_H__by_type_and_indicator 
+#SE.ap "tc_uri__BY_type_and_indicator:", tc_uri__BY_type_and_indicator 
 SE.puts ""
 SE.puts "starting hierarchy = #{starting_hierarchy}"
 SE.puts "  ending hierarchy = #{current_hierarchy}"

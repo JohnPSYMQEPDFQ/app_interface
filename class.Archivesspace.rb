@@ -1,24 +1,23 @@
 =begin
 
 Variable Abbreviations:
-        AO = Archival Object ( Resources are an AO too, but they have their own structure. )
-        AS = ArchivesSpace
-        IT = Instance Type
-        TC = Top Container
-        SC = Sub-Container
-        _H = Hash
-        _J = Json string
-        _RES = Regular Expression String, e.g: find_bozo_RES = '\s+bozo\s+'
-        _RE  = Regular Expression, e.g.: find_bozo_RE = /#{find_bozo_RES}/
-        _A = Array
+        __   =  reads as: ','
+        _A   = Array
+        _BO  = Buffer Object
+        _C   = Class of Struct
         _CKA = Composite Key Array
-        _O = Object
-        _Q = Query
-        _C = Class of Struct
-        _S = Structure of _C 
-        _TF = True/False (Boolean)
-        __ = reads as: 'of'
-
+        _H   = Hash
+        _I   = Integer
+        _J   = Json string
+        _LP  = Lambda Proc
+        _MO  = Match Object
+        _O   = Object
+        _QO  = Query Object
+        _RE  = Regular Expression, e.g.: find_bozo_RE = /#{find_bozo_RES}/
+        _RES = Regular Expression String, e.g: find_bozo_RES = '\s+bozo\s+'
+        _S   = Set or Structure of _C 
+        _TF  = True/False (Boolean)
+    
 =end
 
 require 'requires.common.rb'
@@ -32,7 +31,7 @@ require 'class.Archivesspace.Record_Format.rb'
 class ASpace
     public  attr_reader :allow_updates, :res_faft_validated, :api_uri_base, :session, :http_calls_O, :date_expression_format, :date_expression_separator
     public  attr_writer :allow_updates, :res_faft_validated
-    private attr_writer                                       :api_uri_base, :session, :http_calls_O 
+    private attr_writer                                      :api_uri_base, :session, :http_calls_O 
     
     def initialize( )
         env_var_aspace_uri_base        = 'ASPACE_URI_BASE'
@@ -201,18 +200,18 @@ class ASpace
         return date_expression
     end
     
-    def validate_resource_faft( res_buf_O, faft_to_validate )
-        if ( res_buf_O.is_not_a?( Resource_Record_Buf )) then
+    def validate_resource_faft( res_BO, faft_to_validate )
+        if ( res_BO.is_not_a?( Resource_Record_Buf )) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param-1 is not a 'Resource_Record_Buf' class object, it's a '#{res_buf_O.class}'"
+            SE.puts "Param-1 is not a 'Resource_Record_Buf' class object, it's a '#{res_BO.class}'"
             raise
         end 
-        rep_O = res_buf_O.res_O.rep_O
-        res_title = res_buf_O.record_H.fetch( K.title ).strip.downcase
-        res_faft  = res_buf_O.record_H.fetch( K.finding_aid_filing_title, '~~no_finding_aid_filing_title~~' ).strip.downcase
+        rep_O = res_BO.res_O.rep_O
+        res_title = res_BO.record_H.fetch( K.title ).strip.downcase
+        res_faft  = res_BO.record_H.fetch( K.finding_aid_filing_title, '~~no_finding_aid_filing_title~~' ).strip.downcase
         if ( faft_to_validate.not_in?(  res_faft[ 0, faft_to_validate.length ], res_title[ 0, faft_to_validate.length ] ) ) then
             SE.puts "#{SE.lineno}: The 'faft_to_validate'(Param-2) must start with the K.finding_aid_filing_title (FAFT)"
-            SE.puts "of the 'res_buf_O'(Param-1), NOT the resource's K.title (unless there's no FAFT)."
+            SE.puts "of the 'res_BO'(Param-1), NOT the resource's K.title (unless there's no FAFT)."
             SE.q {[ 'faft_to_validate' ]}
             SE.q {[ 'res_faft[ 0, faft_to_validate.length ]' ]}
             SE.q {[ 'res_faft' ]}
@@ -330,13 +329,13 @@ class ASpace_Query
             SE.puts "Param 1 is not an Array, it's: '#{rec_id_A.class}'"
             raise
         end   
-        integer_rec_id_A = []
+        rec_id_I_A = []
         rec_id_A.each do | rec_id | 
             case true
             when rec_id.is_a?( Integer )
-                integer_rec_id_A.push( rec_id )
+                rec_id_I_A.push( rec_id )
             when rec_id.integer? 
-                integer_rec_id_A.push( rec_id.to_i )
+                rec_id_I_A.push( rec_id.to_i )
             else
                 stringer = rec_id.delete_prefix( "#{self.uri_addr}/" )
                 if ( stringer.not_integer? ) then
@@ -345,11 +344,11 @@ class ASpace_Query
                     SE.puts "or convert to integers after removing the 'uri' prefix."
                     raise
                 end
-                integer_rec_id_A.push( stringer.to_i )
+                rec_id_I_A.push( stringer.to_i )
             end
         end
         query_record_H_A = []
-        integer_rec_id_A.each_slice( 100 ) do | sliced_A |        
+        rec_id_I_A.each_slice( 100 ) do | sliced_A |        
             http_response_body = self.aspace_O.http_calls_O.get( self.uri_addr, { 'id_set' => sliced_A.join( ',' ) } )
             if ( http_response_body.is_not_a?( Array ) ) then
                 SE.puts "#{SE.lineno}: =============================================="

@@ -45,16 +45,16 @@ module SE
     end
 
     def self.pov( p1_O )  # Print Object's Variables
-        self.puts "#{self.lineno(1)}:#{p1_O.class.name} Variables:"
-        self.q {'p1_O.instance_variables.map{ |var| [ var, p1_O.instance_variable_get( var ) ].join( "=" )}' }
+        SE.puts "#{self.lineno(1)}:#{p1_O.class.name} Variables:"
+        SE.q {'p1_O.instance_variables.map{ |var| [ var, p1_O.instance_variable_get( var ) ].join( "=" )}' }
     end
     def self.pom( p1_O )  # Print Object's Methods
-        self.puts "#{self.lineno(1)}:#{p1_O.class.name} Methods:"
-        self.q {'( p1_O.private_methods( false ) - Object.methods ).map{ | m | m = "#{p1_O.class.name}::#{m}"}.sort' }
+        SE.puts "#{self.lineno(1)}:#{p1_O.class.name} Methods:"
+        SE.q {'( p1_O.private_methods( false ) - Object.methods ).map{ | m | m = "#{p1_O.class.name}::#{m}"}.sort' }
     end
     def self.lineno( e = 0 )
         s = caller[ e ].sub(/^.*\//,"").sub(/:in .* in /,":in ").gsub(/[`']/,"")
-        if ( defined?( $. ) and $. and $. > 0 ) then
+        if ( defined?( $. ) && $. && $. > 0 ) then
             s << " $.=#{$.}"
         end
         return s
@@ -102,9 +102,9 @@ module SE
         end
         arr = []
         caller.each_with_index do | e, idx |
-            next if ( not param_rng === idx )
-            next if ( param_regexp and not e.match( param_regexp ) )
-            next if ( param_string and not e.include?( param_string ) )
+            next if not ( param_rng === idx )
+            next if ( param_regexp && ! e.match( param_regexp ) )
+            next if ( param_string && ! e.include?( param_string ) )
             stringer = e.sub(/^.*\//,"").sub(/:in .* in /,":in ").gsub(/[`']/,"") 
             arr << stringer 
         end
@@ -113,24 +113,67 @@ module SE
     end    
     
     def self.debug_on_the_range( thing_to_test, debug_range )
-        if ( not debug_range.is_a?( Range )) then
-            self.puts "#{self.lineno}: Was expecting param2 to be a Range, instead it's a #{debug_range.class}"
-            raise
+        if not ( debug_range.is_a?( Range )) then
+            SE.puts "#{self.lineno}: Was expecting param2 to be a Range, instead it's a #{debug_range.class}"
+            Kernel.raise
         end
 #       SE.q {[ 'thing_to_test', 'debug_range', 'debug_range === thing_to_test' ]}
         if ( $DEBUG ) then
-            if ( not debug_range === thing_to_test ) then   # The range MUST be on the left of the ===  !!!
+            if not ( debug_range === thing_to_test ) then   # The range MUST be on the left of the ===  !!!
                 self.puts "#{self.lineno}: DEBUG off !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 $DEBUG = false
-                self.ap_stack
+                SE.ap_stack
             end
         else
             if ( debug_range === thing_to_test  ) then
                 self.puts "#{self.lineno}: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 $DEBUG = true
-                self.ap_stack
+                SE.ap_stack
             end
         end
+    end
+
+    def self.raise( *argv_A )     
+        caller_location_O_A = caller_locations( 1 )   # Like caller, but more options.
+                                                      # Param 1:  Where to start in the stack.  0 = current location, so 1 would be the caller.
+                                                      # Param 2:  How many stack entries to return (nil = all, starting from param 1)
+        caller_location_O = caller_location_O_A.first
+        caller_lineno = caller_location_O.lineno    #  1 relative
+
+        SE.puts ''
+        SE.puts '==================================================================='
+        SE.puts "#{self.lineno}: Parsing '#{File.basename( caller_location_O.path )}'"
+        
+        original_dollar_dot = $.
+        caller_location_code_A = File.readlines( caller_location_O.path )
+        $. = original_dollar_dot
+        
+      # SE.puts '-------------------- begin ------------------------'
+      # SE.q {'caller_location_code_A'}
+      # SE.puts '--------------------  end  ------------------------'
+      # SE.puts ''
+        require 'class.Parser_Conditions.rb'              #  These take some time to load...
+        require 'unparser'
+        
+        extractor = Parser_Conditions.new
+        extractor.process( Parser::CurrentRuby.parse( caller_location_code_A.join( '' ) ) )   # caller_location_code_A has \n 
+      # SE.q { 'extractor.condition_A'}
+        result_A = extractor.condition_A.reverse_each.find { | condition_lineno, _ | condition_lineno <= caller_lineno  }
+      # SE.q {'result_A'}
+      # SE.q {'argv_A'}
+      # SE.q {['caller_lineno','caller_location_code_A[ caller_lineno - 1]']}
+        SE.print "#{self.lineno( 1 )}: "
+        if result_A.empty?
+            SE.puts "SE.raise Unknown Prior-Conditional"
+        else
+            condition_code = Unparser.unparse( result_A[ 1 ] ).chomp
+            if caller_lineno == result_A[ 0 ]
+                SE.puts "SE.raise BECAUSE: '#{condition_code}'"
+            else
+                SE.puts "SE.raise Prior-Conditional@lineno #{result_A[ 0 ]}: '#{condition_code}'"
+            end
+        end
+        Kernel.raise "\n" + argv_A.join( "\n" ) # << Calls the Kernal raise ::
     end
     
     class Loop_detector
@@ -147,7 +190,7 @@ module SE
                     SE.print "argv #{idx}:"
                     SE.q {'argv'}
                 end
-                raise "Aborting in '#{self.class}'"
+                Kernel.raise "Aborting in '#{self.class}'"
             end
             if ( self.loop_cnt >= self.loop_limit ) then
                 SE.puts "#{SE.lineno}: LOOP DETECTOR: DEBUG on !!!!!!!!!!!!!!!!!!!!!!!!!!!!"

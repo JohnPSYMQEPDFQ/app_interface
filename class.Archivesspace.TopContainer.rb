@@ -9,7 +9,7 @@ class Top_Container
 public  attr_reader :res_O, :rep_O, :rec_id, :uri_addr
 private attr_writer :res_O, :rep_O, :rec_id, :uri_addr
 
-    def initialize( p1_O, p2_TC_identifier = nil )
+    def initialize( p1_O, p2_tc_uri_addr_OR_rec_id = nil )
         case true        
         when p1_O.is_a?( Resource )
             self.res_O = p1_O
@@ -24,30 +24,30 @@ private attr_writer :res_O, :rep_O, :rec_id, :uri_addr
         end    
 
         case true
-        when p2_TC_identifier.nil? 
+        when p2_tc_uri_addr_OR_rec_id.nil? 
             self.rec_id   = nil
             self.uri_addr = nil
-        when p2_TC_identifier.integer? 
-            self.rec_id   = p2_TC_identifier
+        when p2_tc_uri_addr_OR_rec_id.integer? 
+            self.rec_id   = p2_tc_uri_addr_OR_rec_id
             self.uri_addr = "#{self.rep_O.uri_addr}/#{TOP_CONTAINERS}/#{self.rec_id}"
-        when p2_TC_identifier.start_with?( "#{self.rep_O.uri_addr}/#{TOP_CONTAINERS}" ) 
-            self.uri_addr = p2_TC_identifier
-            self.rec_id   = p2_TC_identifier.trailing_digits
+        when p2_tc_uri_addr_OR_rec_id.start_with?( "#{self.rep_O.uri_addr}/#{TOP_CONTAINERS}" ) 
+            self.uri_addr = p2_tc_uri_addr_OR_rec_id
+            self.rec_id   = p2_tc_uri_addr_OR_rec_id.trailing_digits
             if (! self.rec_id.integer? ) then
                 SE.puts "#{SE.lineno}: =============================================="
-                SE.puts "Invalid param2: #{p2_TC_identifier}"
+                SE.puts "Invalid param2: #{p2_tc_uri_addr_OR_rec_id}"
                 raise
             end
         else
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Invalid param2: #{p2_TC_identifier}"
+            SE.puts "Invalid param2: #{p2_tc_uri_addr_OR_rec_id}"
             raise
         end
     end
     
     def new_buffer
-        tc_buf_O = TC_Record_Buf.new( self )
-        return tc_buf_O
+        tc_BO = TC_Record_Buf.new( self )
+        return tc_BO
     end
 end
 
@@ -72,72 +72,73 @@ private attr_writer :tc_O, :rec_id, :uri_addr, :rec_jsonmodel_type
         super( self.tc_O.rep_O.aspace_O )
     end
     
-    def create  
+    def create
         if ( self.tc_O.res_O.nil? ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "self.tc_O.res_O == nil"
             SE.puts "This object was probably created with a 'Repository' Object"
             raise
         end
-        @record_H.merge!( Record_Format.new( self.rec_jsonmodel_type ).record_H )
-        @record_H[ K.resource ][ K.ref ] = self.tc_O.res_O.uri_addr
-        @record_H[ K.created_for_collection ] = self.tc_O.res_O.uri_addr
+        super
+#       self.record_H.merge!( Record_Format.new( self.rec_jsonmodel_type ).record_H )
+        self.record_H[ K.resource ][ K.ref ] = self.tc_O.res_O.uri_addr
+        self.record_H[ K.created_for_collection ] = self.tc_O.res_O.uri_addr
         self.cant_change_A << K.resource
         self.cant_change_A << K.created_for_collection
         return self
     end
     
-    def load( external_record_H, filter_record_B = true )
-        @record_H = super
+    def load( external_record_H, filter_record_TF: true )
+        self.record_H = super
         self.cant_change_A << K.resource
         self.cant_change_A << K.created_for_collection
         return self
     end
     
-    def read( filter_record_B = true )
+    def read( filter_record_TF: true )
         stringer = "#{self.tc_O.rep_O.uri_addr}/#{TOP_CONTAINERS}"
         if ( stringer != self.uri_addr[ 0 .. stringer.maxindex ]) then 
             SE.puts "#{SE.lineno}: =============================================="     
             SE.puts "uri isn't a top_container! uri=#{self.uri_addr}"
             raise
         end
-        @record_H = super( filter_record_B ) 
-#       SE.q {[ '@record_H' ]}
+        self.record_H = super 
+#       SE.q {[ 'self.record_H' ]}
         return self
     end
 
     def store( )
-    #   SE.q {[ '@record_H' ]}
+    #   SE.q {[ 'self.record_H' ]}
         if ( self.tc_O.res_O.nil? ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "self.tc_O.res_O == nil"
             SE.puts "This object was probably created with a 'Repository' Object"
             raise
         end
-        if (!(  @record_H[K.type] && @record_H[K.type] != '')) then 
+        if ( ! (  self.record_H[K.type] && self.record_H[K.type] != '' ) ) then 
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "#{SE.lineno}: I was expecting a @record_H[K.type] value";
+            SE.puts "#{SE.lineno}: I was expecting a self.record_H[K.type] value";
             SE.puts "self.uri_addr = #{self.uri_addr}"
-            SE.q {[ '@record_H' ]}
+            SE.q {[ 'self.record_H' ]}
             raise
         end
-        if (!(  @record_H[K.indicator] && @record_H[K.indicator] != K.undefined )) then 
+        if ( ! (  self.record_H[K.indicator] && self.record_H[K.indicator] != UNDEFINED ) ) then 
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "#{SE.lineno}: I was expecting a @record_H[K.indicator] value";
+            SE.puts "#{SE.lineno}: I was expecting a self.record_H[K.indicator] value";
             SE.puts "self.uri_addr = #{self.uri_addr}"
-            SE.q {[ '@record_H' ]}
+            SE.q {[ 'self.record_H' ]}
             raise
         end
-        if not (    ( @record_H[ K.collection ].any?{ | collection | collection[ K.ref ] == self.tc_O.res_O.uri_addr  } ) ||
-                    ( @record_H.fetch( K.resource, {} ).fetch( K.ref, '' ) == self.tc_O.res_O.uri_addr )
+        if not (    ( self.record_H[ K.collection ].any?{ | collection | collection[ K.ref ] == self.tc_O.res_O.uri_addr  } ) ||
+                    ( self.record_H.fetch( K.resource, {} ).fetch( K.ref, '' ) == self.tc_O.res_O.uri_addr )
                ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Top_Container doesn't belong to current Collection."
-            SE.puts '@record_H[ K.collection ].any?{ | collection | collection[ K.ref ] == self.tc_O.res_O.uri_addr  }'
-            SE.puts '@record_H.fetch( K.resource, {} ).fetch( K.ref, '' ) == self.tc_O.res_O.uri_addr'
+            SE.puts 'self.record_H[ K.collection ].any?{ | collection | collection[ K.ref ] == self.tc_O.res_O.uri_addr  }'
+            SE.puts 'self.record_H.fetch( K.resource, {} ).fetch( K.ref, '' ) == self.tc_O.res_O.uri_addr'
             SE.q {'self.tc_O.res_O.uri_addr'}
-            SE.q {'@record_H[ K.collection ]'}
-            SE.q {'@record_H'}
+            SE.q {'self.record_H[ K.collection ]'}
+            SE.q {'self.record_H'}
             raise
         end
         if ( self.uri_addr.nil? ) then
@@ -162,18 +163,18 @@ private attr_writer :tc_O, :rec_id, :uri_addr, :rec_jsonmodel_type
         end
         read()
         
-        if ( @record_H.has_key?( K.resource ) && @record_H[ K.resource ].has_key?( K.ref )) then
+        if ( self.record_H.has_key?( K.resource ) && self.record_H[ K.resource ].has_key?( K.ref )) then
             if ( self.tc_O.res_O.nil? ) then
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.puts "self.tc_O.res_O == nil"
                 SE.puts "This object was probably created with a 'Repository' Object"
                 raise
             end
-            if ( @record_H[ K.resource ][ K.ref ] != self.tc_O.res_O.uri_addr ) then
+            if ( self.record_H[ K.resource ][ K.ref ] != self.tc_O.res_O.uri_addr ) then
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.puts "Top_Container doesn't belong to current Resource."
-                SE.puts "@record_H[K.resource][K.ref] != self.tc_O.res_O.uri_addr"
-                SE.puts "#{@record_H[K.resource][K.ref]} != #{self.tc_O.res_O.uri_addr}"
+                SE.puts "self.record_H[K.resource][K.ref] != self.tc_O.res_O.uri_addr"
+                SE.puts "#{self.record_H[K.resource][K.ref]} != #{self.tc_O.res_O.uri_addr}"
                 raise
             end
         end
@@ -184,30 +185,27 @@ private attr_writer :tc_O, :rec_id, :uri_addr, :rec_jsonmodel_type
 end
 
 class TC_Query__of_Resource
-    attr_accessor :ao_query_O,  :uri_addr,  :tc_display_order_H,  :record_H_A,  :rec_id_A__BY_type_indicator_A_H
-    private       :ao_query_O=, :uri_addr=, :tc_display_order_H=, :record_H_A=, :rec_id_A__BY_type_indicator_A_H=
-    
-    RELATED_AOZ = :RELATED_AOZ
-    
-    def initialize( p1_ao_query_O )
-        if ( p1_ao_query_O.is_not_a?( AO_Query__of_Resource ) ) then
+    attr_accessor :uri_addr,  :tc_display_order_H,  :record_H_A,  :uri_addr_S__BY_type_indicator_CKA,  :ao_data_H_A__BY_tc_rec_id
+    private       :uri_addr=, :tc_display_order_H=, :record_H_A=, :uri_addr_S__BY_type_indicator_CKA=, :ao_data_H_A__BY_tc_rec_id=
+        
+    def initialize( p1_ao_QO )
+        if ( p1_ao_QO.is_not_a?( AO_Query__of_Resource ) ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 1 is not a 'AO_Query__of_Resource' class object, it's: '#{p1_ao_query_O.class}'"
+            SE.puts "Param 1 is not a 'AO_Query__of_Resource' class object, it's: '#{p1_ao_QO.class}'"
             raise
         end    
-        self.ao_query_O = p1_ao_query_O
-        self.uri_addr = "#{p1_ao_query_O.res_O.rep_O.uri_addr}/#{TOP_CONTAINERS}"    
-        if ( p1_ao_query_O.record_H_A.nil? ) then
+        self.uri_addr = "#{p1_ao_QO.res_O.rep_O.uri_addr}/#{TOP_CONTAINERS}"    
+        if ( p1_ao_QO.record_H_A.nil? ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "p1_ao_query_O.record_H_A is nil, was the get_full_ao_buf boolean set?"
+            SE.puts "p1_ao_QO.record_H_A is nil, was the get_full_ao_buf boolean set?"
             raise
         end
-        tc_ao_instance_xref_H_A__BY_tc_id = {}
-        p1_ao_query_O.record_H_A.each_with_index do | record_H, ao_display_order |
-            if ( record_H.has_no_key?( K.instances ) ) then
+        self.ao_data_H_A__BY_tc_rec_id = {}
+        p1_ao_QO.record_H_A.each_with_index do | ao_record_H, ao_display_order |
+            if ( ao_record_H.has_no_key?( K.instances ) ) then
                 next
             end
-            record_H[ K.instances ].each do | instance |
+            ao_record_H[ K.instances ].each do | instance |
                 if ( instance.has_no_key?( K.sub_container ) ) then
                     next
                 end
@@ -218,67 +216,67 @@ class TC_Query__of_Resource
                     SE.puts "#{SE.lineno}: =============================================="
                     SE.puts "instance with top_container but no K.ref key!"
                     SE.q { 'instance' }
-                    SE.q { 'record_H' }
+                    SE.q { 'ao_record_H' }
                     raise
                 end
-                tc_id = instance[ K.sub_container ][ K.top_container ][ K.ref ].delete_prefix( "#{self.uri_addr}/" ).to_i
-                raise 'tc_id == 0' if ( tc_id == 0 )
+                tc_rec_id_I = instance[ K.sub_container ][ K.top_container ][ K.ref ].delete_prefix( "#{self.uri_addr}/" ).to_i
+                SE.raise if ( tc_rec_id_I == 0 )
                 
-                tc_ao_instance_xref_H_A__BY_tc_id[ tc_id ] ||= []
-                tc_ao_instance_xref_H_A__BY_tc_id[ tc_id ].push( { K.title           => record_H[ K.title ],
-                                                                   :ao_display_order => ao_display_order,
-                                                                   K.uri             => record_H[ K.uri ],
-                                                                   K.instance        => instance[ K.sub_container ] } )
+                self.ao_data_H_A__BY_tc_rec_id[ tc_rec_id_I ] ||= []
+                self.ao_data_H_A__BY_tc_rec_id[ tc_rec_id_I ].push( { K.title           => ao_record_H[ K.title ],
+                                                                      :AO_DISPLAY_ORDER => ao_display_order,
+                                                                      K.uri             => ao_record_H[ K.uri ],
+                                                                      K.ancestors       => ao_record_H[ K.ancestors ],
+                                                                      K.level           => ao_record_H[ K.level ],
+                                                                      } )
                 
             end
         end
         
-        #   Make a hash by tc_id with the lowest (minimum) :ao_display_order value...
+        #   Make a hash by tc_rec_id_I with the lowest (minimum) :AO_DISPLAY_ORDER value...
         tmp_H = {}
-        tc_ao_instance_xref_H_A__BY_tc_id.each_pair do | tc_id, ao_instance_xref_H_A |
-             tmp_H[ tc_id ] = ao_instance_xref_H_A.map { | h | h[ :ao_display_order ] }.min
+        self.ao_data_H_A__BY_tc_rec_id.each_pair do | tc_rec_id_I, related_ao_H_A |
+             tmp_H[ tc_rec_id_I ] = related_ao_H_A.map { | h | h[ :AO_DISPLAY_ORDER ] }.min
         end
         #   Then sort the tmp_H by that lowest value, but sequence the hash 1..N for the actual order.
         self.tc_display_order_H = tmp_H.sort_by { |_, v| v }.each_with_index.to_h { |(k, _), i| [k, i] }
-        if ( self.tc_display_order_H.length != tc_ao_instance_xref_H_A__BY_tc_id.length ) then
+        if ( self.tc_display_order_H.length != self.ao_data_H_A__BY_tc_rec_id.length ) then
              SE.puts "#{SE.lineno}: =============================================="
-             SE.puts "self.tc_display_order_H.length != tc_ao_instance_xref_H_A__BY_tc_id.length"
-             SE.q {[ 'self.tc_display_order_H.length', 'tc_ao_instance_xref_H_A__BY_tc_id.length' ]}
+             SE.puts "self.tc_display_order_H.length != self.ao_data_H_A__BY_tc_rec_id.length"
+             SE.q {[ 'self.tc_display_order_H.length', 'self.ao_data_H_A__BY_tc_rec_id.length' ]}
              raise
         end
-        
-        self.rec_id_A__BY_type_indicator_A_H = { }
+   
+        self.uri_addr_S__BY_type_indicator_CKA = { }
         self.record_H_A = Array.new( self.tc_display_order_H.length )
-        p1_ao_query_O.res_O.rep_O.query( TOP_CONTAINERS )
-                           .record_H_A__OF_rec_id_A( self.tc_display_order_H.keys.sort )
-                           .each do | record_H |
-            tc_id = record_H[ K.uri ].delete_prefix( "#{self.uri_addr}/" ).to_i
-            raise 'tc_id == 0' if ( tc_id == 0 )
-            tc_display_order = self.tc_display_order_H[ tc_id ]
+        p1_ao_QO.res_O.query( TOP_CONTAINERS )
+                      .record_H_A__OF_rec_id_A( self.tc_display_order_H.keys.sort )
+                      .each do | tc_record_H |
+            tc_rec_id_I = tc_record_H[ K.uri ].delete_prefix( "#{self.uri_addr}/" ).to_i
+            SE.raise if ( tc_rec_id_I == 0 )
+            tc_display_order = self.tc_display_order_H[ tc_rec_id_I ]
             if ( tc_display_order.nil? ) then
                  SE.puts "#{SE.lineno}: =============================================="
-                 SE.puts "self.tc_display_order_H[ tc_id ] is nil?"
-                 SE.q {'record_H[ K.uri ]'}
+                 SE.puts "self.tc_display_order_H[ tc_rec_id_I ] is nil?"
+                 SE.q {'tc_record_H[ K.uri ]'}
                  SE.q {'self.tc_display_order_H'}
                  raise
             end 
             if ( self.record_H_A[ tc_display_order ].not_nil? ) then
                  SE.puts "#{SE.lineno}: =============================================="
                  SE.puts "self.record_H_A[ tc_display_order ].not_nil?"
-                 SE.q {'record_H'}
+                 SE.q {'tc_record_H'}
                  SE.q {'self.record_H_A[ tc_display_order ]'}
                  SE.q {'self.tc_display_order_H'}
                  raise
             end
             
-            type      = record_H.fetch( K.type ).strip.downcase
-            indicator = record_H.fetch( K.indicator ).strip.downcase
+            type      = tc_record_H.fetch( K.type ).strip.downcase
+            indicator = tc_record_H.fetch( K.indicator ).strip.downcase
             type_indicator_A = [ type.freeze, indicator.freeze ].freeze
-            self.rec_id_A__BY_type_indicator_A_H[ type_indicator_A ] ||= Set.new
-            self.rec_id_A__BY_type_indicator_A_H[ type_indicator_A ] << tc_id
-            record_H[ RELATED_AOZ ] = tc_ao_instance_xref_H_A__BY_tc_id[ tc_id ]
-            
-            self.record_H_A[ tc_display_order ] = record_H
+            self.uri_addr_S__BY_type_indicator_CKA[ type_indicator_A ] ||= Set.new
+            self.uri_addr_S__BY_type_indicator_CKA[ type_indicator_A ] << tc_record_H[ K.uri ]                        
+            self.record_H_A[ tc_display_order ] = tc_record_H
         end
         if ( self.record_H_A.length != self.tc_display_order_H.keys.length ) then
              SE.puts "#{SE.lineno}: =============================================="
@@ -295,30 +293,30 @@ class TC_Query__of_Resource
         return self
     end
     
-    def record_H__OF_uri( p1_tc_uri_addr_OR_id_num )
+    def record_H__OF_uri( p1_tc_uri_addr_OR_rec_id )
         case true
-        when p1_tc_uri_addr_OR_id_num.is_a?( String ) 
-            stringer = p1_tc_uri_addr_OR_id_num.delete_prefix( "#{self.uri_addr}/" )
+        when p1_tc_uri_addr_OR_rec_id.is_a?( String ) 
+            stringer = p1_tc_uri_addr_OR_rec_id.delete_prefix( "#{self.uri_addr}/" )
             if ( stringer.not_integer? ) then
                 SE.puts "#{SE.lineno}: =============================================="
-                SE.puts "Param 'p1_tc_uri_addr_OR_id_num' won't convert to an integer."
-                if ( p1_tc_uri_addr_OR_id_num[ 0 ] == '/' ) then
+                SE.puts "Param 'p1_tc_uri_addr_OR_rec_id' won't convert to an integer."
+                if ( p1_tc_uri_addr_OR_rec_id[ 0 ] == '/' ) then
                     SE.puts "It's probably because the URI doesn't start with '#{self.uri_addr}'"
                 end
-                SE.q {['p1_tc_uri_addr_OR_id_num','stringer','self.uri_addr']}
+                SE.q {['p1_tc_uri_addr_OR_rec_id','stringer','self.uri_addr']}
                 raise
             end
-            tc_id = stringer.to_i
-        when p1_tc_uri_addr_OR_id_num.integer?
-            tc_id = p1_tc_uri_addr_OR_id_num.to_i
+            tc_rec_id_I = stringer.to_i
+        when p1_tc_uri_addr_OR_rec_id.integer?
+            tc_rec_id_I = p1_tc_uri_addr_OR_rec_id.to_i
         else
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Was expecting param 'p1_tc_uri_addr_OR_id_num' to be a URI String or integer"
-            SE.q {'p1_tc_uri_addr_OR_id_num'}
+            SE.puts "Was expecting param 'p1_tc_uri_addr_OR_rec_id' to be a URI String or integer"
+            SE.q {'p1_tc_uri_addr_OR_rec_id'}
             raise
         end
-        raise 'tc_id == 0' if ( tc_id == 0 )
-        tc_display_order = self.tc_display_order_H[ tc_id ]
+        SE.raise if ( tc_rec_id_I == 0 )
+        tc_display_order = self.tc_display_order_H[ tc_rec_id_I ]
         if ( tc_display_order.nil? ) then
             return nil
         end
@@ -332,8 +330,35 @@ class TC_Query__of_Resource
         return self.record_H_A[ tc_display_order ]
     end
     
-    def rec_id_A__OF_type_indicator( type:, indicator: )
-        return self.rec_id_A__BY_type_indicator_A_H[ [ type.strip.downcase, indicator.strip.downcase ] ].to_a
+    def ao_data_H_A__OF_tc_uri( p1_tc_uri_addr_OR_rec_id )
+    #   NOTE! This is NOT the ao_record_H.   See ao_data_H_A above for the fields.
+        case true
+        when p1_tc_uri_addr_OR_rec_id.is_a?( String ) 
+            stringer = p1_tc_uri_addr_OR_rec_id.delete_prefix( "#{self.uri_addr}/" )
+            if ( stringer.not_integer? ) then
+                SE.puts "#{SE.lineno}: =============================================="
+                SE.puts "Param 'p1_tc_uri_addr_OR_rec_id' won't convert to an integer."
+                if ( p1_tc_uri_addr_OR_rec_id[ 0 ] == '/' ) then
+                    SE.puts "It's probably because the URI doesn't start with '#{self.uri_addr}'"
+                end
+                SE.q {['p1_tc_uri_addr_OR_rec_id','stringer','self.uri_addr']}
+                raise
+            end
+            tc_rec_id_I = stringer.to_i
+        when p1_tc_uri_addr_OR_rec_id.integer?
+            tc_rec_id_I = p1_tc_uri_addr_OR_rec_id.to_i
+        else
+            SE.puts "#{SE.lineno}: =============================================="
+            SE.puts "Was expecting param 'p1_tc_uri_addr_OR_rec_id' to be a URI String or integer"
+            SE.q {'p1_tc_uri_addr_OR_rec_id'}
+            raise
+        end
+        SE.raise if ( tc_rec_id_I == 0 )
+        return self.ao_data_H_A__BY_tc_rec_id[ tc_rec_id_I ]
+    end 
+    
+    def uri_addr_A__OF_type_indicator( type:, indicator: )
+        return self.uri_addr_S__BY_type_indicator_CKA[ [ type.strip.downcase, indicator.strip.downcase ] ].to_a
     end
 
 end

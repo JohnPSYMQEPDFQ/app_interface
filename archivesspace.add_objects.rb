@@ -150,8 +150,6 @@ if not File.exist?( ARGV[ 0 ] ) then
     raise
 end
 
-# SE.q {[ 'cmdln_option_H' ]}
-
 if ( cmdln_option_H[ :rep_num ].nil? ) then
     SE.puts "The --rep-num option is required."
     raise
@@ -165,17 +163,19 @@ if ( cmdln_option_H[ :res_faft ].nil? ) then
     raise
 end
 
+SE.q {[ 'cmdln_option_H' ]}
+
 aspace_O = ASpace.new
 aspace_O.allow_updates=cmdln_option_H[ :update ] 
 
 rep_O = Repository.new( aspace_O, cmdln_option_H[ :rep_num ] )
 
 res_O = Resource.new( rep_O, cmdln_option_H[ :res_num ] )
-res_buf_O = res_O.new_buffer.read
-aspace_O.validate_resource_faft( res_buf_O, cmdln_option_H[ :res_faft ] )
+res_BO = res_O.new_buffer.read
+aspace_O.validate_resource_faft( res_BO, cmdln_option_H[ :res_faft ] )
 
 
-res_Q_O = Res_Q.new( resource_O: res_O, get_full_ao_record_TF: false )
+res_Q_O = Res_Q.new( res_O: res_O, get_full_ao_record_TF: false )
 parent_ref_stack_A = [ ]
 if ( cmdln_option_H[ :ao_num ] ) then
     if ( cmdln_option_H[ :ao_title ] ) then
@@ -189,7 +189,7 @@ else
         parent_ref_stack_A << res_Q_O.uri_addr__OF_title( cmdln_option_H[ :ao_title ] )
         SE.puts "#{SE.lineno}: initial parent AO uri = #{parent_ref_stack_A[ 0 ]} (From the cmd_line)"
     else
-        parent_ref_stack_A << res_buf_O.record_H[ K.uri ]
+        parent_ref_stack_A << res_BO.record_H[ K.uri ]
         SE.puts "#{SE.lineno}: initial parent AO_uri = #{parent_ref_stack_A[ 0 ]} (The Resource)"
     end
 end
@@ -199,7 +199,7 @@ if ( parent_ref_stack_A.maxindex != 0 ) then
     raise
 end
 
-tc_uri_H__by_type_and_indicator = {}
+tc_uri__BY_type_and_indicator = {}
 if ( cmdln_option_H[ :reuse_TCs ] ) then
     SE.puts "Finding Top_Containers (which takes some time) ..."
     time_begin = Time.now
@@ -210,11 +210,11 @@ if ( cmdln_option_H[ :reuse_TCs ] ) then
         if ( record_H.key?( K.type ) and record_H.key?( K.indicator )) then
             stringer=record_H[ K.type ] + record_H[ K.indicator ]
             SE.puts "Reusing TC: #{record_H[ K.uri ].trailing_digits}, type=#{record_H[ K.type ]}, indicator='#{record_H[ K.indicator ]}'"
-            if ( tc_uri_H__by_type_and_indicator.key?( stringer ) ) then
+            if ( tc_uri__BY_type_and_indicator.key?( stringer ) ) then
                 SE.puts "#{SE.lineno}: Duplicate record_H 'type+indicator' #{stringer}, K.uri=#{record_H[ K.uri ]}"
                 next
             end
-            tc_uri_H__by_type_and_indicator[ stringer ] = record_H[ K.uri ]
+            tc_uri__BY_type_and_indicator[ stringer ] = record_H[ K.uri ]
         end
     end
 end
@@ -276,54 +276,54 @@ for argv in ARGV do
                 next
             end
 
-            ao_buf_O = Archival_Object.new( res_buf_O ).new_buffer.create( record_level )
-          # SE.q {'ao_buf_O.record_H'}
+            ao_BO = Archival_Object.new( res_BO ).new_buffer.create( record_level )
+          # SE.q {'ao_BO.record_H'}
             if ( record_level == K.otherlevel ) then
                 if ( input_record_H[ K.fmtr_record ].has_key?( K.other_level ) ) then
-                    ao_buf_O.record_H = { K.other_level => input_record_H[ K.fmtr_record ][ K.other_level ] }
+                    ao_BO.record_H = { K.other_level => input_record_H[ K.fmtr_record ][ K.other_level ] }
                 else
                     SE.puts "#{SE.lineno}: Hit a 'otherlevel' record with no ' K.fmtr_record ][ K.other_level ]' value."
                     SE.q {[ 'input_record_H' ]}
                     raise                    
                 end
             end
-            if ( ao_buf_O.record_H[ K.resource ][ K.ref ] == parent_ref_stack_A[ parent_ref_stack_A.maxindex ] ) then
-                ao_buf_O.record_H = { K.parent => '' }
+            if ( ao_BO.record_H[ K.resource ][ K.ref ] == parent_ref_stack_A[ parent_ref_stack_A.maxindex ] ) then
+                ao_BO.record_H = { K.parent => '' }
             else
-                ao_buf_O.record_H = { K.parent => { K.ref => parent_ref_stack_A[ parent_ref_stack_A.maxindex ] }} 
+                ao_BO.record_H = { K.parent => { K.ref => parent_ref_stack_A[ parent_ref_stack_A.maxindex ] }} 
             end
             if ( input_record_H[ K.fmtr_record ].key?( K.component_id )) then
-                ao_buf_O.record_H = { K.component_id => input_record_H[ K.fmtr_record ][ K.component_id ] }
+                ao_BO.record_H = { K.component_id => input_record_H[ K.fmtr_record ][ K.component_id ] }
             end
-            ao_buf_O.record_H = { K.title => input_record_H[ K.fmtr_record ][ K.title ] }
+            ao_BO.record_H = { K.title => input_record_H[ K.fmtr_record ][ K.title ] }
             if ( input_record_H[ K.fmtr_record ].key?( K.dates ) and
                  input_record_H[ K.fmtr_record ][ K.dates ].not_empty? ) then
-                ao_buf_O.record_H = { K.dates => input_record_H[ K.fmtr_record ][ K.dates ] }
+                ao_BO.record_H = { K.dates => input_record_H[ K.fmtr_record ][ K.dates ] }
             end
             if ( input_record_H[ K.fmtr_record ].key?( K.notes ) and
                ! input_record_H[ K.fmtr_record ][ K.notes ].empty? ) then
-                ao_buf_O.record_H = { K.notes => input_record_H[ K.fmtr_record ][ K.notes ] }
+                ao_BO.record_H = { K.notes => input_record_H[ K.fmtr_record ][ K.notes ] }
             end
             if ( input_record_H[ K.fmtr_record ].key?( K.fmtr_container ) and 
                  input_record_H[ K.fmtr_record ][ K.fmtr_container ].not_empty? ) then
-                ao_buf_O.record_H[ K.instances ] = [ ] 
+                ao_BO.record_H[ K.instances ] = [ ] 
                 SE.puts "#{SE.lineno}: More than one TC" if ( input_record_H[ K.fmtr_record ][ K.fmtr_container ].length > 1 )
                 input_record_H[ K.fmtr_record ][ K.fmtr_container ].each do | container_H |
                     type           = container_H[ K.type ]
                     indicator      = container_H[ K.indicator ]
                     unique_TC_key  = "#{type}#{indicator}"
-                    if ( tc_uri_H__by_type_and_indicator.has_no_key?( unique_TC_key ) ) then
-                        tc_buf_O = Top_Container.new( res_O ).new_buffer.create
-                        tc_buf_O.record_H = { K.type => type }
-                        tc_buf_O.record_H = { K.indicator => indicator }
-                        tc_buf_O.store
-                        tc_uri_H__by_type_and_indicator[ unique_TC_key ] = tc_buf_O.uri_addr
-                      # SE.q {'tc_uri_H__by_type_and_indicator'}
+                    if ( tc_uri__BY_type_and_indicator.has_no_key?( unique_TC_key ) ) then
+                        tc_BO = Top_Container.new( res_O ).new_buffer.create
+                        tc_BO.record_H = { K.type => type }
+                        tc_BO.record_H = { K.indicator => indicator }
+                        tc_BO.store
+                        tc_uri__BY_type_and_indicator[ unique_TC_key ] = tc_BO.uri_addr
+                      # SE.q {'tc_uri__BY_type_and_indicator'}
                     end
 
                     it_frag_O = Record_Format.new( :instance_type )
                     it_frag_O.record_H = { K.instance_type => K.mixed_materials}
-                    it_frag_O.record_H = { K.sub_container => { K.top_container => { K.ref => tc_uri_H__by_type_and_indicator[ unique_TC_key ] }}}
+                    it_frag_O.record_H = { K.sub_container => { K.top_container => { K.ref => tc_uri__BY_type_and_indicator[ unique_TC_key ] }}}
                     it_frag_O.record_H = { K.sub_container => { K.type_2 => container_H[ K.type_2 ] }}
                     it_frag_O.record_H = { K.sub_container => { K.indicator_2 => container_H[ K.indicator_2 ] }}
                     if ( container_H[ K.type_3 ].not_nil? ) then
@@ -331,13 +331,13 @@ for argv in ARGV do
                         it_frag_O.record_H = { K.sub_container => { K.indicator_3 => container_H[ K.indicator_3 ] }}
                     end
 
-                    ao_buf_O.record_H[ K.instances ].push( it_frag_O.record_H )
+                    ao_BO.record_H[ K.instances ].push( it_frag_O.record_H )
                 end
             end
 
-          # SE.q {'ao_buf_O.record_H'}
-            ao_buf_O.store
-            last_AO_uri_created = ao_buf_O.uri_addr
+          # SE.q {'ao_BO.record_H'}
+            ao_BO.store
+            last_AO_uri_created = ao_BO.uri_addr
             next
         end
         SE.puts "#{SE.lineno}: I should't be here!"
@@ -345,7 +345,7 @@ for argv in ARGV do
         raise
     end
 end
-#SE.q {'tc_uri_H__by_type_and_indicator'}
+#SE.q {'tc_uri__BY_type_and_indicator'}
 SE.puts "#{SE.lineno}: net indent count = #{net_indent_cnt}"
 SE.puts "record counts:", record_level_cnt.ai
 

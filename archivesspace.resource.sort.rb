@@ -9,7 +9,7 @@ require 'class.Archivesspace.Resource.rb'
 
 module Main_Global_Variables
 #       Instead of easily mistyped instance-variables, we can do this...
-        attr_accessor :myself_name, :cmdln_option_H, :aspace_O, :rep_O, :res_O, :res_buf_O
+        attr_accessor :myself_name, :cmdln_option_H, :aspace_O, :rep_O, :res_O, :res_BO
                       
 end
 include Main_Global_Variables
@@ -84,19 +84,19 @@ self.aspace_O.allow_updates=self.cmdln_option_H[ :update ]
 self.rep_O = Repository.new( self.aspace_O, self.cmdln_option_H[ :rep_num ] )
 
 self.res_O = Resource.new( self.rep_O, self.cmdln_option_H[ :res_num ] )
-self.res_buf_O = self.res_O.new_buffer.read
+self.res_BO = self.res_O.new_buffer.read
 
-if ( self.cmdln_option_H[ :res_title ].downcase != self.res_buf_O.record_H[ K.title ].downcase ) then
+if ( self.cmdln_option_H[ :res_title ].downcase != self.res_BO.record_H[ K.title ].downcase ) then
     SE.puts "#{SE.lineno}: The --res-title value must match the title of --res-num #{self.cmdln_option_H[ :res_num ]}. They don't:"
     SE.q {[ 'self.cmdln_option_H[ :res_title ].downcase' ]}
-    SE.q {[ 'self.res_buf_O.record_H[ K.title ].downcase' ]}
+    SE.q {[ 'self.res_BO.record_H[ K.title ].downcase' ]}
     raise
 end
 
-ao_query_O = AO_Query__of_Resource.new( resource_O: self.res_O )
+ao_QO = AO_Query__of_Resource.new( res_O: self.res_O )
 
-index_orig_count = ao_query_O.index_H_A.count
-index_H_with_children_A = ao_query_O.index_H_A.select { | h | h[ K.child_count ] > 0 }
+index_orig_count = ao_QO.index_H_A.count
+index_H_with_children_A = ao_QO.index_H_A.select { | h | h[ K.child_count ] > 0 }
 
 resource_children_cnt = index_H_with_children_A.count { | h | h[ K.parent_id ].nil?}
 if ( index_orig_count != index_H_with_children_A.sum { | h | h[ K.child_count ]} + resource_children_cnt ) then
@@ -150,9 +150,9 @@ else
         SE.puts "#{SE.lineno}: Parent Title = '#{arr[ 0 ][ K.title ]}'"
         SE.puts "#{SE.lineno}: Parent AO uri = #{parent_uri}"
     else
-        parent_uri = self.res_buf_O.record_H[ K.uri ]
+        parent_uri = self.res_BO.record_H[ K.uri ]
         SE.puts "#{SE.lineno}: Parent AO_uri = #{parent_uri} (The Resource)"
-        SE.puts "#{SE.lineno}: Parent Title = '#{self.res_buf_O.record_H[ K.title]}'"
+        SE.puts "#{SE.lineno}: Parent Title = '#{self.res_BO.record_H[ K.title]}'"
         parent_uri = ''
     end
 end
@@ -164,23 +164,23 @@ if ( parent_uri.nil? ) then
 end
 
 SE.puts "#{SE.lineno}: PRE-SORT"
-ao_query_O = AO_Query__of_Resource.new( resource_O: self.res_O, 
-                                       get_full_ao_record_TF: true, 
-                                       starting_node_uri: parent_uri, 
-                                       recurse_index_children_TF: false 
-                                      )
-SE.q {[ 'ao_query_O.record_H_A.length' ]}
+ao_QO = AO_Query__of_Resource.new(                   res_O: self.res_O, 
+                                     get_full_ao_record_TF: true, 
+                                         starting_node_uri: parent_uri, 
+                                 recurse_index_children_TF: false 
+                                  )
+SE.q {[ 'ao_QO.record_H_A.length' ]}
 
-# current_min_position = ao_query_O.record_H_A.min_by { | h | h[ K.position ] }[ K.position ]
-# current_max_position = ao_query_O.record_H_A.max_by { | h | h[ K.position ] }[ K.position ]
+# current_min_position = ao_QO.record_H_A.min_by { | h | h[ K.position ] }[ K.position ]
+# current_max_position = ao_QO.record_H_A.max_by { | h | h[ K.position ] }[ K.position ]
 # starting_max_position = 10 ** ( current_max_position.to_s.length )
 # SE.q {['current_min_position','current_max_position', 'starting_max_position']}
 
-#ao_query_O.record_H_A.first( 10 ).each do | record_H |
+#ao_QO.record_H_A.first( 10 ).each do | record_H |
 #   SE.q {[ 'record_H[ K.title ]', 'record_H[ K.position ]', 'record_H[ K.uri ]' ]}
 #end
 
-sort_jost = lambda{ | p1_title |
+sort_LP = lambda{ | p1_title |
     format = '%09d'
     ignore_this_character_except_for_spliting = '^'
     title = p1_title.strip
@@ -198,16 +198,16 @@ sort_jost = lambda{ | p1_title |
     return stringer
 }
 
-sorted_record_H_A = ao_query_O.record_H_A.sort_by { | record_H | sort_jost.call( record_H[ K.title ] ) }
+sorted_record_H_A = ao_QO.record_H_A.sort_by { | record_H | sort_LP.call( record_H[ K.title ] ) }
 SE.q {[ 'sorted_record_H_A.length' ]}
 
 SE.puts "#{SE.lineno}: POST-SORT"
 
 sorted_record_H_A.each_with_index do | record_H, new_position |   
-    ao_buf_O = Archival_Object.new( self.res_buf_O ).new_buffer.load( record_H )
-    if ( ao_buf_O.record_H[ K.position ] != new_position ) then
-        ao_buf_O.record_H[ K.position ] = new_position
-        ao_buf_O.store
+    ao_BO = Archival_Object.new( self.res_BO ).new_buffer.load( record_H )
+    if ( ao_BO.record_H[ K.position ] != new_position ) then
+        ao_BO.record_H[ K.position ] = new_position
+        ao_BO.store
         SE.q {[ 'record_H[ K.title ]', 'record_H[ K.position ]', 'new_position' ]}
     end
 #   puts "#{record_H[ K.title ]}"

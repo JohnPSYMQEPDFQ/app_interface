@@ -156,7 +156,7 @@ def put_record( p1_calculated_indent_level, p2_record_H__stack_A, p3_current_rec
     SE.q {'p1_calculated_indent_level' }                                                    if ( $DEBUG )
     SE.q {'arr1'}                                                                           if ( $DEBUG )
     arr1.shift( p1_calculated_indent_level )
-    output_record_H[ K.fmtr_record ][ K.title ] = arr1.join( ' ' ).strip
+    output_record_H[ K.fmtr_record ][ K.title ] = arr1.join( '. ' ).strip
 #   output_record_H[ K.fmtr_record ][ K.title ] = arr1[ -1 ].strip
     if ( output_record_H[ K.fmtr_record ][ K.title ].blank? ) then
         if ( date_H_A && date_H_A.maxindex >= 0 ) then

@@ -31,9 +31,9 @@ class Spreadsheet_CSV
         h = {   
                 "ArchivesSpace field code (please don't edit this row)" => "" ,  # <<< This needs to be in the header of column 1
                 K.ead => @ead_id ,
-                K.title => K.undefined ,
-                K.hierarchy => K.undefined ,
-                K.level => K.undefined ,
+                K.title => UNDEFINED ,
+                K.hierarchy => UNDEFINED ,
+                K.level => UNDEFINED ,
                 K.publish => K.spreadsheet_true ,
             # Dates
                 K.dates_label => "" ,

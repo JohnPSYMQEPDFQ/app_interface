@@ -431,11 +431,11 @@ def put_column( column_idx = 0 )
                 end                    
             end
            #SE.q {'arr'}
-            raise "arr.length >= 2" if arr.length >= 2
+            SE.raise if arr.length >= 2
             if ( arr.length == 1 ) then
               # SE.puts "#{SE.lineno}: POP:  #{self.column_stack_H_A.last.fetch( :sub_column_value )[ 0, 30 ]}"
                 loop do
-                    raise "self.column_stack_H_A.empty?" if self.column_stack_H_A.empty?
+                    SE.raise if self.column_stack_H_A.empty?
                     column_stack_H = self.column_stack_H_A.pop
                     indent_spaces = +' ' * ( self.column_stack_H_A.length * 4 )
                     output_F_puts indent_spaces  + "#{K.fmtr_end_group} End-Begin csv.row=#{$.}" +
@@ -700,7 +700,8 @@ tmp1_F.each_line do | input_column_J |
             raise
         end
     end
-    if ( input_column_H.keys - original_file_header_A != [] ) then
+    arr = input_column_H.keys - original_file_header_A
+    if ( arr.not_empty? ) then
         SE.puts "#{SE.lineno}: Hash keys different."
         SE.q {[ 'input_column_H.keys', 'original_file_header_A' ]}
         raise
@@ -729,15 +730,15 @@ tmp1_F.close
 tmp3_F = File.new( "#{myself_name}.tmp3_F.json", 'w+' )
 #SE.q {['column_with_data_H']}
 
-column_with_data_H__truncated_display = nil   #  Just to get rid of the warning: assigned but unused variable - column_with_data_H__truncated_display
-column_with_data_H__truncated_display = lambda{
+column_with_data_H__truncated_display_LP = nil   #  Just to get rid of the warning: assigned but unused variable - column_with_data_H__truncated_display_LP
+column_with_data_H__truncated_display_LP = lambda{
     h = {}
     column_with_data_H.each_pair do | column, value |
         h[ column ] = value[ 0, 120 ]
     end
     return h
 }                
-SE.q {'column_with_data_H__truncated_display.call'}  
+SE.q {'column_with_data_H__truncated_display_LP.call'}  
 
 self.used_column_header_A = []
 tmp2_F.rewind
@@ -915,7 +916,7 @@ tmp3_F.each_line do | input_column_J |
     seriesdate_column_value = +''
     output_column_H = {}
     column_use_H.each_pair do | column_name, column_use |     
-        input_column_name_value__save = input_column_H[ column_name ].copy_by_value
+        input_column_name_value__save = input_column_H[ column_name ].deep_copy
         if ( self.used_column_header_A.index( column_name ).nil? ) then
             SE.puts "#{SE.lineno}: Couldn't find '#{column_name}' in 'self.used_column_header_A'"
             SE.q {[ 'self.used_column_header_A' ]}

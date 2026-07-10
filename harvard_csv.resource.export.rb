@@ -177,17 +177,17 @@ def fill_extents(row, ao)
   end
 end
 
-def fetch_top_container(sub_container, tc_query_O)
+def fetch_top_container(sub_container, tc_QO)
   ref = sub_container.dig("top_container", "ref")
   return nil unless ref
-  tc = tc_query_O.record_H__OF_uri( ref )
+  tc = tc_QO.record_H__OF_uri( ref )
   if ( tc.nil? ) then
     raise "Invalid tc ref '#{ref}'"
   end
   return tc
 end
 
-def fill_instances(row, ao, tc_query_O)
+def fill_instances(row, ao, tc_QO)
   insts = ao["instances"].to_a
 
   # Warn if AO references multiple different top-container refs across instances
@@ -208,7 +208,7 @@ def fill_instances(row, ao, tc_query_O)
       row["type_3#{s}"]      = subc["type_3"]
       row["indicator_3#{s}"] = subc["indicator_3"]
 
-      if (tc = fetch_top_container(subc, tc_query_O))
+      if (tc = fetch_top_container(subc, tc_QO))
         row["type_1#{s}"]      = tc["type"]
         row["indicator_1#{s}"] = tc["indicator"]
         row["barcode#{s}"]     = tc["barcode"]
@@ -261,7 +261,7 @@ end
 # ------------------------------
 # Build a full row for an AO
 # ------------------------------
-def build_row_from_ao(ao, collection_id, tc_query_O)
+def build_row_from_ao(ao, collection_id, tc_QO)
   row = Hash[HARVARD_HEADERS.map { |h| [h, nil] }]
 
   row["collection_id"]     = collection_id
@@ -276,7 +276,7 @@ def build_row_from_ao(ao, collection_id, tc_query_O)
 
   fill_dates(row, ao)
   fill_extents(row, ao)
-  fill_instances(row, ao, tc_query_O)
+  fill_instances(row, ao, tc_QO)
   fill_notes(row, ao)
 
   row
@@ -292,11 +292,11 @@ rep_O = Repository.new( aspace_O, 2 )
 res_O = Resource.new( rep_O, RESOURCE_ID )
 resource = fetch_resource()
 collection_id = resource_identifier_string(resource)
-res_query_O = AO_Query__of_Resource.new( resource_O: res_O, get_full_ao_record_TF: true )
-tc_query_O = TC_Query__of_Resource.new( res_query_O )
+res_QO = AO_Query__of_Resource.new( res_O: res_O, get_full_ao_record_TF: true )
+tc_QO = TC_Query__of_Resource.new( res_QO )
 rows = []
-res_query_O.record_H_A.each do | ao |
-    rows << build_row_from_ao(ao, collection_id, tc_query_O)
+res_QO.record_H_A.each do | ao |
+    rows << build_row_from_ao(ao, collection_id, tc_QO)
 end
 
 CSV.open(OUTPUT_CSV, "w", write_headers: true, headers: HARVARD_HEADERS) do |csv|

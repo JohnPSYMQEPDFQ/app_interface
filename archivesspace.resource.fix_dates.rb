@@ -67,7 +67,7 @@ res_O = Resource.new( rep_O, res_num )
 update_cnt = 0
 record_cnt = 0
 date_cnt = 0    
-AO_Query__of_Resource.new( resource_O: res_O ).index_H_A.each do | index_H |
+AO_Query__of_Resource.new( res_O: res_O ).index_H_A.each do | index_H |
     record_cnt += 1
     if ( ! ( index_H.key?( K.dates ) and index_H[ K.dates ].length > 0 )) then
         next
@@ -79,7 +79,7 @@ AO_Query__of_Resource.new( resource_O: res_O ).index_H_A.each do | index_H |
     
     after_image = before_image + ''
 
-    ao_buf_O = nil
+    ao_BO = nil
     index_H[ K.dates ].tap do | ao_dates_A |
         ao_dates_A.each_index do | idx |
             date_cnt += 1
@@ -89,20 +89,20 @@ AO_Query__of_Resource.new( resource_O: res_O ).index_H_A.each do | index_H |
                 end                   
                 change_type = [ ' ',' ',' ',' ' ]
                 if ( ao_date[ K.label ] != K.creation ) then
-                    ao_buf_O = Archival_Object.new(res_O, index_H[ K.uri ] ).new_buffer.read if ( ao_buf_O.nil? )
-                    before_image << "|#{change_type.join(' ')}| #{ao_buf_O.record_H[ K.dates ][ idx ]}"
-                    ao_buf_O.record_H[ K.dates ][ idx ][ K.label ] = K.creation
+                    ao_BO = Archival_Object.new(res_O, index_H[ K.uri ] ).new_buffer.read if ( ao_BO.nil? )
+                    before_image << "|#{change_type.join(' ')}| #{ao_BO.record_H[ K.dates ][ idx ]}"
+                    ao_BO.record_H[ K.dates ][ idx ][ K.label ] = K.creation
                     change_type[ 0 ] = "C"
                 end
                 if ( ao_date[ K.type ] == K.single and ao_date.key?( K.begin ) ) then    # It's K.type in the INDEX but K.date_type in the AO record!!
-                    ao_buf_O = Archival_Object.new(res_O, index_H[ K.uri ] ).new_buffer.read if ( ao_buf_O.nil? )
-                    before_image << "|#{change_type.join(' ')}| #{ao_buf_O.record_H[ K.dates ][ idx ]}"
-                    ao_buf_O.record_H[ K.dates ][ idx ][ K.date_type ]  = K.inclusive
-                    ao_buf_O.record_H[ K.dates ][ idx ][ K.end ]        = ao_buf_O.record_H[ K.dates ][ idx ][ K.begin ]
-                    stringer = aspace_O.format_date_expression( from_date: ao_buf_O.record_H[ K.dates ][ idx ][ K.begin ],
-                                                                thru_date: ao_buf_O.record_H[ K.dates ][ idx ][ K.end ],
-                                                                certainty: ao_buf_O.record_H[ K.dates ][ idx ][ K.certainty ] )
-                    ao_buf_O.record_H[ K.dates ][ idx ][ K.expression ] = stringer
+                    ao_BO = Archival_Object.new(res_O, index_H[ K.uri ] ).new_buffer.read if ( ao_BO.nil? )
+                    before_image << "|#{change_type.join(' ')}| #{ao_BO.record_H[ K.dates ][ idx ]}"
+                    ao_BO.record_H[ K.dates ][ idx ][ K.date_type ]  = K.inclusive
+                    ao_BO.record_H[ K.dates ][ idx ][ K.end ]        = ao_BO.record_H[ K.dates ][ idx ][ K.begin ]
+                    stringer = aspace_O.format_date_expression( from_date: ao_BO.record_H[ K.dates ][ idx ][ K.begin ],
+                                                                thru_date: ao_BO.record_H[ K.dates ][ idx ][ K.end ],
+                                                                certainty: ao_BO.record_H[ K.dates ][ idx ][ K.certainty ] )
+                    ao_BO.record_H[ K.dates ][ idx ][ K.expression ] = stringer
                     change_type[ 1 ] = "S"
                 elsif ( ao_date.key?( K.begin ) and ao_date.key?( K.end ) ) then
                     stringer = aspace_O.format_date_expression( from_date: ao_date[ K.begin ], 
@@ -110,31 +110,31 @@ AO_Query__of_Resource.new( resource_O: res_O ).index_H_A.each do | index_H |
                                                                 certainty: '' )   # index_H doesn't have K.certainty !!
                     if  (ao_date.key?( K.expression ) and ao_date[ K.expression].not_blank? ) then
                         if  (ao_date[ K.expression ] != stringer) then
-                            ao_buf_O = Archival_Object.new(res_O, index_H[ K.uri ] ).new_buffer.read if ( ao_buf_O.nil? )
-                            before_image << "|#{change_type.join(' ')}| #{ao_buf_O.record_H[ K.dates ][ idx ]}"
-                            stringer = aspace_O.format_date_expression( from_date: ao_buf_O.record_H[ K.dates ][ idx ][ K.begin ], 
-                                                                        thru_date: ao_buf_O.record_H[ K.dates ][ idx ][ K.end ],
-                                                                        certainty: ao_buf_O.record_H[ K.dates ][ idx ][ K.certainty ] )  
-                            ao_buf_O.record_H[ K.dates ][ idx ][ K.expression ] = stringer
-#                           ao_buf_O.record_H[ K.dates ][ idx ][ K.date_type ]  = K.inclusive  THIS WIPES OUT BULK!! 
+                            ao_BO = Archival_Object.new(res_O, index_H[ K.uri ] ).new_buffer.read if ( ao_BO.nil? )
+                            before_image << "|#{change_type.join(' ')}| #{ao_BO.record_H[ K.dates ][ idx ]}"
+                            stringer = aspace_O.format_date_expression( from_date: ao_BO.record_H[ K.dates ][ idx ][ K.begin ], 
+                                                                        thru_date: ao_BO.record_H[ K.dates ][ idx ][ K.end ],
+                                                                        certainty: ao_BO.record_H[ K.dates ][ idx ][ K.certainty ] )  
+                            ao_BO.record_H[ K.dates ][ idx ][ K.expression ] = stringer
+#                           ao_BO.record_H[ K.dates ][ idx ][ K.date_type ]  = K.inclusive  THIS WIPES OUT BULK!! 
                             change_type[ 2 ] = "E"    
                         end
                     else
-                        ao_buf_O = Archival_Object.new(res_O, index_H[ K.uri ] ).new_buffer.read if ( ao_buf_O.nil? )
-                        before_image << "|#{change_type.join(' ')}| #{ao_buf_O.record_H[ K.dates ][ idx ]}"
-                        stringer = aspace_O.format_date_expression( from_date: ao_buf_O.record_H[ K.dates ][ idx ][ K.begin ], 
-                                                                    thru_date: ao_buf_O.record_H[ K.dates ][ idx ][ K.end ],
-                                                                    certainty: ao_buf_O.record_H[ K.dates ][ idx ][ K.certainty ] )  
-                        ao_buf_O.record_H[ K.dates ][ idx ][ K.expression ] = stringer
-#                       ao_buf_O.record_H[ K.dates ][ idx ][ K.date_type ]  = K.inclusive   THIS WIPES OUT BULK!! 
+                        ao_BO = Archival_Object.new(res_O, index_H[ K.uri ] ).new_buffer.read if ( ao_BO.nil? )
+                        before_image << "|#{change_type.join(' ')}| #{ao_BO.record_H[ K.dates ][ idx ]}"
+                        stringer = aspace_O.format_date_expression( from_date: ao_BO.record_H[ K.dates ][ idx ][ K.begin ], 
+                                                                    thru_date: ao_BO.record_H[ K.dates ][ idx ][ K.end ],
+                                                                    certainty: ao_BO.record_H[ K.dates ][ idx ][ K.certainty ] )  
+                        ao_BO.record_H[ K.dates ][ idx ][ K.expression ] = stringer
+#                       ao_BO.record_H[ K.dates ][ idx ][ K.date_type ]  = K.inclusive   THIS WIPES OUT BULK!! 
                         change_type[ 3 ] = "B"
                     end
                 end
-                after_image  << "|#{change_type.join(' ')}| #{ao_buf_O.record_H[ K.dates ][ idx ]}" if ( ao_buf_O.not_nil? )
+                after_image  << "|#{change_type.join(' ')}| #{ao_BO.record_H[ K.dates ][ idx ]}" if ( ao_BO.not_nil? )
             end
         end
     end
-    next if ( ao_buf_O.nil? )
+    next if ( ao_BO.nil? )
 
 #   SE.puts "URI=#{index_H[ K.uri ]}" 
     update_cnt += 1
@@ -142,7 +142,7 @@ AO_Query__of_Resource.new( resource_O: res_O ).index_H_A.each do | index_H |
     puts "#{update_cnt},#{date_cnt},#{record_cnt}:#{before_image}"
     puts "#{update_cnt},#{date_cnt},#{record_cnt}:#{after_image}"
     puts ''
-    ao_buf_O.store
+    ao_BO.store
 end
 SE.q {['record_cnt', 'update_cnt' ]}
 

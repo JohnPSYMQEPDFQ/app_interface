@@ -28,6 +28,10 @@ module These_Constants
     TOP_CONTAINERS              = 'top_containers'
     LOCATIONS                   = 'locations'
     
+#   Could be used anywhere...
+    UNDEFINED                   = '__UNDEFINED__'
+    FILTERED                    = '_____________' # It's more invisible with just an underscore instead of __FILTERED__
+    
 #   Location constants
     ALA_NOTE_MARKER             = '_ALA_'                                     # "Automated Location Assignment"
     ALA_PROBLEMS                = '_ALA_PROBLEMS_'                            # Value for 'building'      
@@ -41,8 +45,10 @@ module These_Constants
     ON_LOCATIONS                = 'On Locations'                              # Value for 'coordinate_2_indicator'
     ON_RANGES                   = 'On Ranges'                                 # Value for 'coordinate_2_label'
     RANGE_LOCATION              = 'RANGE_LOCATION'                            # Value for 'coordinate_2_indicator'
+   
 #   Search string: '_ALA_PROBLEMS_ [_MS_634_, ERROR: NO_LOCATION]'
 #   ALA = Automated Location Assignment
+    
     
 end
 include These_Constants
@@ -130,7 +136,7 @@ module K
     def K.has_unpublished_ancestor; return 'has_unpublished_ancestor'; end
     def K.hierarchy; return 'hierarchy'; end                                # spreadsheet
     def K.id; return 'id'; end                                              # The uri number
-    def K.identifier; return 'identifier'; end                              # top_container name for id_0 & id
+    def K.identifier; return 'identifier'; end                              # top_container 
     def K.id_0; return 'id_0'; end                                          # resource  This and the ead_id must be unique.  
                                                                             #           This is called the 'unitid' in the XML dump file!
     def K.ils_holding_id; return 'ils_holding_id'; end                      # top_container
@@ -176,6 +182,7 @@ module K
     def K.offset; return 'offset'; end                                      # tree
     def K.otherlevel; return 'otherlevel'; end                              # archival_object (value for 'level' field)
     def K.other_level; return 'other_level'; end                            # archival_object (field name for 'otherlevel' value, eg "group")
+    def K.ov; return 'ov'; end                                              # This is a box type
     def K.owner_repo; return 'owner_repo'; end                              # locations (owner_repository)
     def K.page; return 'page'; end                                          # repository /search
     def K.page_size; return 'page_size'; end                                # resository /search
@@ -233,7 +240,6 @@ module K
     def K.type_2; return 'type_2'; end                                      # sub_container
     def K.type_3; return 'type_3'; end                                      # sub_container
     def K.types; return 'types'; end                                        # <<< PLURAL,  search results
-    def K.undefined; return '__UNDEFINED__'; end                            # used everywhere
     def K.uri; return 'uri'; end
     def K.user_mtime; return 'user_mtime'; end
     def K.volume; return 'volume'; end
@@ -267,7 +273,6 @@ module K
     def K.fmtr_inmagic_seriesnote; return 'seriesnote'; end                 # InMagic formatter column-use
     def K.fmtr_left; return '__LEFT__'; end                  
     def K.fmtr_new_parent; return '__NEW_PARENT__'; end     
-    def K.fmtr_ov; return 'ov'; end                                         # This is a box type
     def K.fmtr_oversize; return 'oversize'; end                             # This is NOT a box type
     def K.fmtr_prefix; return 'prefix'; end                                 
     def K.fmtr_prepend; return 'prepend'; end                               
@@ -290,7 +295,7 @@ module K
 
     def K.min_length_for_indent_key; return 3; end                          # Used in class.formatter.Record_Grouping_Indent.rb
     def K.skip_these_values_for_indent_key_A                                # Used in class.formatter.Record_Grouping_Indent.rb
-        arr = [ 'ov', K.box, K.folder, K.volume, K.item, K.file, K.album ].freeze
+        arr = [ K.ov, K.box, K.folder, K.volume, K.item, K.file, K.album ].freeze
         return arr
     end    
 
@@ -330,16 +335,17 @@ module K
     end
     
     def K.valid_child_types_RES
-        return '(folders?|vol[.]|volumes?|albums?)'
+        return '(folders?|items?|vol[.]|volumes?|albums?)'
     end
     
     def K.valid_grandchild_types_RES
-        return '(vol[.]|volumes?|files?|albums?)'
+        return '(items?|vol[.]|volumes?|files?|albums?)'
     end  
     
     def K.indicator_num_RES
 #       stringer = '(' + K.fmtr_unk + '|ov\s*\d{0,3}|([0-9]([0-9a-z./-])*))'
-        stringer = '(' + K.fmtr_unk + '|ov\s*\d{0,3}|([0-9]([0-9a-z./-])*)|[ivxl]+)'
+#       stringer = '(' + K.fmtr_unk + '|ov\s*\d{0,3}|([0-9]([0-9a-z./-])*)|[ivxl]+)'
+        stringer = '(' + K.fmtr_unk + '(-\d)?\d{0,4}|ov\s*\d{0,3}|([0-9]([0-9a-z./-])*)|[ivxl]+)'
         return stringer  # NOTE!!!   See note on 'K.container_type_separators_RES'
     end
     
@@ -428,17 +434,22 @@ module K
 
    
     def K.comparison_filter_A
-   #        For comparison of two resources, remove anything that might
+#           For comparison of two resources, remove anything that might
 #           legitimately be different.
+#
+#           For the 'archivesspace.resource.display_all_ao_records.rb' and 'archivesspace.resource.display_all_tc_records.rb'
+#           use the '--add_filter_items' option to filter additional field.
+
         arr = [ K.created_by, K.last_modified_by, K.create_time, K.system_mtime, K.user_mtime,  # From read filter
-                K.ref, K.uri, K.lock_version, 
+                K.ref, K.uri, K.created_for_collection, K.lock_version, 
                 K.repository, K.resource,
-                K.ancestors, K.ead_id, K.id_0, K.parent, 
-                K.position, K.persistent_id, K.is_slug_auto, K.slugged_url, K.ref_id, 
+                K.ead_id, K.id_0, K.parent, 
+                K.position, K.persistent_id, K.is_slug_auto, K.slugged_url, K.ref_id,
              # From the index_record:
                 K.parent_id, K.tree, K.waypoints, K.waypoint_size, 
              # Maybe optional ones:
-                K.publish, K.has_unpublished_ancestor,
+                K.publish, K.has_unpublished_ancestor, K.identifier,
+                K.display_string, K.long_display_string,
                ]
         return arr
     end 

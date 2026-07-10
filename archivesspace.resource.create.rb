@@ -363,11 +363,10 @@ resource_H = csrm_collection( repository_uri: rep_O.uri_addr,
                               extent_date_H_A: extent_date_H_A
                               )
 #SE.q {'resource_H'}
-resource_buf_O = Resource.new( rep_O ).new_buffer.create
-resource_buf_O.load( resource_H )
+resource_BO = Resource.new( rep_O ).new_buffer.load( resource_H )
 
-#SE.q {[ 'resource_buf_O.record_H' ]}
-new_resource_num = resource_buf_O.store
+#SE.q {[ 'resource_BO.record_H' ]}
+new_resource_num = resource_BO.store
 puts ''
 puts "New resource number: #{new_resource_num}"
 puts "               name: #{collection_name}"   

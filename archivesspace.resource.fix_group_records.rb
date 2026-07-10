@@ -55,23 +55,23 @@ aspace_O = ASpace.new
 aspace_O.allow_updates = cmdln_option[ :update ]
 rep_O = Repository.new( aspace_O, rep_num )
 res_O = Resource.new( rep_O, res_num )
-cnt = 0; AO_Query__of_Resource.new( resource_O: res_O ).record_H_A.each do | query_record_H |
+cnt = 0; AO_Query__of_Resource.new( res_O: res_O ).record_H_A.each do | query_record_H |
     if ( ! query_record_H[ K.level ].in?( [ K.recordgrp ] ) ) then
         next
     end
 
-    ao_buf_O = Archival_Object.new( res_O, query_record_H[ K.uri ] ).new_buffer.read( )
+    ao_BO = Archival_Object.new( res_O, query_record_H[ K.uri ] ).new_buffer.read( )
     cnt += 1
     print "#{cnt} "
-    print "ao #{ao_buf_O.record_H[ K.uri ].trailing_digits} "
-    print "#{ao_buf_O.record_H[ K.ancestors ].length} "
-    print "#{ao_buf_O.record_H[ K.level ]} "
-    print "#{ao_buf_O.record_H[ K.title ]}, "
+    print "ao #{ao_BO.record_H[ K.uri ].trailing_digits} "
+    print "#{ao_BO.record_H[ K.ancestors ].length} "
+    print "#{ao_BO.record_H[ K.level ]} "
+    print "#{ao_BO.record_H[ K.title ]}, "
   
-    if ( ao_buf_O.record_H[ K.ancestors ].length > 1 ) then
-        ao_buf_O.record_H[ K.level ]       = K.otherlevel
-        ao_buf_O.record_H[ K.other_level ] = K.group.capitalize
-        ao_buf_O.store
+    if ( ao_BO.record_H[ K.ancestors ].length > 1 ) then
+        ao_BO.record_H[ K.level ]       = K.otherlevel
+        ao_BO.record_H[ K.other_level ] = K.group.capitalize
+        ao_BO.store
     else
         print "SKIPPED\n"
     end

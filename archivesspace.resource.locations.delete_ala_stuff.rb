@@ -72,14 +72,14 @@ aspace_O = ASpace.new
 aspace_O.allow_updates=self.cmdln_option_H.fetch( :update )
 rep_O          = Repository.new( aspace_O, self.cmdln_option_H.fetch( :rep_num ) )
 res_O          = Resource.new( rep_O, self.cmdln_option_H.fetch( :res_num ) )
-res_rec_buf_O  = res_O.new_buffer.read
-aspace_O.validate_resource_faft( res_rec_buf_O, self.cmdln_option_H[ :res_faft ] )
-self.ala_id_0 = "_#{res_rec_buf_O.record_H.fetch( K.id_0 ).sub( /inmagic /, '' ).gsub( /\s+/, '_' )}_"
+res_rec_BO  = res_O.new_buffer.read
+aspace_O.validate_resource_faft( res_rec_BO, self.cmdln_option_H[ :res_faft ] )
+self.ala_id_0 = "_#{res_rec_BO.record_H.fetch( K.id_0 ).sub( /inmagic /, '' ).gsub( /\s+/, '_' )}_"
 
 def get_ao_ala_stuff( record_H )
     changed_record_CKA_H = {}
     ala_note_RE = /\A\s*#{ALA_NOTE_MARKER}.*?#{LF}/
-    orig_record_CKA_H = record_H.to_composite_key_h
+    orig_record_CKA_H = record_H.to_CKA_h
     orig_record_CKA_H.each_pair do | orig_record_CKA, orig_value |
         next if ( orig_value.is_not_a?( String ) )
         next if ( orig_value.not_match?( /#{ALA_NOTE_MARKER}/ ) )
@@ -105,41 +105,41 @@ end
 def remove_ao_ala_stuff( changed_record_CKA_H, record_H )
     changed_record_CKA_H.each_pair do | changed_record_CKA, text_value | 
         new_value     = record_H.dig( *changed_record_CKA )
-        raise "new_value.nil?" if ( new_value.nil? )
+        SE.raise if ( new_value.nil? )
         new_value.replace( text_value )
     end
 end
 
 
-changed_record_CKA_H = get_ao_ala_stuff( res_rec_buf_O.record_H )
+changed_record_CKA_H = get_ao_ala_stuff( res_rec_BO.record_H )
 if ( changed_record_CKA_H.not_empty? ) then 
-    remove_ao_ala_stuff( changed_record_CKA_H, res_rec_buf_O.record_H )
-    res_rec_buf_O.store
+    remove_ao_ala_stuff( changed_record_CKA_H, res_rec_BO.record_H )
+    res_rec_BO.store
 end
 
 SE.puts "Getting AO's ..."
-ao_query_O = AO_Query__of_Resource.new( resource_O: res_O, get_full_ao_record_TF: true )
-ao_query_O.record_H_A.each do | record_H |
+ao_QO = AO_Query__of_Resource.new( res_O: res_O, get_full_ao_record_TF: true )
+ao_QO.record_H_A.each do | record_H |
     changed_record_CKA_H = get_ao_ala_stuff( record_H )
     if ( changed_record_CKA_H.not_empty? ) then 
-        ao_rec_buf_O = Archival_Object.new( res_O, record_H.fetch( K.uri ) ).new_buffer.read
-        remove_ao_ala_stuff( changed_record_CKA_H, ao_rec_buf_O.record_H )
-        ao_rec_buf_O.store
+        ao_rec_BO = Archival_Object.new( res_O, record_H.fetch( K.uri ) ).new_buffer.read
+        remove_ao_ala_stuff( changed_record_CKA_H, ao_rec_BO.record_H )
+        ao_rec_BO.store
     end
 end
 
 SE.puts "Getting TC's ..."
-TC_Query__of_Resource.new( ao_query_O ).record_H_A.each do | record_H |
-    container_location_H_A = record_H.fetch( K.container_locations ).cbv
+TC_Query__of_Resource.new( ao_QO ).record_H_A.each do | record_H |
+    container_location_H_A = record_H.fetch( K.container_locations ).deep_copy
     container_location_H_A.delete_if { 
                     | container_location_H | container_location_H[ K.note ].to_s.match?( /^#{ALA_NOTE_MARKER}/i ) || 
                                              container_location_H[ K.start_date ].to_s == ALA_START_DATE }
     if ( container_location_H_A.length != record_H.fetch( K.container_locations ).length ) then
-        rec_buf_O = Top_Container.new( res_O, record_H.fetch( K.uri ) ).new_buffer.read
-        changed_record_H = rec_buf_O.record_H
+        rec_BO = Top_Container.new( res_O, record_H.fetch( K.uri ) ).new_buffer.read
+        changed_record_H = rec_BO.record_H
         changed_record_H[ K.container_locations ] = container_location_H_A
         SE.q {'changed_record_H'} if ( container_location_H_A.not_empty? )
-        rec_buf_O.store        
+        rec_BO.store        
     end
 end
 
@@ -148,8 +148,8 @@ search_text  = %Q|title:"#{ala_problem_id_0_text}"|         # Note field-name an
 SE.q {'search_text'}
 loc_record_H_A = rep_O.search( record_type_A: [ K.location ], search_text: search_text ).record_H_A
 loc_record_H_A.each do | loc_record_H |
-    raise "if ( loc_record_H[ K.title ].not_match?( /#{self.ala_id_0}/ ) )" if ( loc_record_H[ K.title ].not_match?( /#{self.ala_id_0}/ ) )
-    loc_buf_O = Location.new( rep_O, loc_record_H[ K.uri ] ).new_buffer.read
-    loc_buf_O.delete
+    SE.raise if ( loc_record_H[ K.title ].not_match?( /#{self.ala_id_0}/ ) )
+    loc_BO = Location.new( rep_O, loc_record_H[ K.uri ] ).new_buffer.read
+    loc_BO.delete
 end
 

@@ -1,6 +1,14 @@
 
 class Record_Grouping_Indent
 
+private_class_method :new
+private attr_accessor :record_print_method, :indent_print_method, :record_stack_size_0R, :record_H__stack_A,
+                      :indent_key_stack_A_A, :indent_key_prefixes_A, :first_record_indent_keys_A, :highest_matched_indent_key_idx_A,
+                      :calculated_indent_right_rec_cnt, :forced_indent_right_rec_cnt,
+                      :calculated_indent_left_rec_cnt, :forced_indent_left_rec_cnt,
+                      :current_calculated_indent_level,
+                      :group_rec_cnt, :file_rec_cnt, :total_rec_cnt
+                          
     def self.new_with_flush(*args)
         myself_O = new(*args)
         yield myself_O
@@ -8,14 +16,14 @@ class Record_Grouping_Indent
     end
 
     def initialize(record_print_method, indent_print_method, stack_size_0R, indent_keys_prefixes_A = [ [ '/', 0 ] ] )
-        @record_print_method = record_print_method
-        @indent_print_method = indent_print_method
+        self.record_print_method = record_print_method
+        self.indent_print_method = indent_print_method
         if (stack_size_0R < 1) then
             SE.puts "#{SE.lineno}: stack_size_0R, must be 1 or greater (and, it's 0-relative remember...)."
             raise
         end
-        @record_stack_size_0R = stack_size_0R
-        @record_H__stack_A = []
+        self.record_stack_size_0R = stack_size_0R
+        self.record_H__stack_A = []
         if (! indent_keys_prefixes_A.empty?) then
             if (! indent_keys_prefixes_A[ 0 ].is_a?(Array)) then
                 SE.puts "#{SE.lineno}: indent_keys_prefixes_A, must be an array of arrays" +
@@ -23,27 +31,20 @@ class Record_Grouping_Indent
                 raise
             end
         end
-        @indent_key_stack_A_A = indent_keys_prefixes_A
-        if ( @indent_key_stack_A_A.empty? or @indent_key_stack_A_A[ 0 ][ 0 ] != '/' ) then
-            @indent_key_stack_A_A.unshift( [ '/', 0 ])
+        self.indent_key_stack_A_A = indent_keys_prefixes_A
+        if ( self.indent_key_stack_A_A.empty? or self.indent_key_stack_A_A[ 0 ][ 0 ] != '/' ) then
+            self.indent_key_stack_A_A.unshift( [ '/', 0 ])
         end
-        @indent_key_prefixes_A = @indent_key_stack_A_A.transpose[ 0 ]
-        @calculated_indent_right_rec_cnt = 0
-        @forced_indent_right_rec_cnt = 0
-        @calculated_indent_left_rec_cnt = 0
-        @forced_indent_left_rec_cnt = 0
-        @current_calculated_indent_level = 0
-        @group_rec_cnt = 0
-        @file_rec_cnt = 0
-        @total_rec_cnt = 0
+        self.indent_key_prefixes_A = self.indent_key_stack_A_A.transpose[ 0 ]
+        self.calculated_indent_right_rec_cnt = 0
+        self.forced_indent_right_rec_cnt = 0
+        self.calculated_indent_left_rec_cnt = 0
+        self.forced_indent_left_rec_cnt = 0
+        self.current_calculated_indent_level = 0
+        self.group_rec_cnt = 0
+        self.file_rec_cnt = 0
+        self.total_rec_cnt = 0
     end
-    private_class_method :new
-    private attr_accessor :record_print_method, :indent_print_method, :record_stack_size_0R, :record_H__stack_A,
-                          :indent_key_stack_A_A, :indent_key_prefixes_A, :first_record_indent_keys_A, :highest_matched_indent_key_idx_A,
-                          :calculated_indent_right_rec_cnt, :forced_indent_right_rec_cnt,
-                          :calculated_indent_left_rec_cnt, :forced_indent_left_rec_cnt,
-                          :current_calculated_indent_level,
-                          :group_rec_cnt, :file_rec_cnt, :total_rec_cnt
 
     def flush
         self.record_stack_size_0R = 0
@@ -216,7 +217,10 @@ class Record_Grouping_Indent
                 group_title_A << self.indent_key_stack_A_A[ idx ][ 0 ]
             end
 
-            self.indent_print_method.call( self.current_calculated_indent_level, group_number_A.deep_copy, group_title_A.deep_copy )
+            self.indent_print_method.call( self.current_calculated_indent_level, 
+                                           group_number_A.deep_copy, 
+                                           group_title_A.deep_copy 
+                                           )
             self.group_rec_cnt += 1
             add_1_to_total_rec_cnt
 
@@ -278,7 +282,10 @@ class Record_Grouping_Indent
         end
         
         SE.puts "#{SE.lineno}: FILE RECORD: #{first_record_H}"  if ( $DEBUG )
-        self.record_print_method.call( self.current_calculated_indent_level, self.record_H__stack_A.deep_copy, first_record_H )
+        self.record_print_method.call( self.current_calculated_indent_level, 
+                                       self.record_H__stack_A.deep_copy, 
+                                       first_record_H.deep_copy
+                                       )
         self.file_rec_cnt += 1
         add_1_to_total_rec_cnt
         

@@ -3,20 +3,20 @@ class Repository
 public  attr_reader :aspace_O, :rec_id, :uri_addr
 private attr_writer :aspace_O, :rec_id, :uri_addr
     
-    def initialize( p1_aspace_O, p2_rep_num )
+    def initialize( p1_aspace_O, p2_rep_rec_id )
         if ( not p1_aspace_O.is_a?( ASpace ) ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Param 1 is not a ASpace class object, it's a '#{p1_aspace_O.class}'"
             raise
         end    
-        if ( ! p1_aspace_O.session || p1_aspace_O.session == K.undefined ) then
+        if ( ! p1_aspace_O.session || p1_aspace_O.session == UNDEFINED ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "aspace_O.session undefined."
             SE.q {[ 'p1_aspace_O' ]}
             raise
         end
         self.aspace_O = p1_aspace_O
-        self.rec_id  = p2_rep_num
+        self.rec_id   = p2_rep_rec_id
         self.uri_addr = "/#{REPOSITORIES}/#{self.rec_id}"
 #       SE.puts "#{SE.lineno}: ================ In Repository:initialize,self.rec_id=#{self.rec_id}"
     end
@@ -42,9 +42,9 @@ private attr_writer :aspace_O, :rec_id, :uri_addr
     
     def batch_delete( delete_uri_A )
         return ASpace_Batch_delete__for_Repository.new( self.aspace_O, 
-                                            self, 
-                                            self, 
-                                            delete_uri_A )
+                                                        self, 
+                                                        self, 
+                                                        delete_uri_A )
     end
     
     def query_search_filter( record_H_A, query_search_uri )

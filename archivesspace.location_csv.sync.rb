@@ -70,7 +70,7 @@ self.rep_O   = Repository.new( aspace_O, cmdln_option.fetch( :rep_num ) )
                                       "title" => "SMCC, I Bay, 2 [Range: 210, Column: R, Shelf: 10]"
 =end
 
-record_H_H__by_title_H = {}
+loc_data_H__BY_title = {}
 ala_problem_record_cnt = 0
 input_csv_O = CSV.open( csv_input_file, :headers => true )
 #
@@ -85,8 +85,8 @@ input_csv_O.each_with_index do | input_row_CSV, row_num |
         SE.q {['row_num','input_row_CSV']}
         raise
     end
-    if ( record_H_H__by_title_H.has_key?( title_downcase_WO_spaces ) ) then
-        dup_uri      = record_H_H__by_title_H.fetch( title_downcase_WO_spaces ).fetch( :uri_from_csv )
+    if ( loc_data_H__BY_title.has_key?( title_downcase_WO_spaces ) ) then
+        dup_uri      = loc_data_H__BY_title.fetch( title_downcase_WO_spaces ).fetch( :uri_from_csv )
         print "Skipped dup key: row_num=#{row_num} title='#{input_row_CSV.fetch( K.title )}' uri=#{input_row_CSV.fetch( K.uri )}" 
         print " other uri=#{dup_uri}"
         puts ''
@@ -133,10 +133,10 @@ input_csv_O.each_with_index do | input_row_CSV, row_num |
         record_H[ K.coordinate_3_label ]     = coordinate_A[ 4 ]
         record_H[ K.coordinate_3_indicator ] = coordinate_A[ 5 ]          
     end
-    record_H_H__by_title_H[ title_downcase_WO_spaces ] = { :location_record_H => record_H, 
+    loc_data_H__BY_title[ title_downcase_WO_spaces ] = { :location_record_H => record_H, 
                                                            :uri_from_csv      => input_row_H[ K.uri ] }
 end
-puts "#{record_H_H__by_title_H.length} location records loaded from csv file."
+puts "#{loc_data_H__BY_title.length} location records loaded from csv file."
 puts "#{ala_problem_record_cnt} ALA_PROBLEM records skipped."
 # header_A = input_csv_O.headers.to_a
 # SE.puts header_A.join( ',' )
@@ -165,8 +165,8 @@ location_delete_uri_A = [ ]
 SE.puts "#{record_H_A.length} location records in ASpace."
 record_H_A.each do | record_H |
     title_downcase_WO_spaces = record_H.fetch( K.title ).gsub( /\s+/, '' ).downcase
-    if ( record_H_H__by_title_H.has_key?( title_downcase_WO_spaces ) ) then
-        record_H_H__by_title_H.delete( title_downcase_WO_spaces )
+    if ( loc_data_H__BY_title.has_key?( title_downcase_WO_spaces ) ) then
+        loc_data_H__BY_title.delete( title_downcase_WO_spaces )
 #       SE.puts "Same: #{record_H[ K.title ]}"
         next
     end
@@ -196,12 +196,12 @@ if self.aspace_O.allow_updates && location_delete_uri_A.length != deleted_cnt
 end
 puts "#{deleted_cnt} records deleted."
 
-puts "#{record_H_H__by_title_H.length} records to_be created."
+puts "#{loc_data_H__BY_title.length} records to_be created."
 created_cnt = 0
-record_H_H__by_title_H.each_pair do | title_downcase_WO_spaces, record_H_H |
+loc_data_H__BY_title.each_pair do | title_downcase_WO_spaces, record_H_H |
     record_H = record_H_H.fetch( :location_record_H )
     puts "Create: #{record_H.fetch( K.title )}"
-    Location.new( rep_O ).new_buffer.create.load( record_H ).store   
+    Location.new( rep_O ).new_buffer.load( record_H ).store   
     created_cnt += 1
 end
 puts "#{created_cnt} records created."

@@ -87,7 +87,7 @@ private attr_writer :aspace_O
             response_body = {K.uri => "NO UPDATE MODE"}
         end
     #   SE.q {'response_body'}
-        return response_body;
+        return response_body
     end 
     
     def delete( p1_uri, p2_params = { } )  

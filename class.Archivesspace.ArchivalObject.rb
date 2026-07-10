@@ -4,12 +4,12 @@ class Archival_Object
       Archival_Object just holds the AO-number and uri.   
       An object of this is needed to create a AO_Record_Buf, but
       there's a 'new_buffer' method that will do it from inside here too, eg:
-          ao_buffer_Obj = Archival_Object.new(resource_Obj, ao-num|uri).new_buffer[.read|create]
+          ao_buffer_Obj = Archival_Object.new(res_Obj, ao-num|uri).new_buffer[.read|create]
 =end
 public  attr_reader :res_O, :rec_id, :uri_addr
 private attr_writer :res_O, :rec_id, :uri_addr
     
-    def initialize( p1_res_O, p2_AO_identifier = nil )
+    def initialize( p1_res_O, p2_ao_uri_addr_OR_rec_id = nil )
         case true
         when p1_res_O.is_a?( Resource_Record_Buf )
             self.res_O = p1_res_O.res_O
@@ -22,30 +22,30 @@ private attr_writer :res_O, :rec_id, :uri_addr
         end    
 
         case true
-        when p2_AO_identifier.nil?  
+        when p2_ao_uri_addr_OR_rec_id.nil?  
             self.rec_id   = nil
             self.uri_addr = nil        
-        when p2_AO_identifier.integer?  then
-            self.rec_id   = p2_AO_identifier
+        when p2_ao_uri_addr_OR_rec_id.integer?  then
+            self.rec_id   = p2_ao_uri_addr_OR_rec_id
             self.uri_addr = "#{self.res_O.rep_O.uri_addr}/#{ARCHIVAL_OBJECTS}/#{self.rec_id}"
-        when p2_AO_identifier.start_with?( "#{self.res_O.rep_O.uri_addr}/#{ARCHIVAL_OBJECTS}" )
-            self.uri_addr = p2_AO_identifier
-            self.rec_id   = p2_AO_identifier.trailing_digits
+        when p2_ao_uri_addr_OR_rec_id.start_with?( "#{self.res_O.rep_O.uri_addr}/#{ARCHIVAL_OBJECTS}" )
+            self.uri_addr = p2_ao_uri_addr_OR_rec_id
+            self.rec_id   = p2_ao_uri_addr_OR_rec_id.trailing_digits
             if (! self.rec_id.integer? ) then
                 SE.puts "#{SE.lineno}: =============================================="
-                SE.puts "Invalid param2: #{p2_AO_identifier}"
+                SE.puts "Invalid param2: #{p2_ao_uri_addr_OR_rec_id}"
                 raise
             end
         else
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Invalid param2: #{p2_AO_identifier}"
+            SE.puts "Invalid param2: #{p2_ao_uri_addr_OR_rec_id}"
             raise
         end
     end
     
     def new_buffer
-        ao_buf_O = AO_Record_Buf.new( self )
-        return ao_buf_O
+        ao_BO = AO_Record_Buf.new( self )
+        return ao_BO
     end
 end
 
@@ -72,22 +72,23 @@ private attr_writer :ao_O, :rec_id, :uri_addr, :rec_jsonmodel_type
     end
     
     def create( p1_level )
-        @record_H.merge!( Record_Format.new( self.rec_jsonmodel_type ).record_H )  
-        @record_H[ K.level ] = p1_level
-        @record_H[ K.resource ][ K.ref ] = self.ao_O.res_O.uri_addr
+        super()
+#       self.record_H.merge!( Record_Format.new( self.rec_jsonmodel_type ).record_H )  
+        self.record_H[ K.level ] = p1_level
+        self.record_H[ K.resource ][ K.ref ] = self.ao_O.res_O.uri_addr
         self.cant_change_A << K.level 
         self.cant_change_A << K.resource
         return self
     end
 
-    def load( external_record_H, filter_record_B = true )
-        @record_H = super
-        if ( not (@record_H.has_key?( K.resource ) && @record_H[K.resource].has_key?( K.ref ) && 
-                  @record_H[ K.resource ][ K.ref ] == self.ao_O.res_O.uri_addr )) then
+    def load( external_record_H, filter_record_TF: true )
+        self.record_H = super
+        if ( not (self.record_H.has_key?( K.resource ) && self.record_H[K.resource].has_key?( K.ref ) && 
+                  self.record_H[ K.resource ][ K.ref ] == self.ao_O.res_O.uri_addr )) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Archival_object doesn't belong to current Resource."
-            SE.puts "@record_H[K.resource][K.ref] != self.ao_O.res_O.uri_addr"
-            SE.ap "@record_H:", @record_H
+            SE.puts "self.record_H[K.resource][K.ref] != self.ao_O.res_O.uri_addr"
+            SE.ap "self.record_H:", self.record_H
             raise
         end
         self.cant_change_A << K.level 
@@ -95,56 +96,57 @@ private attr_writer :ao_O, :rec_id, :uri_addr, :rec_jsonmodel_type
         return self
     end
     
-    def read( filter_record_B = true )
+    def read( filter_record_TF: true )
         stringer = "#{self.ao_O.res_O.rep_O.uri_addr}/#{ARCHIVAL_OBJECTS}"
         if ( stringer != self.uri_addr[ 0 .. stringer.maxindex ]) then 
             SE.puts "#{SE.lineno}: =============================================="     
             SE.puts "uri isn't a archival_object! uri=#{self.uri_addr}"
             raise
         end
-        @record_H = super( filter_record_B )
-#       SE.ap "#{SE.lineno}: @record_H:", @record_H
-        if ( @record_H[K.resource][K.ref] != self.ao_O.res_O.uri_addr ) then
+        self.record_H = super
+#       SE.ap "#{SE.lineno}: self.record_H:", self.record_H
+        if ( self.record_H[K.resource][K.ref] != self.ao_O.res_O.uri_addr ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Archival_object doesn't belong to current Resource."
-            SE.puts "@record_H[K.resource][K.ref] != self.ao_O.res_O.uri_addr"
-            SE.puts "#{@record_H[K.resource][K.ref]} != #{self.ao_O.res_O.uri_addr}"
+            SE.puts "self.record_H[K.resource][K.ref] != self.ao_O.res_O.uri_addr"
+            SE.puts "#{self.record_H[K.resource][K.ref]} != #{self.ao_O.res_O.uri_addr}"
             raise
         end
         return self
     end
      
     def store( )
-#       SE.ap "@record_H:", @record_H            
-        if (!(   @record_H[K.resource][K.ref] && @record_H[K.resource][K.ref] != '')) then 
+#       SE.ap "self.record_H:", self.record_H            
+        if ( ! (   self.record_H[ K.resource ][ K.ref ] && self.record_H[ K.resource ][ K.ref ] != '' ) ) then 
             SE.puts "#{SE.lineno}: =========================================="
-            SE.puts "I was expecting an @record_H[K.resource][K.ref] value";
-            SE.ap "@record_H:", @record_H
+            SE.puts "I was expecting an self.record_H[ K.resource ][ K.ref ] value";
+            SE.ap "self.record_H:", self.record_H
             raise
         end
-        if ( @record_H.has_key?(K.parent)) then
-            if ( @record_H[K.parent].respond_to?(:to_H) && @record_H[K.parent].has_key?(K.ref)) then
-                if ( ! (  @record_H[K.parent][K.ref].match?( %r"^#{self.ao_O.res_O.rep_O.uri_addr}/(#{ARCHIVAL_OBJECTS}|#{RESOURCES})" ) ||
-                       (  @record_H[K.parent][K.ref] == "NO UPDATE MODE" && ! self.ao_O.res_O.rep_O.aspace_O.allow_updates )))
+        if ( self.record_H.has_key?( K.parent ) ) then
+            if ( self.record_H[ K.parent ].respond_to?( :to_H ) && self.record_H[ K.parent ].has_key?( K.ref ) ) then
+                if ( ! (  self.record_H[ K.parent ][ K.ref ].match?( %r"^#{self.ao_O.res_O.rep_O.uri_addr}/(#{ARCHIVAL_OBJECTS}|#{RESOURCES})" ) ||
+                       (  self.record_H[ K.parent ][ K.ref ] == "NO UPDATE MODE" && ! self.ao_O.res_O.rep_O.aspace_O.allow_updates ) )
+                     ) then
                     SE.puts "#{SE.lineno}: =========================================="
-                    SE.puts "@record_H[K.parent][K.ref]: '#{self.ao_O.res_O.rep_O.uri_addr}/(#{ARCHIVAL_OBJECTS}|#{RESOURCES})'"
-                    SE.puts "@record_H[K.parent][K.ref]: '#{@record_H[K.parent][K.ref]}'"
-                    SE.ap "@record_H:", @record_H
+                    SE.puts "self.record_H[ K.parent ][ K.ref ]: '#{self.ao_O.res_O.rep_O.uri_addr}/(#{ARCHIVAL_OBJECTS}|#{RESOURCES})'"
+                    SE.puts "self.record_H[ K.parent ][ K.ref ]: '#{self.record_H[ K.parent ][ K.ref ]}'"
+                    SE.ap "self.record_H:", self.record_H
                     raise
                 end
             end
         end
-        if (!(  @record_H[K.title] && @record_H[K.title] != K.undefined )) then 
+        if ( ! (  self.record_H[ K.title ] && self.record_H[ K.title ] != UNDEFINED ) ) then 
             SE.puts "#{SE.lineno}: =========================================="
-            SE.puts "I was expecting a @record_H[K.title] value";
-            SE.ap "@record_H:", @record_H
+            SE.puts "I was expecting a self.record_H[ K.title ] value";
+            SE.ap "self.record_H:", self.record_H
             raise
         end
-        if ( @record_H[K.resource][K.ref] != self.ao_O.res_O.uri_addr ) then
+        if ( self.record_H[ K.resource ][ K.ref ] != self.ao_O.res_O.uri_addr ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Archival_object doesn't belong to current Resource."
-            SE.puts "@record_H[K.resource][K.ref] != self.ao_O.res_O.uri_addr"
-            SE.puts "#{@record_H[K.resource][K.ref]} != #{self.ao_O.res_O.uri_addr}"
+            SE.puts "self.record_H[ K.resource ][ K.ref ] != self.ao_O.res_O.uri_addr"
+            SE.puts "#{self.record_H[ K.resource ][ K.ref ]} != #{self.ao_O.res_O.uri_addr}"
             raise
         end
 
@@ -167,24 +169,24 @@ class AO_Query__of_Resource
     public  attr_reader :res_O, :uri_addr, :index_H_A, :ao_display_order_H                 
     private attr_writer :res_O, :uri_addr, :index_H_A, :ao_display_order_H, :record_H_A
     
-    def initialize( resource_O:, 
+    def initialize( res_O:, 
                     get_full_ao_record_TF: false, 
                     starting_node_uri: '', 
                     recurse_index_children_TF: true 
                    )
-        if ( resource_O.is_not_a?( Resource ) ) then
+        if ( res_O.is_not_a?( Resource ) ) then
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Param 'resource_O:' is not a Resource class object, it's: '#{res_O.class}'"
+            SE.puts "Param 'res_O:' is not a Resource class object, it's: '#{res_O.class}'"
             raise
         end    
-        self.res_O              = resource_O
+        self.res_O              = res_O
         self.uri_addr           = "#{self.res_O.rep_O.uri_addr}/#{ARCHIVAL_OBJECTS}"
         self.index_H_A          = nil
         self.ao_display_order_H = nil
         self.record_H_A         = nil
 =begin    
         Param 'get_full_ao_record_TF', if true, causes the query to read each AO record.  
-        This is about 10 times slowerthan using the data from the AO indexes, which is a subset of the AO.
+        This is about 10 times slower than using the data from the AO indexes, which is a subset of the AO.
 =end
         if ( get_full_ao_record_TF.not_in?( true, false )) then
             SE.puts "#{SE.lineno}: =============================================="
@@ -214,12 +216,12 @@ class AO_Query__of_Resource
         of a particular level will be fetched.
 =end
         self.index_H_A = []
-        self.ao_display_order_H = {}     # Hash of ao_id's with associated index_H_A index number
+        self.ao_display_order_H = {}     # Hash of ao_rec_id_I's with associated index_H_A index number
         process_each_node( starting_node_uri, recurse_index_children_TF )
         self.index_H_A.each_with_index do | index_H, ao_display_order |
-            ao_id = index_H[ K.uri ].delete_prefix( "#{self.uri_addr}/" ).to_i
-            raise 'ao_id == 0' if ( ao_id == 0 )
-            self.ao_display_order_H[ ao_id ] = ao_display_order
+            ao_rec_id_I = index_H[ K.uri ].delete_prefix( "#{self.uri_addr}/" ).to_i
+            SE.raise if ( ao_rec_id_I == 0 )
+            self.ao_display_order_H[ ao_rec_id_I ] = ao_display_order
         end
 
         if ( get_full_ao_record_TF ) then
@@ -258,12 +260,12 @@ class AO_Query__of_Resource
                      SE.q {'record_H'}
                      raise
                 end
-                ao_id = record_H[ K.uri ].delete_prefix( "#{self.uri_addr}/" ).to_i
-                raise 'ao_id == 0' if ( ao_id == 0 )
-                ao_display_order = self.ao_display_order_H[ ao_id ]
+                ao_rec_id_I = record_H[ K.uri ].delete_prefix( "#{self.uri_addr}/" ).to_i
+                SE.raise if ( ao_rec_id_I == 0 )
+                ao_display_order = self.ao_display_order_H[ ao_rec_id_I ]
                 if ( ao_display_order.nil? ) then
                      SE.puts "#{SE.lineno}: =============================================="
-                     SE.puts "self.ao_display_order_H[ ao_id ] is nil?"
+                     SE.puts "self.ao_display_order_H[ ao_rec_id_I ] is nil?"
                      SE.q {'record_H[ K.uri ]'}
                      SE.q {'self.ao_display_order_H'}
                      raise
@@ -312,49 +314,49 @@ class AO_Query__of_Resource
         return @record_H_A
     end
     
-    def record_H__OF_uri( p1_ao_uri_addr_OR_id_num )
-        return self.record_H_A[ ao_display_order( p1_ao_uri_addr_OR_id_num ) ]
+    def record_H__OF_uri( p1_ao_uri_addr_OR_rec_id )
+        return self.record_H_A[ ao_display_order( p1_ao_uri_addr_OR_rec_id ) ]
     end   
 
-    def index_H__OF_uri( p1_ao_uri_addr_OR_id_num )
-        return self.index_H_A[ ao_display_order( p1_ao_uri_addr_OR_id_num ) ]
+    def index_H__OF_uri( p1_ao_uri_addr_OR_rec_id )
+        return self.index_H_A[ ao_display_order( p1_ao_uri_addr_OR_rec_id ) ]
     end   
     
-    def ao_display_order( p1_ao_uri_addr_OR_id_num )
+    def ao_display_order( p1_ao_uri_addr_OR_rec_id )
         case true
-        when p1_ao_uri_addr_OR_id_num.is_a?( String ) 
-            stringer = p1_ao_uri_addr_OR_id_num.delete_prefix( "#{self.uri_addr}/" )
+        when p1_ao_uri_addr_OR_rec_id.is_a?( String ) 
+            stringer = p1_ao_uri_addr_OR_rec_id.delete_prefix( "#{self.uri_addr}/" )
             if ( stringer.not_integer? ) then
                 SE.puts "#{SE.lineno}: =============================================="
-                SE.puts "Param 'p1_ao_uri_addr_OR_id_num' won't convert to an integer."
-                if ( p1_ao_uri_addr_OR_id_num[ 0 ] == '/' ) then
+                SE.puts "Param 'p1_ao_uri_addr_OR_rec_id' won't convert to an integer."
+                if ( p1_ao_uri_addr_OR_rec_id[ 0 ] == '/' ) then
                     SE.puts "It's probably because the URI doesn't start with '#{self.uri_addr}'"
                 end
-                SE.q {['p1_ao_uri_addr_OR_id_num','stringer','self.uri_addr']}
+                SE.q {['p1_ao_uri_addr_OR_rec_id','stringer','self.uri_addr']}
                 raise
             end
-            ao_id = stringer.to_i
-        when p1_ao_uri_addr_OR_id_num.integer?
-            ao_id = p1_ao_uri_addr_OR_id_num.to_i
+            ao_rec_id_I = stringer.to_i
+        when p1_ao_uri_addr_OR_rec_id.integer?
+            ao_rec_id_I = p1_ao_uri_addr_OR_rec_id.to_i
         else
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Was expecting param 'p1_ao_uri_addr_OR_id_num' to be a URI String or integer"
-            SE.q {'p1_ao_uri_addr_OR_id_num'}
+            SE.puts "Was expecting param 'p1_ao_uri_addr_OR_rec_id' to be a URI String or integer"
+            SE.q {'p1_ao_uri_addr_OR_rec_id'}
             raise
         end
-        raise 'ao_id == 0' if ( ao_id == 0 )
-        if ( self.ao_display_order_H.has_no_key?( ao_id ) ) then
-            SE.puts "#{SE.lineno}: No ao_id '#{ao_id}' in resource"
+        SE.raise if ( ao_rec_id_I == 0 )
+        if ( self.ao_display_order_H.has_no_key?( ao_rec_id_I ) ) then
+            SE.puts "#{SE.lineno}: No ao_rec_id_I '#{ao_rec_id_I}' in resource"
             raise
         end
-        return self.ao_display_order_H[ ao_id ] 
+        return self.ao_display_order_H[ ao_rec_id_I ] 
     end
   
     def process_each_node( node_uri, recurse_index_children = true )
         if ( node_uri == '' ) then
             waypoint_node_H = self.res_O.rep_O.aspace_O.http_calls_O.get( "#{self.res_O.uri_addr}/tree/root", { } ) 
             if (  waypoint_node_H.has_key?( K.precomputed_waypoints ) &&
-                  waypoint_node_H[ K.precomputed_waypoints ] == {} ) then
+                  waypoint_node_H[ K.precomputed_waypoints ].empty? ) then
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.puts "#{SE.lineno}: No AO records found"
                 SE.puts "#{SE.lineno}: =============================================="

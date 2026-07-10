@@ -58,7 +58,7 @@ aspace_O.allow_updates = cmdln_option[ :update ]
 rep_O = Repository.new( aspace_O, rep_num )
 res_O = Resource.new( rep_O, res_num )
 series_uri_A = []
-cnt = 0; AO_Query__of_Resource.new( resource_O: res_O ).record_H_A.each do | record_H |
+cnt = 0; AO_Query__of_Resource.new( res_O: res_O ).record_H_A.each do | record_H |
     if ( ! record_H[ K.level ].in?( [ K.series, K.subseries ] ) ) then
         next
     end
@@ -75,14 +75,14 @@ end
 sequence_A = [ 0 ]
 series_uri_A.each do | uri |
     puts ""
-    ao_buf_O = Archival_Object.new(res_O, uri).new_buffer.read( )
+    ao_BO = Archival_Object.new(res_O, uri).new_buffer.read( )
     
-    a1 = ao_buf_O.record_H[ K.title ].split( /^((Series|Subseries) \d+(\.\d+)* *: *)/i )
+    a1 = ao_BO.record_H[ K.title ].split( /^((Series|Subseries) \d+(\.\d+)* *: *)/i )
     if ( a1.maxindex == 0 ) then
-        puts "Unable to find 'series' text in '#{ao_buf_O.record_H[ K.title]}'"
+        puts "Unable to find 'series' text in '#{ao_BO.record_H[ K.title]}'"
         next
     end
-    ancestors_maxindex = ao_buf_O.record_H[ K.ancestors ].maxindex
+    ancestors_maxindex = ao_BO.record_H[ K.ancestors ].maxindex
     until ( ancestors_maxindex == sequence_A.maxindex ) 
         if ( ancestors_maxindex > sequence_A.maxindex) then
             sequence_A << 0
@@ -92,31 +92,31 @@ series_uri_A.each do | uri |
     end
     sequence_A[ ancestors_maxindex ] += 1
     
-    old_title = ao_buf_O.record_H[ K.title ]
+    old_title = ao_BO.record_H[ K.title ]
 
     stringer = ""
-    case ao_buf_O.record_H[ K.level ] 
+    case ao_BO.record_H[ K.level ] 
     when K.series
         stringer = "Series"
     when K.subseries
         stringer = "Subseries"
     else
         SE.puts "#{SE.lineno}: I shouldn't be here..."
-        SE.q {[ 'ao_buf_O.record_H[ K.level ]' ]}
+        SE.q {[ 'ao_BO.record_H[ K.level ]' ]}
         raise
     end
     new_title = stringer + " " + sequence_A.join( '.' ) + ": " + a1[ a1.maxindex ] 
 
-    puts "#{uri} #{ao_buf_O.record_H[ K.level ]}"
+    puts "#{uri} #{ao_BO.record_H[ K.level ]}"
     if ( old_title == new_title ) then
         puts "Titles are the same, no change: '#{old_title}'"
         next
     end
-#   SE.ap ao_buf_O.record_H
+#   SE.ap ao_BO.record_H
     puts "Old title: #{old_title}"
-    ao_buf_O.record_H[ K.title] = new_title
+    ao_BO.record_H[ K.title] = new_title
     puts "New title: #{new_title}"
-    ao_buf_O.store
+    ao_BO.store
 end
 
 

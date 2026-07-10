@@ -9,7 +9,7 @@ class Resource
 public  attr_reader :rep_O, :rec_id, :uri_addr
 private attr_writer :rep_O, :rec_id, :uri_addr
 
-    def initialize( p1_rep_O, p2_res_identifier = nil )
+    def initialize( p1_rep_O, p2_res_uri_addr_OR_rec_id = nil )
         if ( p1_rep_O.nil? || p1_rep_O.is_not_a?( Repository ) ) then
             SE.puts "#{SE.lineno}: =============================================="
             SE.puts "Param 1 is not a Repository class object, it's a '#{p1_rep_O.class}'"
@@ -17,30 +17,30 @@ private attr_writer :rep_O, :rec_id, :uri_addr
         end    
         self.rep_O = p1_rep_O
         case true
-        when p2_res_identifier.nil? 
-            self.rec_id = nil
+        when p2_res_uri_addr_OR_rec_id.nil? 
+            self.rec_id   = nil
             self.uri_addr = nil
-        when p2_res_identifier.integer? 
-            self.rec_id = p2_res_identifier
+        when p2_res_uri_addr_OR_rec_id.integer? 
+            self.rec_id   = p2_res_uri_addr_OR_rec_id
             self.uri_addr = "#{self.rep_O.uri_addr}/#{RESOURCES}/#{self.rec_id}"
-        when p2_res_identifier.start_with?( "#{self.rep_O.uri_addr}/#{ARCHIVAL_OBJECTS}" ) 
-            self.uri_addr = p2_res_identifier
-            self.rec_id = p2_res_identifier.trailing_digits
+        when p2_res_uri_addr_OR_rec_id.start_with?( "#{self.rep_O.uri_addr}/#{ARCHIVAL_OBJECTS}" ) 
+            self.uri_addr = p2_res_uri_addr_OR_rec_id
+            self.rec_id   = p2_res_uri_addr_OR_rec_id.trailing_digits
             if ( ! self.rec_id.integer? ) then
                 SE.puts "#{SE.lineno}: =============================================="
-                SE.puts "Invalid param2: #{p2_res_identifier}"
+                SE.puts "Invalid param2: #{p2_res_uri_addr_OR_rec_id}"
                 raise
             end
         else
             SE.puts "#{SE.lineno}: =============================================="
-            SE.puts "Invalid param2: #{p2_res_identifier}"
+            SE.puts "Invalid param2: #{p2_res_uri_addr_OR_rec_id}"
             raise
         end 
     end
     
     def new_buffer
-        res_buf_O = Resource_Record_Buf.new( self )
-        return res_buf_O
+        res_BO = Resource_Record_Buf.new( self )
+        return res_BO
     end
 #
 #   NOTE!  'what_to_query' is the SUB-object NOT this object.
@@ -65,9 +65,9 @@ private attr_writer :rep_O, :rec_id, :uri_addr
     
     def batch_delete( delete_uri_A )
         return Repository_Batch_delete__for_Resource.new( self.rep_O.aspace_O, 
-                                          self.rep_O, 
-                                          self, 
-                                          delete_uri_A )
+                                                          self.rep_O, 
+                                                          self, 
+                                                          delete_uri_A )
     end
     
     def query_search_filter( record_H_A, query_search_uri )
@@ -133,7 +133,7 @@ private attr_writer :res_O, :uri_addr, :rec_id, :rec_jsonmodel_type
             SE.puts "Param 1 is not a Resource class object, it's a '#{p1_res_O.class}'"
             raise
         end 
-        self.rec_jsonmodel_type =  K.resource
+        self.rec_jsonmodel_type = K.resource
         self.res_O              = p1_res_O
         self.uri_addr           = p1_res_O.uri_addr
         self.rec_id             = p1_res_O.rec_id
@@ -141,20 +141,21 @@ private attr_writer :res_O, :uri_addr, :rec_id, :rec_jsonmodel_type
     end
     
     def create
-        @record_H.merge!( Record_Format.new( self.rec_jsonmodel_type ).record_H )
+        super
+#       self.record_H.merge!( Record_Format.new( self.rec_jsonmodel_type ).record_H )
         self.cant_change_A << K.level 
         self.cant_change_A << K.resource
         return self
     end
 
-    def load( external_record_H, filter_record_B = true )
-        @record_H = super
-        # if ( not (@record_H.has_key?( K.resource ) && @record_H[K.resource].has_key?( K.ref ) && 
-                  # @record_H[ K.resource ][ K.ref ] == self.ao_O.p1_res_O.uri_addr )) then
+    def load( external_record_H, filter_record_TF: true )
+        self.record_H = super
+        # if ( not (self.record_H.has_key?( K.resource ) && self.record_H[K.resource].has_key?( K.ref ) && 
+                  # self.record_H[ K.resource ][ K.ref ] == self.ao_O.p1_res_O.uri_addr )) then
             # SE.puts "#{SE.lineno}: =============================================="
             # SE.puts "Archival_object doesn't belong to current Resource."
-            # SE.puts "@record_H[K.resource][K.ref] != self.ao_O.p1_res_O.uri_addr"
-            # SE.ap "@record_H:", @record_H
+            # SE.puts "self.record_H[K.resource][K.ref] != self.ao_O.p1_res_O.uri_addr"
+            # SE.ap "self.record_H:", self.record_H
             # raise
         # end
         self.cant_change_A << K.level 
@@ -162,15 +163,15 @@ private attr_writer :res_O, :uri_addr, :rec_id, :rec_jsonmodel_type
         return self
     end
     
-    def read( filter_record_B = true )
-        @record_H = super( filter_record_B )
-#       SE.q { [ '@record_H' ] }
-        if ( @record_H.key?( self.rec_jsonmodel_type ) &&  @record_H[ self.rec_jsonmodel_type ].key?( K.ref )) then
-            if ( ! ( @record_H[ self.rec_jsonmodel_type ][ K.ref ] == "#{self.uri_addr}" ) ) then
+    def read( filter_record_TF: true )
+        self.record_H = super
+#       SE.q { [ 'self.record_H' ] }
+        if ( self.record_H.key?( self.rec_jsonmodel_type ) &&  self.record_H[ self.rec_jsonmodel_type ].key?( K.ref )) then
+            if ( ! ( self.record_H[ self.rec_jsonmodel_type ][ K.ref ] == "#{self.uri_addr}" ) ) then
                 SE.puts "#{SE.lineno}: =============================================="
                 SE.puts "uri is not part of resource '#{self.rec_id}'"
                 SE.puts "resource => uri = '#{self.uri_addr}'"
-                SE.q { [ '@record_H' ] }
+                SE.q { [ 'self.record_H' ] }
                 raise
             end
         end
@@ -178,10 +179,10 @@ private attr_writer :res_O, :uri_addr, :rec_id, :rec_jsonmodel_type
     end
     
     def store( )
-        if ( not (  @record_H[K.title] && @record_H[K.title] != K.undefined )) then 
+        if ( not (  self.record_H[K.title] && self.record_H[K.title] != UNDEFINED )) then 
             SE.puts "#{SE.lineno}: =========================================="
-            SE.puts "I was expecting a @record_H[K.title] value";
-            SE.ap "@record_H:", @record_H
+            SE.puts "I was expecting a self.record_H[K.title] value";
+            SE.ap "self.record_H:", self.record_H
             raise
         end
 
@@ -190,7 +191,7 @@ private attr_writer :res_O, :uri_addr, :rec_id, :rec_jsonmodel_type
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Created Resource, uri = #{http_response_body_H[ K.uri ]}";
             self.uri_addr = http_response_body_H[ K.uri ] 
-            self.rec_id = self.uri_addr.trailing_digits
+            self.rec_id   = self.uri_addr.trailing_digits
         else
             http_response_body_H = super
             SE.puts "#{SE.lineno}: Updated Resource, uri = #{http_response_body_H[ K.uri ]}";

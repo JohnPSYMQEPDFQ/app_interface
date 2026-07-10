@@ -50,11 +50,11 @@ end
 
 def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed_word_A )
 
-    filter_types = lambda{ | type |    # This is all "types": child and grandchild AND bracketed words!!!!
+    filter_types_LP = lambda{ | type |    # This is all "types": child and grandchild AND bracketed words!!!!
         type.downcase.strip
 #           .sub( /(s|es)$/, '' )                              # This turns volumes or photocopies into volum and photocopi.
             .sub( /(?<!photocopi|photocopie|letterpres|volum)e?s$/i, '' )  # This doesn't.
-            .sub( /^oversized?$/, K.fmtr_ov )   
+            .sub( /^oversized?$/, K.ov )   
             .sub( /^vol[.]$/, K.volume ) 
             .freeze             # This is to keep 
                                 # the return value 
@@ -72,11 +72,11 @@ def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed
 #
 #   It's kinda dangerous...
 
-    child_logic = lambda{ | container_H, implied_bracketed_word_A, container_match_O__nc_H |
-        child_type = filter_types.( container_match_O__nc_H[ :child_type ] )
+    child_logic_LP = lambda{ | container_H, implied_bracketed_word_A, container_match_O__nc_H |
+        child_type = filter_types_LP.( container_match_O__nc_H[ :child_type ] )
         implied_bracketed_word_A.push( child_type.dup )
         if ( container_match_O__nc_H[ :child_num ].nil? || 
-             container_match_O__nc_H[ :child_num ].downcase.start_with?( K.undefined.downcase ) 
+             container_match_O__nc_H[ :child_num ].downcase.start_with?( UNDEFINED.downcase ) 
             ) then                
             container_H[ K.type_2 ] = child_type.dup
             if ( child_type.downcase == K.volume and from_thru_date_H_A.length == 1 ) then
@@ -92,11 +92,11 @@ def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed
         end
     }
                 
-    grandchild_logic = lambda{ | container_H, implied_bracketed_word_A, container_match_O__nc_H |
-        grandchild_type = filter_types.( container_match_O__nc_H[ :grandchild_type ] )
+    grandchild_logic_LP = lambda{ | container_H, implied_bracketed_word_A, container_match_O__nc_H |
+        grandchild_type = filter_types_LP.( container_match_O__nc_H[ :grandchild_type ] )
         implied_bracketed_word_A.push( grandchild_type.dup )
         if ( container_match_O__nc_H[ :grandchild_num ].nil? || 
-             container_match_O__nc_H[ :grandchild_num ].downcase.start_with?( K.undefined.downcase ) 
+             container_match_O__nc_H[ :grandchild_num ].downcase.start_with?( UNDEFINED.downcase ) 
             ) then                
             container_H[ K.type_3 ]      = grandchild_type.dup
             if ( grandchild_type.downcase == K.volume and from_thru_date_H_A.length == 1 ) then
@@ -116,7 +116,7 @@ def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed
     SE.q {['input_record']} if ( $DEBUG )
     
     explicitly_bracketed_word_A.map! do | explicitly_bracketed_word |
-        explicitly_bracketed_word = filter_types.( explicitly_bracketed_word )
+        explicitly_bracketed_word = filter_types_LP.( explicitly_bracketed_word )
     end
     
     container_H_A = [ ]
@@ -133,15 +133,15 @@ def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed
                 if ( container_H_A.not_empty? and container_H_A.last[ K.indicator_2 ].blank? ) then
                     container_match_O__nc_H = { }   
                     container_match_O__nc_H[ :child_type ] = K.volume.dup
-                    container_match_O__nc_H[ :child_num ]  = K.undefined.dup 
-                    child_logic.( container_H_A.last, implied_bracketed_word_A, container_match_O__nc_H  )
+                    container_match_O__nc_H[ :child_num ]  = UNDEFINED.dup 
+                    child_logic_LP.( container_H_A.last, implied_bracketed_word_A, container_match_O__nc_H  )
                     break
                 else
                 #   This goes through the "orphan" process creating a new container. 
                     container_match_O__nc_H = { }                   # A fake match_O, that will turn into:
                                                                     # Box Unk, Volume NN -or- Date
                     container_match_O__nc_H[ :container_type ] = K.volume.dup
-                    container_match_O__nc_H[ :container_num ]  = K.undefined.dup 
+                    container_match_O__nc_H[ :container_num ]  = UNDEFINED.dup 
                 end
             else
                 break
@@ -152,9 +152,9 @@ def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed
             if ( $~[ :trailing_del ].last == ']' ) then
                 SE.puts "#{SE.lineno}: WARNING: ']' chopped off due to container.sub! statement."
             end 
-            if ( container_match_O__nc_H[ :container_type ].match?( /#{K.fmtr_ov}\d+/i ) ) then
+            if ( container_match_O__nc_H[ :container_type ].match?( /#{K.ov}\d+/i ) ) then
                 if ( container_match_O__nc_H[ :container_num ].nil? ) then
-                    container_match_O__nc_H[ :container_type ] = K.fmtr_ov.dup
+                    container_match_O__nc_H[ :container_type ] = K.ov.dup
                     container_match_O__nc_H[ :container_num ]  = container_match_O__nc_H[ :container_type ].trailing_digits
                 else
                     SE.puts "#{SE.lineno}: I got an 'OVnn' container '#{container_match_O__nc_H[ :container_type ]}'"
@@ -165,7 +165,7 @@ def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed
                 end
             end                    
         end
-        container_type = filter_types.( container_match_O__nc_H[ :container_type ] ) 
+        container_type = filter_types_LP.( container_match_O__nc_H[ :container_type ] ) 
         implied_bracketed_word_A.push( container_type.dup )
 
         SE.q {['input_record','container_match_O__nc_H']}  if ( $DEBUG )
@@ -211,30 +211,30 @@ def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed
                         SE.q {'input_record'}
                         raise            
                     end
-                    integer_indicator = cleaned_indicator.to_i  
+                    indicator_I = cleaned_indicator.to_i  
                 end
                 if previous_operator_is_a_range
                     begin
-                        indicators_to_create = integer_indicator - container_indicator_A.last  
+                        indicators_to_create = indicator_I - container_indicator_A.last  
                     rescue => e
                         puts "Rescued exception: #{e.message}"
-                        SE.q {['indicators_to_create', 'integer_indicator', 'indicator', 'operator' ]}
+                        SE.q {['indicators_to_create', 'indicator_I', 'indicator', 'operator' ]}
                         SE.q {'container_indicator_A'}
                         raise
                     end
                     if ( indicators_to_create < 0 or indicators_to_create > 20 ) then
                         SE.puts "#{SE.lineno}:  Got indicators_to_create < 0 or > 20."
-                        SE.q {['indicators_to_create', 'integer_indicator', 'indicator', 'operator' ]}
+                        SE.q {['indicators_to_create', 'indicator_I', 'indicator', 'operator' ]}
                         SE.q {'container_indicator_A'}
                         SE.q {'container_num_A'}
                         SE.q {'container_match_O__nc_H'}
                         SE.q {'input_record'}
                         raise            
                     end
-                    range_A = (( container_indicator_A.last + 1 ) .. integer_indicator ).map { | number | number.to_s }
+                    range_A = (( container_indicator_A.last + 1 ) .. indicator_I ).map { | number | number.to_s }
                     container_indicator_A.concat( range_A )
                 else    
-                    container_indicator_A << integer_indicator
+                    container_indicator_A << indicator_I
                 end
                 previous_operator_is_a_range = current_operator_is_a_range
             end
@@ -249,11 +249,12 @@ def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed
            
             container_H = K.fmtr_empty_container_H
             
-            if ( indicator.to_s.downcase.start_with?( K.fmtr_unk ) ) then
+            if ( indicator.to_s.downcase == K.fmtr_unk ) then
                 container_H[ K.indicator ] = self.the_unknown_box_O.next_seq.upcase
             else
                 container_H[ K.indicator ] = indicator.to_s               # See below for RGn:Sn modifier
-            end     
+            end
+            container_H[ K.indicator ].sub!( /[[:punct:]]$/, '' )
        
             orphan_child_H = {}
             case true
@@ -261,9 +262,9 @@ def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed
                 orphan_child_H[ K.type ]      = container_type.dup                 
                 orphan_child_H[ K.indicator ] = container_H[ K.indicator ].dup
                 container_H[ K.type ]         = nil
-            when container_type == K.fmtr_ov
-                implied_bracketed_word_A.push( K.fmtr_oversize.dup )
-                container_H[ K.type ]         = K.fmtr_ov.upcase
+            when container_type == K.ov
+                implied_bracketed_word_A.push( K.oversize.dup )
+                container_H[ K.type ]         = K.ov.upcase
             when container_type.match?( /^#{K.valid_container_types_RES}/i )
                 container_H[ K.type ]         = container_type.dup
             else
@@ -277,14 +278,14 @@ def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed
                 container_type_modifier.gsub!( /[\[\]]/, '' )
                 case true
                 when container_type_modifier.match?( /^ov/i )      # ^ov will match oversize
-                    if ( container_H[ K.type ].not_in?( K.box, K.fmtr_ov.upcase ) ) then
+                    if ( container_H[ K.type ].not_in?( K.box, K.ov.upcase ) ) then
                         SE.puts "#{SE.lineno}: I got a 'OV' modifier but the container_H[ K.type ] is '#{container_H[ K.type ]}'"
                         SE.q {'container_match_O__nc_H'}
                         SE.q {'input_record'}
                         raise
                     end
-                    container_H[ K.type ]      = K.fmtr_ov.upcase
-                    implied_bracketed_word_A.push( K.fmtr_oversize.dup )
+                    container_H[ K.type ]      = K.ov.upcase
+                    implied_bracketed_word_A.push( K.oversize.dup )
                 when container_type_modifier.match?( /^(sb|slide)/i )
                     container_H[ K.indicator ] << ' SB'
                 when container_type_modifier.match?( /^(rc|record)/i )
@@ -314,11 +315,11 @@ def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed
             end
 
             if ( container_match_O__nc_H[ :child_type ].not_nil? ) then
-                child_logic.( container_H, implied_bracketed_word_A, container_match_O__nc_H  )
+                child_logic_LP.( container_H, implied_bracketed_word_A, container_match_O__nc_H  )
             end
               
             if ( container_match_O__nc_H[ :grandchild_type ].not_nil? ) then
-                grandchild_logic.( container_H, implied_bracketed_word_A, container_match_O__nc_H  )
+                grandchild_logic_LP.( container_H, implied_bracketed_word_A, container_match_O__nc_H  )
             end  
             
             container_H[ K.indicator ].concat( self.tc_group_suffix )
@@ -332,7 +333,7 @@ def scrape_off_container( input_record, from_thru_date_H_A, explicitly_bracketed
 
     arr = implied_bracketed_word_A - explicitly_bracketed_word_A
     arr.sort.uniq.each do | word |
-        next if ( word.in?( K.fmtr_ov, K.box, K.folder, K.item ) )
+        next if ( word.in?( K.ov, K.box, K.folder, K.item ) )
         explicitly_bracketed_word_A.push( word )
     end
 
@@ -378,9 +379,9 @@ def scrape_off_dates( input_record )
         if ( self.max_date == '' or self.max_date < from_thru_date_H[ K.end ] ) then
             self.max_date = from_thru_date_H[ K.end ]
         end 
-        from_thru_date_H[ K.bulk ]                                          = date_clump_S.bulk_TF
-        from_thru_date_H[ K.certainty ]                                     = date_clump_S.certainty 
-        from_thru_date_H[ K.expression]                                     = date_clump_S.as_date_expression
+        from_thru_date_H[ K.bulk ]                                  = date_clump_S.bulk_TF
+        from_thru_date_H[ K.certainty ]                             = date_clump_S.certainty 
+        from_thru_date_H[ K.expression]                             = date_clump_S.as_date_expression
         from_thru_date_H[ Find_Dates_in_String::MORALITY_ACTION ]   = date_clump_S.morality_action
         from_thru_date_H_A << from_thru_date_H
     end
@@ -733,9 +734,18 @@ ARGF.each_line do |input_record|
                 SE.q { 'input_record' }
                 raise
             end
-            stringer = command_line_split_A.join( '' ).strip
-            stringer.sub!( /[,.:;]$/, '' )
-            stringer << '.'
+            indent_key = command_line_split_A.join( '' ).strip.sub( /[[:punct:]]+$/, '' )
+#           indent_key.sub!( /[[:punct:]]+$/, '' ) 
+#           indent_key << '.'  # 5/18/2026  A period at the end of an indent_key causes the
+#                              #            following lines to have and unwanted group before
+#                              #            thing 1, because the "CRI&P" != "CRI&P."
+#                              #            CRI&P date
+#                              #            CRI&P date
+#                              #            CRI&P date           <<< this CRI&P doesn't match
+#                              #            CRI&P. thing 1       <<< this one.
+#                              #            CRI&P. thing 2
+#                                                   
+#       
             
             if ( indent_level_based_on_text_indentation != self.prepend_A_A.length ) then
                 SE.puts "#{SE.lineno}: Got a '#{command}' record but the text indentation doesn't match the prepend_A_A.length."
@@ -744,7 +754,7 @@ ARGF.each_line do |input_record|
                 SE.q {'self.prepend_A_A'}
                 raise
             end
-            self.prepend_A_A.push( [ stringer, :indent_keys, :prefix, nil, nil, $., SE.lineno ] )
+            self.prepend_A_A.push( [ indent_key, :indent_keys, :prefix, nil, nil, $., SE.lineno ] )     
             if ( self.prepend_A_A.maxdepth != 2 ) then
                 SE.puts "#{SE.lineno}: self.prepend_A_A has a maxdepth != 2"
                 SE.q {[ 'input_record', 'self.prepend_A_A' ]}
@@ -889,7 +899,17 @@ ARGF.each_line do |input_record|
                 SE.q {[ 'input_record', 'self.prepend_A_A' ]}
                 raise
             end
-            
+            title.sub!( /[.,:;]\s*$/, '' )
+
+#                              # 5/18/2026  A period at the end of a prepend_key/indent_key causes the
+#                              #            following lines to have and unwanted group before
+#                              #            thing 1, because the "CRI&P" != "CRI&P."
+#                              #            CRI&P date
+#                              #            CRI&P date
+#                              #            CRI&P date           <<< this CRI&P doesn't match
+#                              #            CRI&P. thing 1       <<< this one.
+#                              #            CRI&P. thing 2         
+   
             if  ( as_record_type.in?( [ K.subseries, K.subgrp ] ) and self.prepend_A_A.empty? ) then
                 SE.puts "#{SE.lineno}: Got a '#{as_record_type}' record but self.prepend_A_A is empty"
                 SE.q {[ 'input_record', 'self.prepend_A_A' ]}
@@ -903,7 +923,7 @@ ARGF.each_line do |input_record|
                 raise
             end
             
-            self.prepend_A_A.push( [ title, :sort, :group, as_record_type, group_num, $., SE.lineno ] )
+            self.prepend_A_A.push( [ title, :sort, :group, as_record_type, group_num, $., SE.lineno ] ) 
             if ( self.prepend_A_A.maxdepth != 2 ) then
                 SE.puts "#{SE.lineno}: self.prepend_A_A has a maxdepth != 2"
                 SE.q {[ 'input_record', 'self.prepend_A_A' ]}
@@ -1002,16 +1022,24 @@ ARGF.each_line do |input_record|
                 break if ( indent_keys_A.maxindex >= self.cmdln_option_H[ :MAX_GROUP_LEVELS ] )
                 phrase = phrase_A[ 0 ].strip
                 break if ( phrase[ 0 ] == '[' )
-                indent_keys_A.push( phrase )
+                indent_keys_A.push( phrase.sub( /[[:punct:]]+$/, '' ) )
                 phrase_A.shift( 1 )
-            end     
-            output_record_H[ K.fmtr_record_indent_keys ] = get_prepend_elements_for_indent_keys_F_A + indent_keys_A  
-            
+            end
+#                              # 5/18/2026  A period at the end of a prepend_key/indent_key causes the
+#                              #            following lines to have and unwanted group before
+#                              #            thing 1, because the "CRI&P" != "CRI&P."
+#                              #            CRI&P date
+#                              #            CRI&P date
+#                              #            CRI&P date           <<< this CRI&P doesn't match
+#                              #            CRI&P. thing 1       <<< this one.
+#                              #            CRI&P. thing 2         
+     
+            output_record_H[ K.fmtr_record_indent_keys ] = get_prepend_elements_for_indent_keys_F_A + indent_keys_A          
             arr1_A = [ ]
             loop do
                 break if ( phrase_A.empty? )
                 phrase = phrase_A.shift( 1 )[ 0 ].strip   # pop/shift with an argument returns an array, [0] says return the 1st element
-                arr1_A.push( phrase )
+                arr1_A.push( phrase.sub( /[[:punct:]]+$/, '' ) )
             end
             title = arr1_A.join( ' ' )           
         #       The sort keys are at the front of the record so the Unix 'sort' command works.   

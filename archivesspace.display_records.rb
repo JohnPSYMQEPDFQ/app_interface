@@ -54,23 +54,23 @@ end
 if ( cmdln_option_H[ :res_num ] ) then
     res_num = cmdln_option_H[ :res_num ]
     res_O = Resource.new( rep_O, res_num )
-    res_buf_O = res_O.new_buffer.read( cmdln_option_H[ :filter ] )
+    res_BO = res_O.new_buffer.read( filter_record_TF: cmdln_option_H[ :filter ] )
 end
 
 
-print_thingy = lambda{ | thingy | 
+print_LP = lambda{ | thingy | 
     if ( cmdln_option_H[ :flattened ] ) then
-        thingy = thingy.to_composite_key_h 
+        thingy = thingy.to_CKA_h 
     end
     puts thingy.ai
 }
 
-ao_query_O = nil
-current_record_type = K.undefined
+ao_QO = nil
+current_record_type = UNDEFINED
 ARGV.push('res') if (ARGV.empty?)
 ARGV.each do | element | 
     if ( element.in? [ 'res', 'ao', 'index' ]) then
-        if ( not res_buf_O ) then
+        if ( not res_BO ) then
             SE.puts "The --res-num option is required."
             raise
         end
@@ -81,38 +81,38 @@ ARGV.each do | element |
         current_record_type = element
         next
     end
-    if ( current_record_type == K.undefined ) then
+    if ( current_record_type == UNDEFINED ) then
         SE.puts "No record_type specified"
         raise
     end
     case current_record_type
     when 'res' 
         puts "Resource: #{res_num}:"
-        print_thingy.( res_buf_O.record_H )
+        print_LP.( res_BO.record_H )
     when 'ao'
         puts "Archival_Object: #{element}:"
-        ao_buf_O = Archival_Object.new( res_buf_O, element )
-                                  .new_buffer
-                                  .read( cmdln_option_H[ :filter ] )
-        print_thingy.( ao_buf_O.record_H )
+        ao_BO = Archival_Object.new( res_BO, element )
+                               .new_buffer
+                               .read( filter_record_TF: cmdln_option_H[ :filter ] )
+        print_LP.( ao_BO.record_H )
     when 'index' 
         puts "Index for Archival_Object: #{element}:"
-        if ( ao_query_O.nil? ) then
-            ao_query_O = AO_Query__of_Resource.new( resource_O: res_O )
+        if ( ao_QO.nil? ) then
+            ao_QO = AO_Query__of_Resource.new( res_O: res_O )
         end
-        print_thingy.( ao_query_O.index_H__OF_uri( element ) )
+        print_LP.( ao_QO.index_H__OF_uri( element ) )
     when 'tc'
         puts "Top_Container: #{element}:"
-        tc_buf_O = Top_Container.new(  res_O.nil? ? rep_O : res_O , element )
-                                .new_buffer
-                                .read( cmdln_option_H[ :filter ] )
-        print_thingy.( tc_buf_O.record_H )
+        tc_BO = Top_Container.new(  res_O.nil? ? rep_O : res_O , element )
+                             .new_buffer
+                             .read( filter_record_TF: cmdln_option_H[ :filter ] )
+        print_LP.( tc_BO.record_H )
     when 'loc'
         puts "Location: #{element}:"
-        loc_buf_O = Location.new( aspace_O, element )
-                            .new_buffer
-                            .read( cmdln_option_H[ :filter ] )
-        print_thingy.( loc_buf_O.record_H )
+        loc_BO = Location.new( aspace_O, element )
+                         .new_buffer
+                         .read( filter_record_TF: cmdln_option_H[ :filter ] )
+        print_LP.( loc_BO.record_H )
     else
         puts "Unknown record_type: #{current_record_type}"
     end 

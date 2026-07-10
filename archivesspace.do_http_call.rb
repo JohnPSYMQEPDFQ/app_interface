@@ -8,10 +8,6 @@ require 'json'
 require 'pp'
 require 'optparse'
 
-require 'class.Array.extend.rb'
-require 'class.String.extend.rb'
-require 'class.Hash.extend.rb'
-require 'module.SE.rb'
 require 'class.Archivesspace.rb'
 require 'class.ArchivesSpace.http_calls.rb'
 

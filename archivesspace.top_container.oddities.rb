@@ -67,10 +67,10 @@ if ( cmdln_option_H[ :res_num ].nil? ) then
 else
     res_O         = Resource.new( rep_O, cmdln_option_H.fetch( :res_num ) )
     SE.puts "Getting AO's ..."
-    ao_query_O    = AO_Query__of_Resource.new( resource_O: res_O, get_full_ao_record_TF: true )
+    ao_QO         = AO_Query__of_Resource.new( res_O: res_O, get_full_ao_record_TF: true )
     SE.puts "Getting TC's ..."
-    tc_query_O    = TC_Query__of_Resource.new( ao_query_O )
-    tc_record_H_A = tc_query_O.record_H_A
+    tc_QO         = TC_Query__of_Resource.new( ao_QO )
+    tc_record_H_A = tc_QO.record_H_A
 end
 elapsed_seconds = Time.now - time_begin
 SE.puts "Elapsed seconds = #{elapsed_seconds}"
