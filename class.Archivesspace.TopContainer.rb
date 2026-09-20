@@ -331,7 +331,7 @@ class TC_Query__of_Resource
     end
     
     def ao_data_H_A__OF_tc_uri( p1_tc_uri_addr_OR_rec_id )
-    #   NOTE! This is NOT the ao_record_H.   See ao_data_H_A above for the fields.
+    #   NOTE! This is NOT the ao_record_H.   See ao_data_H_A__BY_tc_rec_id above for the fields.
         case true
         when p1_tc_uri_addr_OR_rec_id.is_a?( String ) 
             stringer = p1_tc_uri_addr_OR_rec_id.delete_prefix( "#{self.uri_addr}/" )

@@ -179,7 +179,7 @@ def print__aoz_having_locations( source_data_H__BY_ao_uri )
             puts "#{source_data_H.fetch( K.level )}: #{source_data_H.fetch( K.title )[ 0,60 ]} " +
                  "`#{source_data_H.fetch( K.uri ).trailing_digits}` " +
                  ''                   
-            puts "        Text: #{source_data_H.fetch( LOC_DATA_H ).fetch( TEXT_H ).fetch( TEXT_VALUE )}"       
+            puts "        Text: #{source_data_H[ LOC_DATA_H ][ TEXT_H ][ TEXT_VALUE ].gsub(/([\r]*[\n])+/, " | ")}"       
             source_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID_n_RANGE_H_A )
                              .each do | loc_id_n_range_H | 
                 print "    Location: #{loc_id_n_range_H.fetch( LOC_ID )} "
@@ -206,7 +206,7 @@ def print__aoz_with_unused_locations( source_data_H__BY_ao_uri, unused_ao_locati
             puts "#{source_data_H.fetch( K.level )}: #{source_data_H.fetch( K.title )[ 0,60 ]} " +
                  "`#{source_data_H.fetch( K.uri ).trailing_digits}` " +
                  ''             
-            puts "        Text: #{source_data_H.fetch( LOC_DATA_H ).fetch( TEXT_H ).fetch( TEXT_VALUE )}"
+            puts "        Text: #{source_data_H[ LOC_DATA_H ][ TEXT_H ][ TEXT_VALUE ].gsub(/([\r]*[\n])+/, " | ")}"
             source_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID_n_RANGE_H_A ).each do | loc_id_n_range_H | 
                 print "    Location: #{loc_id_n_range_H.fetch( LOC_ID )} "
                 loc_id_n_range_H.fetch( LOC_RANGE_H_A ).each do | loc_range_H |
@@ -228,8 +228,8 @@ def print__tcz_locations( tc_data_H__BY_tc_uri, tc_QO, ao_QO )
     puts "TC's assigned locations:"
     tc_data_H__BY_tc_uri.each_pair do | tc_uri, tc_data_H |
         print "#{tc_data_H.fetch( K.type )} #{tc_data_H.fetch( K.indicator )} `#{tc_uri.trailing_digits}` "
-        arr = tc_data_H__BY_tc_uri.fetch( tc_uri ).fetch( PICKED_DATA_H_A )
-            .map { | picked_data_H |  picked_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID ) } 
+        arr = tc_data_H__BY_tc_uri.fetch( tc_uri ).fetch( PICKED_LOC_DATA_H_A )
+            .map { | picked_loc_data_H |  picked_loc_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID ) } 
             .uniq
         if arr.length > 1 then
             print "<<<<< WARNING: TC has more than 1 location!"
@@ -237,8 +237,8 @@ def print__tcz_locations( tc_data_H__BY_tc_uri, tc_QO, ao_QO )
         puts ''
 
         container_loc_note_A = [ ]    
-        tc_data_H.fetch( PICKED_DATA_H_A ).each do | picked_data_H |            
-            loc_data_H = picked_data_H.fetch( LOC_DATA_H )
+        tc_data_H.fetch( PICKED_LOC_DATA_H_A ).each do | picked_loc_data_H |            
+            loc_data_H = picked_loc_data_H.fetch( LOC_DATA_H )
             loc_id = loc_data_H.fetch( LOC_ID )
             if ( loc_id.in?( NO_LOCATION, INVALID_LOCATION ) ) then
                 cnt_of_bad_locations += 1
@@ -250,7 +250,7 @@ def print__tcz_locations( tc_data_H__BY_tc_uri, tc_QO, ao_QO )
                     puts "    Note: #{error_note}"
                 end
             end
-            picked_data_H[ PICKED_DATA_H__CHILD_H_A ].each_pair do | picked_ao_uri, child_H_A |            
+            picked_loc_data_H[ CHILD_H_A ].each_pair do | picked_ao_uri, child_H_A |            
                 if ( child_H_A.length == 1 && child_H_A.first.fetch( K.uri ) == picked_ao_uri ) then
                     stringer = "        Self Source:"
                     print_children = false
@@ -275,7 +275,7 @@ def print__tcz_locations( tc_data_H__BY_tc_uri, tc_QO, ao_QO )
                        #SE.q {'ao_record_H[ K.uri ]'}
                        #SE.q {'text.lstrip'}
                        #SE.q {'container_loc_note_A'}
-                       #SE.q {'picked_data_H[ PICKED_DATA_H__CHILD_H_A ].keys'}
+                       #SE.q {'picked_loc_data_H[ CHILD_H_A ].keys'}
                        #SE.q {'tc_data_H'}
                        #raise
                    #end
@@ -312,7 +312,7 @@ def print__tcz_by_type_indicator( tc_data_H__BY_tc_type_indicator )
     puts ''
     tc_data_H__BY_tc_type_indicator.each_pair do | type_N_indicator, data_H |
         next if data_H[ K.hierarchy ].length <= 1
-        puts "Multiple locations for '#{type_N_indicator}', AO's: #{data_H[ AO_CNT ]}, Location count: #{data_H[ K.hierarchy ].length}"
+        puts "Multiple hierarchies for '#{type_N_indicator}', AO's: #{data_H[ AO_CNT ]}, Location count: #{data_H[ K.hierarchy ].length}"
     end
     puts ''
 end
@@ -406,7 +406,7 @@ def get_loc_from_ao( record_H )
             if source_data_H.empty? then
                source_data_H[ LOC_ID_n_RANGE_H_A ] = [ ]
                source_data_H[ TEXT_H ]  = { TEXT_KEY_CKA => composite_key_A,
-                                            TEXT_VALUE   => source_text_value_WO_CRLF 
+                                            TEXT_VALUE   => source_text_value   # This HAS the CR/LF !!!! 
                                            }.deep_yield { | y | y.freeze }
             end
                                               
@@ -632,6 +632,7 @@ end
 BEGIN {    
 
     AO_CNT                       = :AO_CNT
+    CHILD_H_A                    = :CHILD_H_A
     CONTAINER_LOC_NOTE           = :CONTAINER_LOC_NOTE
     CONTAINER_LOC_TITLE          = :CONTAINER_LOC_TITLE
     CONTAINER_LOC_URI            = :CONTAINER_LOC_URI                
@@ -643,8 +644,7 @@ BEGIN {
     LOC_ID_n_RANGE_H_A           = :LOC_ID_n_RANGE_H_A
     LOC_RANGE_H                  = :LOC_RANGE_H
     LOC_RANGE_H_A                = :LOC_RANGE_H_A
-    PICKED_DATA_H_A              = :PICKED_DATA_H_A
-    PICKED_DATA_H__CHILD_H_A     = :PICKED_DATA_H__CHILD_H_A
+    PICKED_LOC_DATA_H_A          = :PICKED_LOC_DATA_H_A
     TEXT_H                       = :TEXT_H    
     TEXT_KEY_CKA                 = :TEXT_KEY_CKA                    # CKA = Composite Key Array
     TEXT_VALUE                   = :TEXT_VALUE
@@ -917,7 +917,6 @@ ao_QO.record_H_A.each do | ao_record_H |
         if ( picked_data_H[ LOC_DATA_H ].empty? )
             picked_data_H[ LOC_DATA_H ][ LOC_ID ]      = NO_LOCATION
             picked_data_H[ LOC_DATA_H ][ LOC_RANGE_H ] = {}  
-#           picked_data_H[ TEXT_H ]                    = {}
             picked_data_H[ K.uri ]                     = ao_uri               
         end
 
@@ -968,24 +967,16 @@ ao_QO.record_H_A.each do | ao_record_H |
         SE.q {'picked_data_H'} if ( $DEBUG )
         tc_data_H = tc_data_H__BY_tc_uri[ tc_uri ] ||= { K.type              => tc_record_H.fetch( K.type ).downcase,
                                                          K.indicator         => tc_record_H.fetch( K.indicator ),
-                                                         PICKED_DATA_H_A     => [ ],
+                                                         PICKED_LOC_DATA_H_A => [ ],
                                                         }.deep_copy
-        tc_data_H__picked_data_H = tc_data_H.fetch( PICKED_DATA_H_A ).find { | tc__picked_data_H | 
-            tc__picked_data_H.fetch( LOC_DATA_H ) == picked_data_H.fetch( LOC_DATA_H ) } || begin                               
-                if ( picked_data_H.has_no_key?( TEXT_H ) ) then
-                    SE.puts "#{SE.lineno}: =============================="
-                    SE.puts "picked_data_H.has_no_key?( TEXT_H )"
-                    SE.q {'picked_data_H'}
-                    SE.q {'tc_data_H'}
-                    raise
-                end
-                tc_data_H[ PICKED_DATA_H_A ] << { LOC_DATA_H               => picked_data_H.fetch( LOC_DATA_H ),
-                                                  PICKED_DATA_H__CHILD_H_A => {}, 
-#                                                 TEXT_H                   => picked_data_H.fetch( TEXT_H )
-                                                  }                                                           
-                tc_data_H.fetch( PICKED_DATA_H_A ).last    # This is needed because the '<<' OR '.push" returns the entire array                                          
+        tc_data_H__picked_loc_data_H = tc_data_H.fetch( PICKED_LOC_DATA_H_A ).find { | picked_loc_data_H | 
+            picked_loc_data_H.fetch( LOC_DATA_H ) == picked_data_H.fetch( LOC_DATA_H ) } || begin                               
+                tc_data_H[ PICKED_LOC_DATA_H_A ] << { LOC_DATA_H  => picked_data_H.fetch( LOC_DATA_H ),
+                                                      CHILD_H_A   => {}, 
+                                                     }                                                           
+                tc_data_H[ PICKED_LOC_DATA_H_A ].last    # This is needed because the '<<' OR '.push" returns the entire array                                          
             end
-        SE.q {'tc_data_H__picked_data_H'} if ( $DEBUG )
+        SE.q {'tc_data_H__picked_loc_data_H'} if ( $DEBUG )
         if ( picked_data_H.fetch( K.uri ).blank? ) then
             SE.puts "#{SE.lineno}: =============================="
             SE.puts "picked_data_H.fetch( K.uri ).blank?" 
@@ -993,24 +984,33 @@ ao_QO.record_H_A.each do | ao_record_H |
             raise
         end
         SE.q {'picked_data_H.fetch( K.uri )'} if ( $DEBUG )
-        tc_data_H__picked_data_H[ PICKED_DATA_H__CHILD_H_A ][ picked_data_H.fetch( K.uri ) ] ||= []
+        tc_data_H__picked_loc_data_H[ CHILD_H_A ][ picked_data_H.fetch( K.uri ) ] ||= []
                  
         new_child_H = { K.uri      => ao_uri,
                         K.instance => instance_idx,
                        }.deep_yield { | y | y.freeze }  
-        bool = tc_data_H__picked_data_H.fetch( PICKED_DATA_H__CHILD_H_A )
-                                       .fetch( picked_data_H.fetch( K.uri ) )
-                                       .find { | child_H | child_H.fetch( K.uri ) == new_child_H.fetch( K.uri ) } 
+        bool = tc_data_H__picked_loc_data_H.fetch( CHILD_H_A )
+                                           .fetch( picked_data_H.fetch( K.uri ) )
+                                           .find { | child_H | child_H.fetch( K.uri ) == new_child_H.fetch( K.uri ) } 
         if bool then 
             puts "#{SE.lineno}: =============================="
             puts "WARNING: AO has more than one reference to TC: #{tc_data_H.fetch( K.type )} #{tc_data_H.fetch( K.indicator )} "
             puts "Offending AO: uri=#{new_child_H.fetch( K.uri ).trailing_digits}, instance_idx=#{new_child_H.fetch( K.instance )}" 
             puts ''
-        end 
-        tc_data_H__picked_data_H[ PICKED_DATA_H__CHILD_H_A ][ picked_data_H.fetch( K.uri )] << new_child_H 
-        picked_data_H_A__BY_ao_uri[ ao_uri ] = picked_data_H          
-
-    SE.q {'tc_data_H'} if ( $DEBUG )             
+        end
+        picked_ao_uri = picked_data_H[ K.uri ]
+        tc_data_H__picked_loc_data_H[ CHILD_H_A ][ picked_ao_uri ] << new_child_H 
+        if ( picked_data_H_A__BY_ao_uri.has_key?( picked_ao_uri ) ) 
+            if ( picked_data_H_A__BY_ao_uri[ picked_ao_uri ] != picked_data_H ) 
+                SE.q {'picked_data_H'}
+                SE.q {'picked_ao_uri'}
+                SE.q {'picked_data_H_A__BY_ao_uri[ picked_ao_uri ]'}
+                SE.raise
+            end
+        else
+            picked_data_H_A__BY_ao_uri[ picked_ao_uri ] = picked_data_H          
+        end
+        SE.q {'tc_data_H'} if ( $DEBUG )             
     end
 end
 
@@ -1023,66 +1023,65 @@ print__tcz_by_type_indicator( tc_data_H__BY_tc_type_indicator )
 
 tc_to_skip_A = []
 tc_data_H__BY_tc_uri.each_pair do | tc_uri, tc_data_H |
-    picked_data_H_A = tc_data_H.fetch( PICKED_DATA_H_A )
-    if ( picked_data_H_A.empty? ) then
+    picked_loc_data_H_A = tc_data_H.fetch( PICKED_LOC_DATA_H_A )
+    if ( picked_loc_data_H_A.empty? ) then
         SE.puts "#{SE.lineno}: =============================="
-        SE.puts "tc_data_H.fetch( PICKED_DATA_H_A ).empty?"
+        SE.puts "tc_data_H.fetch( PICKED_LOC_DATA_H_A ).empty?"
         SE.q {['tc_uri', 'tc_data_H']}
         raise
     end
 
-    cnt = picked_data_H_A.count { | picked_data_H | 
-                                    picked_data_H.fetch( LOC_DATA_H )
+    cnt = picked_loc_data_H_A.count { | picked_loc_data_H | 
+                                    picked_loc_data_H.fetch( LOC_DATA_H )
                                                  .fetch( LOC_ID )
                                                  .not_in?( NO_LOCATION, DUPLICATE_LOCATIONS, INVALID_LOCATION ) }
     if ( cnt > 0 ) then #We have an actual location, so delete the NO_LOCATION location.   A NO_LOCATION
                         #can get into the table if a box is located under two different hyerachies,
                         #one with a location and one with-out.   
-        picked_data_H_A.map! do | picked_data_H |
-            loc_id = picked_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID )
+        picked_loc_data_H_A.map! do | picked_loc_data_H |
+            loc_id = picked_loc_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID )
             if ( loc_id.in?( NO_LOCATION ) ) then
                puts "#{tc_data_H.fetch( K.type )} #{tc_data_H.fetch( K.indicator )} `#{tc_uri.trailing_digits}` NO_LOCATION dropped."
-               picked_data_H = {}     #THIS WORKS, ONLY because of 'next picked_data_H' below.
+               picked_loc_data_H = {}     #THIS WORKS, ONLY because of 'next picked_loc_data_H' below.
             end
-            next picked_data_H        #map! is expecting something back for EACH iteration of the loop. 
-                                      #Without 'next picked_data_H', the value of the last statement is the  
+            next picked_loc_data_H        #map! is expecting something back for EACH iteration of the loop. 
+                                      #Without 'next picked_loc_data_H', the value of the last statement is the  
                                       #return value; which is the if statement IF IT'S FALSE.
         end
     end
-    picked_data_H_A.delete_if { | picked_data_H | picked_data_H.empty? }
-    next if ( picked_data_H_A.empty? )
+    picked_loc_data_H_A.delete_if { | picked_loc_data_H | picked_loc_data_H.empty? }
+    next if ( picked_loc_data_H_A.empty? )
 
-    arr = tc_data_H__BY_tc_uri.fetch( tc_uri ).fetch( PICKED_DATA_H_A )
-                                              .map { | picked_data_H |  picked_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID ) } 
+    arr = tc_data_H__BY_tc_uri.fetch( tc_uri ).fetch( PICKED_LOC_DATA_H_A )
+                                              .map { | picked_loc_data_H |  picked_loc_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID ) } 
                                               .uniq
     if ( arr.length > 1 ) then
-        picked_data_H_A << { LOC_DATA_H => { LOC_ID      => DUPLICATE_LOCATIONS,      
-                                             LOC_RANGE_H => {},
-                                            },
-                             PICKED_DATA_H__CHILD_H_A => {},              
-                             TEXT_H                   => {},
-                             K.uri                    => nil,                                            
-                            }.deep_copy      
-        set_location( picked_data_H_A.last[ LOC_DATA_H ], container_loc_uri_H ) 
+        picked_loc_data_H_A << { LOC_DATA_H => { LOC_ID      => DUPLICATE_LOCATIONS,      
+                                                 LOC_RANGE_H => {},
+                                                },
+                                 CHILD_H_A => {},              
+                                 K.uri     => nil,                                            
+                                }.deep_copy      
+        set_location( picked_loc_data_H_A.last[ LOC_DATA_H ], container_loc_uri_H ) 
         puts "#{tc_data_H.fetch( K.type )} #{tc_data_H.fetch( K.indicator )} `#{tc_uri.trailing_digits}` Added '#{ERROR_LABEL}: #{DUPLICATE_LOCATIONS}'"
         puts ''
     end
     
-    cnt = picked_data_H_A.count { | picked_data_H | picked_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID ) == NO_LOCATION }                                                                           
+    cnt = picked_loc_data_H_A.count { | picked_loc_data_H | picked_loc_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID ) == NO_LOCATION }                                                                           
     if ( cnt > 1 ) then
         SE.puts "#{SE.lineno}: =============================="
         SE.puts "count ( NO_LOCATION ) > 1"
         SE.q {['tc_uri', 'tc_data_H']}
         raise
     end
-    cnt = picked_data_H_A.count { | picked_data_H | picked_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID ) == INVALID_LOCATION }                                                                           
+    cnt = picked_loc_data_H_A.count { | picked_loc_data_H | picked_loc_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID ) == INVALID_LOCATION }                                                                           
     if ( cnt > 1 ) then
        #SE.puts "#{SE.lineno}: =============================="
        #SE.puts "count ( INVALID_LOCATION ) > 1"
        #SE.q {['tc_uri', 'tc_data_H']}
        #raise
     end
-    cnt = picked_data_H_A.count { | picked_data_H | picked_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID ) == DUPLICATE_LOCATIONS }                                                                           
+    cnt = picked_loc_data_H_A.count { | picked_loc_data_H | picked_loc_data_H.fetch( LOC_DATA_H ).fetch( LOC_ID ) == DUPLICATE_LOCATIONS }                                                                           
     if ( cnt > 1 ) then
         SE.puts "#{SE.lineno}: =============================="
         SE.puts "count ( DUPLICATE_LOCATIONS ) > 1"
@@ -1098,16 +1097,16 @@ tc_to_update_A = []
 picked_ao_uri_A = []      # AO's actually used in TC's.
 loc_data_H_A__BY_new_ALA_location_H = {}
 tc_data_H__BY_tc_uri.each_pair do | tc_uri, tc_data_H |
-    next if ( tc_data_H.fetch( PICKED_DATA_H_A ).empty? )
-    tc_data_H.fetch( PICKED_DATA_H_A ).each do | picked_data_H |
-        loc_data_H = picked_data_H.fetch( LOC_DATA_H )
+    next if ( tc_data_H.fetch( PICKED_LOC_DATA_H_A ).empty? )
+    tc_data_H.fetch( PICKED_LOC_DATA_H_A ).each do | picked_loc_data_H |
+        loc_data_H = picked_loc_data_H.fetch( LOC_DATA_H )
         if (  loc_data_H.has_no_key?( CONTAINER_LOC_URI )   || loc_data_H.fetch( CONTAINER_LOC_URI ).blank? ||
               loc_data_H.has_no_key?( CONTAINER_LOC_TITLE ) || loc_data_H.fetch( CONTAINER_LOC_TITLE ).blank? ) then
             SE.puts "#{SE.lineno}: =============================="
             SE.puts "loc_data_H.has_no_key?( CONTAINER_LOC_URI )   || loc_data_H.fetch( CONTAINER_LOC_URI ).blank? ||"
             SE.puts "loc_data_H.has_no_key?( CONTAINER_LOC_TITLE ) || loc_data_H.fetch( CONTAINER_LOC_TITLE ).blank?"
             SE.q {'loc_data_H'}
-            SE.q {'picked_data_H'}
+            SE.q {'picked_loc_data_H'}
             SE.q {'tc_uri'}
             SE.q {'tc_data_H'}
             raise
@@ -1119,7 +1118,7 @@ tc_data_H__BY_tc_uri.each_pair do | tc_uri, tc_data_H |
             loc_data_H_A__BY_new_ALA_location_H[ new_ALA_location_key_H ] ||= []            
             loc_data_H_A__BY_new_ALA_location_H[ new_ALA_location_key_H ] << loc_data_H   
         end
-        picked_ao_uri_A.concat( picked_data_H.fetch( PICKED_DATA_H__CHILD_H_A ).keys )
+        picked_ao_uri_A.concat( picked_loc_data_H.fetch( CHILD_H_A ).keys )
         picked_ao_uri_A.uniq!
         
         tc_record_H = tc_QO.record_H__OF_uri( tc_uri )  
@@ -1213,8 +1212,8 @@ tc_to_update_A.each_with_index do | tc_uri, tc_rec_idx |
         | container_location_H | container_location_H[ K.note ].to_s.match?( /^#{ALA_NOTE_MARKER} #{NO_LOCATION}$/i ) || 
                                  container_location_H[ K.start_date ].to_s == ALA_START_DATE }                                      
 
-    tc_data_H.fetch( PICKED_DATA_H_A ).each do | picked_data_H |  
-        loc_data_H = picked_data_H.fetch( LOC_DATA_H )
+    tc_data_H.fetch( PICKED_LOC_DATA_H_A ).each do | picked_loc_data_H |  
+        loc_data_H = picked_loc_data_H.fetch( LOC_DATA_H )
         loc_id = loc_data_H.fetch( LOC_ID )
         container_location_note = "#{ALA_NOTE_MARKER} #{loc_id} "
         range = loc_data_H.fetch( LOC_RANGE_H )
@@ -1246,7 +1245,7 @@ tc_to_update_A.each_with_index do | tc_uri, tc_rec_idx |
         if loc_data_H.fetch( CONTAINER_LOC_URI ).in?( '', CREATE_ALA_LOCATION )
             SE.puts "#{SE.lineno}: =============================="
             SE.puts "loc_data_H.fetch( CONTAINER_LOC_URI ).in?( '', CREATE_ALA_LOCATION )" 
-            SE.q {'picked_data_H'}
+            SE.q {'picked_loc_data_H'}
             raise
         end
         cl_uri = loc_data_H.fetch( CONTAINER_LOC_URI )
@@ -1273,21 +1272,35 @@ tc_to_update_A.each_with_index do | tc_uri, tc_rec_idx |
         end    
      
         puts "CL: (#{container_locations_H_A.length}): Loc: `#{cl_uri.trailing_digits}`: #{container_location_note}"
-        picked_data_H[ PICKED_DATA_H__CHILD_H_A ].each_key do | picked_ao_uri |
+        picked_loc_data_H[ CHILD_H_A ].each_key do | picked_ao_uri |
             if ( picked_note.not_blank? && picked_ao_uri[ 0 ] == '/' ) then
                 if ( picked_ao_uri == self.res_BO.record_H.fetch( K.uri ) ) then
                     ao_BO = self.res_BO.read   
                 else
                     ao_BO = Archival_Object.new( self.res_O, picked_ao_uri ).new_buffer.read
-                end                
-                picked_loc_text_CKA = picked_data_H_A__BY_ao_uri.fetch( picked_ao_uri ).fetch( TEXT_H ).fetch( TEXT_KEY_CKA )
+                end
+                begin
+                    picked_loc_text_CKA = picked_data_H_A__BY_ao_uri.fetch( picked_ao_uri ).fetch( TEXT_H ).fetch( TEXT_KEY_CKA )
+                rescue
+                    SE.q {'picked_data_H_A__BY_ao_uri'}
+                    SE.q {'picked_loc_data_H[ CHILD_H_A ]'}
+                    raise
+                end
                 begin
                     picked_loc_text = ao_BO.record_H.value__using_CKA( picked_loc_text_CKA )
                 rescue
                     SE.q {'picked_loc_text_CKA'}
+                    SE.q {'picked_loc_data_H[ CHILD_H_A ]'}
                     raise
                 end
-                SE.raise if ( picked_loc_text != picked_data_H_A__BY_ao_uri[ picked_ao_uri ][ TEXT_H ].fetch( TEXT_VALUE ) )
+                if ( picked_loc_text != picked_data_H_A__BY_ao_uri[ picked_ao_uri ][ TEXT_H ].fetch( TEXT_VALUE ) )
+                    SE.q {'picked_loc_text'}
+                    SE.q {'picked_data_H_A__BY_ao_uri[ picked_ao_uri ]'}
+                    SE.q {'picked_loc_text_CKA'}
+                    SE.q {'picked_ao_uri'}
+                    SE.q {'ao_BO.record_H'}
+                    SE.raise
+                end
                 picked_loc_text.sub!( /^\<physloc\>: /, '' )              
                 if ( picked_loc_text.not_include?( picked_note ) )
                     picked_loc_text.prepend( picked_note )       
